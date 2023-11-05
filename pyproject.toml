@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "joshi-network"
+version = "0.1.0"
+description = ""
+authors = ["ted whalen <tewhalen@gmail.com>"]
+readme = "README.md"
+packages = [{include = "joshi_network"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+requests = "^2.28.1"
+beautifulsoup4 = "^4.11.1"
+pandas = "^1.5.2"
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.10.0"
+flake8 = "^6.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
