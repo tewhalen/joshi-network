@@ -3,13 +3,14 @@ import math
 import pathlib
 from collections import Counter
 
+from joshi_data import non_joshi
 from scrape import get_all_wrestlers
 
 w_directory = json.load(open("joshi_dir.json"))
 
 
 def joshi_wrestlers():
-    return {x for x, y in w_directory.items() if y["joshi"]}
+    return {x for x, y in w_directory.items() if y["joshi"] and x not in non_joshi}
 
 
 from directory import joshi_promotions
