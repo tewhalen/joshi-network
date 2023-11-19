@@ -3,8 +3,8 @@ import math
 import pathlib
 from collections import Counter
 
-from joshi_data import non_joshi
-from scrape import get_all_wrestlers
+from identifier import Identifier
+from joshi_data import joshi_promotions, non_joshi
 
 w_directory = json.load(open("joshi_dir.json"))
 
@@ -13,21 +13,13 @@ def joshi_wrestlers():
     return {x for x, y in w_directory.items() if y["joshi"] and x not in non_joshi}
 
 
-from directory import joshi_promotions
-
 j_p = list(joshi_promotions)
-
-
-def promotion_id(w):
-    if w_directory[w]["promotion"] in joshi_promotions:
-        return j_p.index(w_directory[w]["promotion"]) + 1
-    else:
-        return 0
 
 
 def build_graph():
     data = pathlib.Path("data").glob("[0-9]*.json")
 
+    promotion_id = Identifier()
     wrestlers = set()
     interactions = Counter()
     match_counts = Counter()
@@ -48,12 +40,11 @@ def build_graph():
     to_remove = {x for x in wrestlers if match_counts[int(x)] < 2}
     wrestlers = wrestlers.difference(to_remove)
     wrestlers = wrestlers.intersection(joshi_wrestlers())
-    print(wrestlers)
     for wrestler in wrestlers:
         nodes.append(
             {
                 "id": str(wrestler),
-                "group": promotion_id(str(wrestler)),
+                "group": promotion_id[w_directory[str(wrestler)]["promotion"]],
                 "promotion": w_directory[str(wrestler)]["promotion"],
                 "name": w_directory[str(wrestler)]["name"],
             }
@@ -76,5 +67,10 @@ def build_graph():
     return d
 
 
-output = build_graph()
-json.dump(output, open("joshi_net.json", "w"))
+if __name__ == "__main__":
+    output = build_graph()
+    fn = "joshi_net.json"
+    print(
+        f"Writing {len(output['nodes'])} wrestlers with {len(output['links'])} links to '{fn}'"
+    )
+    json.dump(output, open(fn, "w"))

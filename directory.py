@@ -48,9 +48,13 @@ def create_directory():
 
 def summarize_directory():
     d = json.load(open("joshi_dir.json"))
-    proms = Counter(wrestler["promotion"] for wrestler in d.values())
-    print(tabulate(proms.most_common(20)))
+    proms = Counter(
+        wrestler["promotion"] for wrestler in d.values() if wrestler["joshi"]
+    )
+    print(tabulate(proms.most_common()))
 
+
+def find_outliers(d):
     pcts = {}
     for wr_d, wrestler in d.items():
         j = [d[wid]["joshi"] for wid in wrestler["opponents"] if wid in d]
