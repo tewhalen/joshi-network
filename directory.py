@@ -4,7 +4,7 @@ from collections import Counter
 
 from tabulate import tabulate
 
-from joshi_data import joshi_promotions, known_joshi, non_joshi, promotion_map
+from joshirank.joshi_data import joshi_promotions, known_joshi, non_joshi, promotion_map
 from scrape import get_all_wrestlers
 
 

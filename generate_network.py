@@ -3,8 +3,8 @@ import math
 import pathlib
 from collections import Counter
 
-from identifier import Identifier
-from joshi_data import joshi_promotions, non_joshi
+from joshirank.identifier import Identifier
+from joshirank.joshi_data import joshi_promotions, non_joshi
 
 w_directory = json.load(open("joshi_dir.json"))
 
