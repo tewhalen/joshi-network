@@ -1,14 +1,23 @@
+import functools
 import pathlib
 import shelve
 
+from joshirank.joshi_data import considered_female, promotion_abbreviations
 
+
+@functools.lru_cache(maxsize=None)
 def is_joshi(wrestler_id: int) -> bool:
     """Determine if a wrestler is female based on their profile data."""
-    if wrestler_id in (22620,):  # abadon special case
+    if wrestler_id in considered_female:
         return True
-    wrestler_profile = db.get_wrestler(wrestler_id).get("profile", {})
+    wrestler_profile = db.get_wrestler(wrestler_id)
+    return is_female(wrestler_id, wrestler_profile)
 
-    gender = wrestler_profile.get("Gender", "")
+
+def is_female(wrestler_id: int, wrestler_info: dict) -> bool:
+    if wrestler_id in considered_female:
+        return True
+    gender = wrestler_info.get("profile", {}).get("Gender", "")
     return gender.lower() == "female"
 
 
@@ -34,6 +43,12 @@ class WrestlerDb:
     def wrestler_exists(self, wrestler_id: int) -> bool:
         return str(wrestler_id) in self.db
 
+    def all_female_wrestlers(self):
+        self.db.sync()
+        for wid, info in self.db.items():
+            if is_female(int(wid), info):
+                yield int(wid), info
+
 
 def make_clean_shelve_db(path: pathlib.Path):
     """Load a shelve database, remove it, and replace it with a fresh one with the old contents."""
@@ -56,12 +71,13 @@ def make_clean_shelve_db(path: pathlib.Path):
 # make_clean_shelve_db(pathlib.Path("data/joshi_wrestlers.new"))
 
 db = WrestlerDb(pathlib.Path("data/joshi_wrestlers.y"))
-
+wrestler_db = db
 # import dbm
 
 # print("xx", dbm.whichdb(pathlib.Path("data/joshi_wrestlers.db")))
 
 
+@functools.lru_cache(maxsize=None)
 def get_name(wrestler_id: int) -> str:
     if wrestler_id == 4813:
         return "Nanae Takahashi"
@@ -69,50 +85,54 @@ def get_name(wrestler_id: int) -> str:
         return "Cora Jade"
     elif wrestler_id == 3709:
         return "Kaori Yoneyama"
+    elif wrestler_id == 20441:
+        return "Haruna Neko"
+    elif wrestler_id == 4913:
+        return "Tanny Mouse"
+    elif wrestler_id == 16871:
+        return "Charli Evans"
     wrestler_info = db.get_wrestler(wrestler_id)
     best_name = wrestler_info.get("profile", {}).get("Current gimmick")
     if best_name:
         return best_name
     else:
         alter_ego = wrestler_info.get("profile", {}).get("Alter egos")
-        if alter_ego:
+        if type(alter_ego) is str and "a.k.a." in alter_ego:
+            alter_ego = alter_ego.split("a.k.a.")[0].strip()
+        if type(alter_ego) is str:
             return alter_ego
+        elif type(alter_ego) is list and len(alter_ego) > 0:
+            return alter_ego[0]
         else:
             return f"Unknown ({wrestler_id})"
 
 
+def get_promotion_with_location(wrestler_id: int) -> str:
+    promotion = get_promotion(wrestler_id)
+    if promotion == "":
+        wrestler_info = db.get_wrestler(wrestler_id)
+        location = wrestler_info.get("_guessed_location", "Unknown")
+        if location != "Unknown":
+            promotion = f"Freelancer ({location})"
+        else:
+            promotion = "Freelancer"
+    return promotion
+
+
+@functools.lru_cache(maxsize=None)
 def get_promotion(wrestler_id: int) -> str:
     wrestler_info = db.get_wrestler(wrestler_id)
     promotion = wrestler_info.get("profile", {}).get("Promotion", "")
-    p_map = {
-        "All Elite Wrestling": "AEW",
-        "World Wonder Ring Stardom": "Stardom",
-        "World Wrestling Entertainment": "WWE",
-        "Tokyo Joshi Pro-Wrestling": "TJPW",
-        "Marvelous That's Women Pro Wrestling": "Marvelous",
-        "Sendai Girls' Pro Wrestling": "Sendai Girls",
-        "Girl's Pro-Wrestling Unit Color's": "Colors",
-        "Dream Star Fighting Marigold": "Marigold",
-        "Ganbare Pro Wrestling": "Ganbare",
-        "Pro Wrestling WAVE": "Wave",
-        "Total Nonstop Action Wrestling": "TNA",
-        "Women Of Wrestling": "WOW",
-        "Yanagase Pro Wrestling": "Yanagase",
-        "World Woman Pro-Wrestling Diana": "Diana",
-        "National Wrestling Alliance": "NWA",
-        "Consejo Mundial De Lucha Libre": "CMLL",
-        "Ohio Valley Wrestling": "OVW",
-        "Juggalo Championship Wrestling": "JCW",
-        "Lucha Libre AAA Worldwide": "AAA",
-        "Major League Wrestling": "MLW",
-        "Gokigen Pro Wrestling": "Gokigen",
-        "Pro-Wrestling Evolution": "Evolution",
-        "Active Advance Pro Wrestling": "2AW",
-        "Hokuto Pro Wrestling": "Hokuto",
-        "Michinoku Pro Wrestling": "Michinoku",
-        "Pro Wrestling Up Town": "UpTown",
-        "P.P.P. Tokyo": "PPP Tokyo",
-        "Freelancer": "",
-        "Shinsyu Girls Pro Wrestling": "Shinsyu",
-    }
-    return p_map.get(promotion, promotion)
+
+    return promotion_abbreviations.get(promotion, promotion)
+
+
+if __name__ == "__main__":
+    # test some wrestler ids
+    test_ids = [28004, 26912, 32147, 26559, 4813, 21791]
+    for wid in test_ids:
+        print(f"Wrestler ID: {wid}")
+        print(f"Name: {get_name(wid)}")
+        print(f"Promotion: {get_promotion(wid)}")
+        print(f"Is Joshi: {is_joshi(wid)}")
+        print()

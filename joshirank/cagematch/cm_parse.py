@@ -36,6 +36,14 @@ def parse_wrestler_profile_page(html_data: str) -> dict:
                 value = parse_cm_date(value).isoformat()
             except ValueError:
                 pass
+        if label == "Alter egos":
+            # iterate over each <a> tag and extract the alter ego names
+            alter_egos = []
+            for a_tag in pair.find("div", class_="InformationBoxContents").find_all(
+                "a"
+            ):
+                alter_egos.append(a_tag.text.strip())
+            value = alter_egos
 
         wrestler_data[label] = value
 
