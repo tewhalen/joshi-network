@@ -92,11 +92,14 @@ def get_name(wrestler_id: int) -> str:
     elif wrestler_id == 16871:
         return "Charli Evans"
     wrestler_info = db.get_wrestler(wrestler_id)
-    best_name = wrestler_info.get("profile", {}).get("Current gimmick")
+    wrestler_profile = wrestler_info.get("profile", {})
+    best_name = wrestler_profile.get("Current gimmick")
     if best_name:
         return best_name
+    elif wrestler_profile.get("_name"):
+        return wrestler_profile.get("_name")
     else:
-        alter_ego = wrestler_info.get("profile", {}).get("Alter egos")
+        alter_ego = wrestler_profile.get("Alter egos")
         if type(alter_ego) is str and "a.k.a." in alter_ego:
             alter_ego = alter_ego.split("a.k.a.")[0].strip()
         if type(alter_ego) is str:

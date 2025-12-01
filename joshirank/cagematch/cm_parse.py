@@ -27,6 +27,9 @@ def parse_wrestler_profile_page(html_data: str) -> dict:
 
     wrestler_data = {}
 
+    page_header = soup.find("h1", class_="TextHeader")
+    if page_header:
+        wrestler_data["_name"] = page_header.text.strip()
     info_pairs = soup.findAll("div", class_="InformationBoxRow")
     for pair in info_pairs:
         label = pair.find("div", class_="InformationBoxTitle").text.strip().strip(":")
