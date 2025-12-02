@@ -1,6 +1,7 @@
 import datetime
 import sys
 import time
+from collections import Counter
 
 import requests
 from loguru import logger
@@ -37,6 +38,7 @@ def refresh_wrestler(wrestler_id: int, year: int, force=False) -> dict:
     wrestler = WrestlerScrape(wrestler_id)
     wrestler_info["timestamp"] = time.time()
     wrestler_info["profile"] = wrestler.scrape_data()
+    wrestler_info["id"] = wrestler_id
     wrestler_db.save_wrestler(wrestler_id, wrestler_info)
     time.sleep(0.5)  # be polite to CageMatch
     # only load matches if the wrestler is a joshi
@@ -48,6 +50,16 @@ def refresh_wrestler(wrestler_id: int, year: int, force=False) -> dict:
         )
         wrestler_info["matches"] = wrestler.scrape_matches(year)
         # sleep is built into scrape_matches
+
+        # count countries worked
+        country_counter = Counter(
+            [x.get("country", "Unknown") for x in wrestler_info["matches"]]
+        )
+        wrestler_info["_countries_worked"] = dict(country_counter)
+        if country_counter:
+            wrestler_info["_guessed_location"] = country_counter.most_common(1)[0][0]
+        else:
+            wrestler_info["_guessed_location"] = "Unknown"
 
     else:
         logger.debug(
@@ -173,7 +185,8 @@ if __name__ == "__main__":
     logger.remove()
 
     logger.add(sys.stderr, level="INFO")
-    # refresh_wrestler(3387, 2025, force=True)
+    # refresh_wrestler(32049, 2025, force=True)
+    # sys.exit(0)
     # follow_wrestlers(10962, 2025, deep=True)  # mercedes
     # follow_wrestlers(32147, 2025)
     # follow_wrestlers(31992, 2025)
