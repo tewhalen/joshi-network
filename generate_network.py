@@ -14,7 +14,8 @@ from joshirank.joshidb import (
     is_joshi,
 )
 
-w_directory = json.load(open("joshi_dir.json"))
+#
+# w_directory = json.load(open("joshi_dir.json"))
 
 
 j_p = list(joshi_promotions)
@@ -127,14 +128,14 @@ def build_graph(from_wrestlers: set, threshold=8):
 
 if __name__ == "__main__":
     output = build_graph(all_female_wrestlers())
-    fn = "joshi_net-sm.json"
+    fn = "output/joshi_net-sm.json"
     print(
         f"Writing {len(output['nodes'])} wrestlers with {len(output['links'])} links to '{fn}'"
     )
     json.dump(output, open(fn, "w"), indent=2)
 
     output = build_graph(all_joshi_japanese_wrestlers(), threshold=2)
-    fn = "joshi_net-jpn.json"
+    fn = "output/joshi_net-jpn.json"
     print(
         f"Writing {len(output['nodes'])} wrestlers with {len(output['links'])} links to '{fn}'"
     )
