@@ -1,8 +1,7 @@
 import csv
 import datetime
 from collections import defaultdict
-
-from columnar import columnar
+from tabulate import tabulate
 
 from joshirank.all_matches import all_matches
 from joshirank.glicko2 import Player
@@ -48,8 +47,77 @@ class Ranker:
             self.wrestler_objects[wrestler_id] = new_object
             return new_object
 
+    def matches_by_week(self) -> dict[tuple[int, int], list[dict]]:
+        """Returns a dict of (year, week) -> list of matches"""
+        matches_by_week = defaultdict(list)
+        for match in all_matches():
+            match_dict = dict(match)
+            match_date = match_dict["date"]
+            if match_date == "Unknown":
+                continue
+            date_obj = datetime.date.fromisoformat(match_date)
+            year, week, _ = date_obj.isocalendar()
+            matches_by_week[(year, week)].append(match_dict)
+        return matches_by_week
+
+    def matches_to_result_vectors(self, matches: list[dict]):
+        """Given a list of matches, return structured result vectors needed for Glicko2 update.
+        This will be a list of tuples wrestler_id, (opponent_rating, opponent_rd, outcomes)
+        """
+        result_vectors = defaultdict(
+            lambda: ([], [], [])
+        )  # wrestler_id -> (opp_rating, opp_rd, outcomes)
+        for match in matches:
+            for wid_a in match["side_a"]:
+                w_a = self.get_wrestler(wid_a)
+                for wid_b in match["side_b"]:
+                    w_b = self.get_wrestler(wid_b)
+                    result_vectors[wid_a][0].append(w_b.rating)
+                    result_vectors[wid_a][1].append(w_b.rd)
+                    result_vectors[wid_b][0].append(w_a.rating)
+                    result_vectors[wid_b][1].append(w_a.rd)
+                if match["is_victory"]:
+                    result_vectors[wid_a][2].append(1)  # win
+                    result_vectors[wid_b][2].append(0)  # loss
+                else:  # draw
+                    result_vectors[wid_a][2].append(0.5)  # draw
+                    result_vectors[wid_b][2].append(0.5)  # draw
+
+        return result_vectors
+
     def main(self):
-        # self.reset_wrestlers()
+        # iterate over all the weeks in order
+        matches_by_week = self.matches_by_week()
+        all_weeks = list(matches_by_week.keys())
+        all_weeks.sort()
+        for year_week in all_weeks:
+            year, week = year_week
+            print(
+                f"Processing Year {year} Week {week} with {len(matches_by_week[year_week])} matches"
+            )
+            results = self.matches_to_result_vectors(matches_by_week[year_week])
+            seen_this_week = set()
+            # now update each wrestler
+            for wrestler_id, (opp_ratings, opp_rds, outcomes) in results.items():
+                seen_this_week.add(wrestler_id)
+                wrestler = self.get_wrestler(wrestler_id)
+                wrestler.add_wld(
+                    sum(1 for o in outcomes if o == 1),
+                    sum(1 for o in outcomes if o == 0),
+                    sum(1 for o in outcomes if o == 0.5),
+                )
+                wrestler.update_player(
+                    opp_ratings,
+                    opp_rds,
+                    outcomes,
+                )
+            for wrestler_id in self.wrestler_objects:
+                if wrestler_id not in seen_this_week:
+                    wrestler = self.get_wrestler(wrestler_id)
+                    wrestler.did_not_compete()
+            self.display_current_rankings()
+
+    def old_main(self):
         all_the_matches = list(dict(match) for match in all_matches())
         all_the_matches.sort(key=lambda x: x["date"])
         for match in all_the_matches:  # should sort by date
@@ -98,7 +166,21 @@ class Ranker:
                     d["record"],
                 ]
             )
-        print(columnar(output, no_borders=True))
+        print(
+            tabulate(
+                output,
+                tablefmt="plain",
+                headers=[
+                    "Rank",
+                    "Name",
+                    "ID",
+                    "Promotion",
+                    "Rating",
+                    "RD",
+                    "Record",
+                ],
+            )
+        )
 
     def current_rankings(self):
 
