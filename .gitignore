@@ -1,4 +1,7 @@
 
 data/*.json
-__pycache__/*
+**/__pycache__/*
 poetry.lock
+/output
+/data
+.DS_Store
