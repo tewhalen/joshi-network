@@ -5,8 +5,11 @@ from tabulate import tabulate
 
 from joshirank.all_matches import all_matches
 from joshirank.glicko2 import Player
-from joshirank.joshidb import get_name, get_promotion
+from joshirank.joshidb import get_name, get_promotion, get_promotion_with_location
 from joshirank.record import Record
+
+
+URL_TEMPLATE = "https://www.cagematch.net/?id=2&nr={}&view=&page=4&gimmick=&year=2025&promotion=&region=&location=&arena=&showtype=&constellationType=Singles&worker="
 
 
 class Wrestler(Player):
@@ -92,9 +95,7 @@ class Ranker:
         all_weeks.sort()
         for year_week in all_weeks:
             year, week = year_week
-            print(
-                f"Processing Year {year} Week {week} with {len(matches_by_week[year_week])} matches"
-            )
+
             results = self.matches_to_result_vectors(matches_by_week[year_week])
             seen_this_week = set()
             # now update each wrestler
@@ -115,7 +116,7 @@ class Ranker:
                 if wrestler_id not in seen_this_week:
                     wrestler = self.get_wrestler(wrestler_id)
                     wrestler.did_not_compete()
-            self.display_current_rankings()
+        self.display_current_rankings()
 
     def old_main(self):
         all_the_matches = list(dict(match) for match in all_matches())
@@ -155,12 +156,17 @@ class Ranker:
             # output.append(
             #    f"{i:3} {name:20} {rating:.0f} ({rd:.0f}) {p.record} {p.y_record(month)}"
             # )
+            html_link = (
+                '<a href="'
+                + URL_TEMPLATE.format(d["id"])
+                + '">{}</a>'.format(get_name(d["id"]))
+            )
+
             output.append(
                 [
                     i,
-                    get_name(d["id"]),
-                    d["id"],
-                    get_promotion(d["id"]),
+                    html_link,
+                    get_promotion_with_location(d["id"]),
                     f"{d['rating']:.0f}",
                     f"{d['rd']:.0f}",
                     d["record"],
@@ -169,11 +175,10 @@ class Ranker:
         print(
             tabulate(
                 output,
-                tablefmt="plain",
+                tablefmt="unsafehtml",
                 headers=[
                     "Rank",
                     "Name",
-                    "ID",
                     "Promotion",
                     "Rating",
                     "RD",
@@ -192,7 +197,7 @@ class Ranker:
                 "record": p.record,
             }
             for wrestler_id, p in self.wrestler_objects.items()
-            if p.record.wins >= 5
+            if p.record.total_matches() >= 5
         ]
         rankings.sort(key=lambda x: x["rating"], reverse=True)
         return rankings

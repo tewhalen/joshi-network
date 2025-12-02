@@ -19,6 +19,9 @@ class Record(NamedTuple):
             draws=self.draws + x[2],
         )
 
+    def total_matches(self) -> int:
+        return self.wins + self.losses + self.draws
+
 
 if __name__ == "__main__":
     assert Record(2, 1, 3) + Record(2, 3, 4) == Record(4, 4, 7)
