@@ -50,17 +50,27 @@ class Ranker:
 
     def main(self):
         # self.reset_wrestlers()
-        for match in sorted(all_matches()):  # should sort by date
+        all_the_matches = list(dict(match) for match in all_matches())
+        all_the_matches.sort(key=lambda x: x["date"])
+        for match in all_the_matches:  # should sort by date
             # turn it back into a dict
             match_dict = dict(match)
-            winner = self.get_wrestler(match_dict["winners"][0])
-            loser = self.get_wrestler(match_dict["losers"][0])
-            # print(winner, loser)
-            winner.add_wld(1, 0, 0)
-            loser.add_wld(0, 1, 0)
 
-            winner.update_player([loser.rating], [loser.rd], [1])
-            loser.update_player([winner.rating], [winner.rd], [0])
+            winner = self.get_wrestler(match_dict["side_a"][0])
+            loser = self.get_wrestler(match_dict["side_b"][0])
+            # print(winner, loser)
+            if match_dict["is_victory"]:
+                winner.add_wld(1, 0, 0)
+                loser.add_wld(0, 1, 0)
+
+                winner.update_player([loser.rating], [loser.rd], [1])
+                loser.update_player([winner.rating], [winner.rd], [0])
+            else:
+                winner.add_wld(0, 0, 1)
+                loser.add_wld(0, 0, 1)
+
+                winner.update_player([loser.rating], [loser.rd], [0.5])
+                loser.update_player([winner.rating], [winner.rd], [0.5])
 
         self.display_current_rankings()
         # self.display_upsets_and_squashes()
