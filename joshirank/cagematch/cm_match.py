@@ -5,12 +5,13 @@ import urllib.parse
 from typing import Generator
 
 from bs4 import BeautifulSoup, Tag
+from loguru import logger
 
 import joshirank.cagematch.cm_parse as cm_parse
 import joshirank.cagematch.util as util
-from joshirank.cagematch.data import country_map
+from joshirank.cagematch.data import country_map, missing_wrestlers
 
-date_re = re.compile(r"\(([0-9]+)\.([0-9]+)\.([0-9]+)\)")
+date_re = re.compile(r"([0-9]{2})\.([0-9]{2})\.([0-9]{4})")
 
 id_href = re.compile("nr=([0-9]+)")
 tag_href = re.compile("[?]id=(28|29)")
@@ -43,9 +44,10 @@ def m_date(match: BeautifulSoup) -> str | None:
     for cell in match.find_all("td"):
         m = date_re.search(cell.text)
         if m:
+
             date = util.parse_cm_date(m.group(0))
             return date.isoformat()
-    return None
+    return "Unknown"
 
 
 def get_matchtype(match: Tag):
@@ -68,14 +70,6 @@ def parse_match(match: BeautifulSoup) -> dict:
     side_a, side_b, is_victory = parse_match_results(match)
     wrestlers = side_a + side_b
 
-    for link in match.find_all("a"):
-        # print(link["href"])
-        if link["href"].startswith("?"):
-            parsed = urllib.parse.parse_qs(link["href"][1:])
-            if parsed["id"][0] == "2":
-                if "nr" in parsed:
-                    wrestlers.append(int(parsed["nr"][0]))
-
     return {
         "date": m_date(match),
         "country": _guess_country_of_match_soup(match),
@@ -89,6 +83,15 @@ def parse_match(match: BeautifulSoup) -> dict:
     }
 
 
+def check_missing(txt_string):
+    """Check if any known missing wrestlers are in the given text string."""
+
+    for name in missing_wrestlers:
+        if name in txt_string:
+            return True
+    return False
+
+
 def parse_match_results(match: BeautifulSoup) -> tuple:
     """Extract match results (side_a, side_b, is_victory) from match html.
 
@@ -100,24 +103,44 @@ def parse_match_results(match: BeautifulSoup) -> tuple:
     """
     d_split = match.find(string=re.compile("defeat[s]?"))
     vs_split = match.find(string=re.compile("vs[.]"))  # indicates draw
+
     if d_split:
 
         winners = d_split.find_previous_siblings("a")
         losers = d_split.find_next_siblings("a")
 
-        side_a = list(sorted(extract_wrestler_id(x) for x in winners))
-        side_b = list(sorted(extract_wrestler_id(x) for x in losers))
+        side_a = tuple(sorted(extract_wrestler_id(x) for x in winners))
+        side_b = tuple(sorted(extract_wrestler_id(x) for x in losers))
+
+        side_a_txt, side_b_txt = match.text.split("defeat")
+        if check_missing(side_a_txt):
+            # prepend a -1 to indicate missing wrestler
+            side_a = (-1,) + side_a
+        if check_missing(side_b_txt):
+            side_b = (-1,) + side_b
+
         return side_a, side_b, True
 
     elif vs_split:
         # draw?
 
-        side_one = [
-            extract_wrestler_id(x) for x in vs_split.find_previous_siblings("a")
-        ]
-        side_two = [extract_wrestler_id(x) for x in vs_split.find_next_siblings("a")]
-
+        side_one = tuple(
+            sorted(extract_wrestler_id(x) for x in vs_split.find_previous_siblings("a"))
+        )
+        side_two = tuple(
+            sorted(extract_wrestler_id(x) for x in vs_split.find_next_siblings("a"))
+        )
+        side_a_txt, side_b_txt = match.text.split("vs.", maxsplit=1)
+        if check_missing(side_a_txt):
+            # prepend a -1 to indicate missing wrestler
+            side_one = (-1,) + side_one
+        if check_missing(side_b_txt):
+            side_two = (-1,) + side_two
         return side_one, side_two, False
+    else:
+        # CAN'T PARSE
+        logger.debug("Could not parse match result: {}", str(match))
+        return [], [], False
 
 
 def guess_country_of_match(html_content):

@@ -18,4 +18,45 @@ country_map = {
     "Japan in Kawasaki Stadium": "Japan",
     "Dänemark": "Denmark",
     "Estland": "Estonia",
+    "Grapplemax Studio in Singapur": "Singapore",
+    "Vereinigte Arabische Emirate": "United Arab Emirates",
+}
+
+
+country_abbrev = {
+    "United States": "USA",
+    "United Kingdom": "UK",
+    "Mexico": "MEX",
+    "Canada": "CAN",
+    "Australia": "AUS",
+    "Germany": "GER",
+    "Japan": "JPN",
+    "France": "FRA",
+    "Austria": "AUT",
+    "Italy": "ITA",
+    "Netherlands": "NED",
+    "Sweden": "SWE",
+    "Finland": "FIN",
+    "Russia": "RUS",
+    "South Korea": "KOR",
+    "Philippines": "PHI",
+    "Spain": "ESP",
+    "Poland": "POL",
+    "Belgium": "BEL",
+    "Switzerland": "SWI",
+    "Taiwan": "TPE",
+    "Indien": "IND",
+    "Denmark": "DEN",
+    "Estland": "EST",
+    "Singapore": "SGP",
+    "United Arab Emirates": "UAE",
+}
+
+
+missing_wrestlers = {
+    "Melina Cole",
+    "Jess E. Quinn",
+    "Jess E Quinn",
+    "Jack Garcia",
+    "Rosa Keaton",
 }
