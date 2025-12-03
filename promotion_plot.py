@@ -1,13 +1,13 @@
 import statistics
 from collections import Counter, defaultdict
 
-import numpy as np
-from sparklines import sparklines
-from tabulate import tabulate
-
+import jinja2
 import matplotlib as mpl
 import matplotlib.patches as patches
+import numpy as np
 from matplotlib import pyplot as plt
+from sparklines import sparklines
+from tabulate import tabulate
 
 from joshirank.joshidb import get_name, get_promotion_with_location, wrestler_db
 
@@ -15,7 +15,7 @@ min_val = 0
 max_val = 120
 
 
-def match_count_report():
+def match_count_report(year: int = 2025):
     accumulator = []
     promotions = defaultdict(list)
     for wid, wrestler_info in wrestler_db.all_female_wrestlers():
@@ -60,14 +60,31 @@ def match_count_report():
     return accumulator
 
 
-def print_results(results):
+def html_table_results(results):
     # copy the results but remove hist_data
 
     results = [x.copy() for x in results]
     for i, r in enumerate(results):
         del r["hist_data"]
         r["histogram"] = "<img src='h/{}_histogram_match_counts.png'/>".format(i)
-    print(tabulate(results, headers="keys", tablefmt="unsafehtml"))
+    return tabulate(results, headers="keys", tablefmt="unsafehtml")
+
+
+def save_results(results, year: int = 2025):
+    # load the ranking template and render out the results to a file
+    template_loader = jinja2.FileSystemLoader(searchpath="templates")
+    template_env = jinja2.Environment(loader=template_loader)
+    template = template_env.get_template("promotions.html")
+    rendered_table = html_table_results(results)
+    rendered_table = rendered_table.replace(
+        "<table>", '<table id="ranking-table" class="display">'
+    )
+
+    output_text = template.render(
+        the_table=rendered_table, year=year, sort_column=4, sort_order="desc"
+    )
+    with open(f"output/promotions.html", "w") as f:
+        f.write(output_text)
 
 
 def plot_results(results):
@@ -120,5 +137,6 @@ def plot_results(results):
 
 if __name__ == "__main__":
     results = match_count_report()
-    print_results(results)
+    # print_results(results)
+    save_results(results)
     plot_results(results)

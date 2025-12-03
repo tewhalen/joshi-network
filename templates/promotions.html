@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>{{ year }} Rankings</title>
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="
+https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css">
+    <style>
+        /* sensible system font stack and dark background */
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            background: #0b0f14;
+            color: #e6eef8;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.45;
+        }
+
+        a {
+            color: #e6eef8;
+        }
+
+        /* table basics */
+        table.display {
+            width: 100%;
+            border-collapse: collapse;
+            background: transparent;
+            box-shadow: 0 1px 0 rgba(255, 255, 255, 0.02) inset;
+        }
+
+        /* header */
+        #ranking-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 3;
+            background: linear-gradient(180deg, rgba(20, 24, 28, 0.95), rgba(16, 20, 24, 0.95));
+            color: #e6eef8;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            font-weight: 600;
+            padding: 10px 12px;
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+        }
+
+        /* body cells */
+        #ranking-table tbody td {
+            padding: 4px 6px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            color: #dbe9f8;
+            vertical-align: middle;
+        }
+
+        /* zebra rows and hover */
+        #ranking-table tbody tr:nth-child(even) td {
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        #ranking-table tbody tr:hover td {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        /* align numeric columns consistently */
+        #ranking-table th[style],
+        #ranking-table td[style] {
+            white-space: nowrap;
+        }
+
+        /* DataTables controls (search, length, pagination) */
+        .dataTables_wrapper .dataTables_filter input,
+        .dataTables_wrapper .dataTables_length select {
+            background: #0f1519;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: #e6eef8;
+            padding: 6px 8px;
+            border-radius: 6px;
+            outline: none;
+        }
+
+        .dataTables_wrapper .dataTables_filter input::placeholder {
+            color: #9aa6b3;
+        }
+
+        /* pagination buttons */
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            background: transparent;
+            border: 1px solid transparent;
+            color: #dbe9f8;
+            padding: 6px 10px;
+            margin: 0 2px;
+            border-radius: 6px;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: #172027;
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+
+        /* table footer / info */
+        .dataTables_wrapper .dataTables_info {
+            color: #9fb0c6;
+            padding-top: 8px;
+        }
+
+        /* subtle focus outlines for accessibility */
+        :focus {
+            outline: 2px solid rgba(99, 179, 237, 0.18);
+            outline-offset: 2px;
+        }
+
+        /* small screens: tighten spacing */
+        @media (max-width: 720px) {
+
+            #ranking-table thead th,
+            #ranking-table tbody td {
+                padding: 6px 8px;
+                font-size: 13px;
+            }
+        }
+
+        /* keep histogram images small so rows stay compact */
+        #ranking-table img {
+            height: 36px;
+            display: block;
+        }
+    </style>
+
+    <!-- jQuery and DataTables JS -->
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <script src="https://cdn.datatables.net/2.3.5/js/dataTables.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $('#ranking-table').DataTable({
+                "order": [[{{ sort_column }}, "{{ sort_order }}"]], // order by matches column descending
+                "pageLength": 50
+            });
+        });
+    </script>
+</head>
+
+<body>
+    <div style="max-width: 900px; margin: auto; padding: 20px;">
+        <h1>Women's Wrestling by Promotion and Region</h1>
+        <p>This table shows the number of matches wrestled by women (and relevant non-binary wrestlers) in various
+            promotions and regions in 2025,
+            along with summary statistics. </p>
+
+        <p>The number for "matches" isn't the total number of women's matches in that
+            promotion/region, but rather the total number of matches wrestled by all the women in that
+            promotion/region (so a tag match involving four women would count as four matches).</p>
+
+        <p>25%, 50% (median), and 75% quantiles are shown to illustrate the distribution of match counts within each
+            promotion/region (and the max number of matches wrestled by a single woman in that promotion/region).
+            There's also a little histogram giving a visual sense of the distribution of match counts across the
+            promotion...</p>
+        <p>Data is sourced from <a href="https://www.cagematch.net/">Cagematch</a> as of December 2025.
+            Only promotions/regions with 5 or more women are included.
+        </p>
+    </div>
+    {{ the_table }}
+</body>
+
+</html>
