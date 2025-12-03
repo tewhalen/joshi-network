@@ -91,6 +91,8 @@ def get_name(wrestler_id: int) -> str:
         return "Tanny Mouse"
     elif wrestler_id == 16871:
         return "Charli Evans"
+    elif wrestler_id == 11871:
+        return "HARUKAZE"
     wrestler_info = db.get_wrestler(wrestler_id)
     wrestler_profile = wrestler_info.get("profile", {})
     best_name = wrestler_profile.get("Current gimmick")
@@ -132,10 +134,13 @@ def get_promotion(wrestler_id: int) -> str:
 
 if __name__ == "__main__":
     # test some wrestler ids
+    from pprint import pprint
+
     test_ids = [28004, 26912, 32147, 26559, 4813, 21791]
     for wid in test_ids:
         print(f"Wrestler ID: {wid}")
         print(f"Name: {get_name(wid)}")
         print(f"Promotion: {get_promotion(wid)}")
         print(f"Is Joshi: {is_joshi(wid)}")
+        pprint(db.get_wrestler(wid))
         print()
