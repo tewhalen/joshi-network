@@ -1,13 +1,14 @@
 import csv
 import datetime
 from collections import defaultdict
+
+import jinja2
 from tabulate import tabulate
 
 from joshirank.all_matches import all_matches
 from joshirank.glicko2 import Player
 from joshirank.joshidb import get_name, get_promotion, get_promotion_with_location
 from joshirank.record import Record
-
 
 URL_TEMPLATE = "https://www.cagematch.net/?id=2&nr={}&view=&page=4&gimmick=&year=2025&promotion=&region=&location=&arena=&showtype=&constellationType=Singles&worker="
 
@@ -116,7 +117,6 @@ class Ranker:
                 if wrestler_id not in seen_this_week:
                     wrestler = self.get_wrestler(wrestler_id)
                     wrestler.did_not_compete()
-        self.display_current_rankings()
 
     def old_main(self):
         all_the_matches = list(dict(match) for match in all_matches())
@@ -141,11 +141,10 @@ class Ranker:
                 winner.update_player([loser.rating], [loser.rd], [0.5])
                 loser.update_player([winner.rating], [winner.rd], [0.5])
 
-        self.display_current_rankings()
         # self.display_upsets_and_squashes()
         # self.save_long_data()
 
-    def display_current_rankings(self):
+    def current_rankings_table(self):
 
         rankings = self.current_rankings()
 
@@ -172,19 +171,18 @@ class Ranker:
                     d["record"],
                 ]
             )
-        print(
-            tabulate(
-                output,
-                tablefmt="unsafehtml",
-                headers=[
-                    "Rank",
-                    "Name",
-                    "Promotion",
-                    "Rating",
-                    "RD",
-                    "Record",
-                ],
-            )
+
+        return tabulate(
+            output,
+            tablefmt="unsafehtml",
+            headers=[
+                "Rank",
+                "Name",
+                "Promotion",
+                "Rating",
+                "RD",
+                "Record",
+            ],
         )
 
     def current_rankings(self):
@@ -266,7 +264,23 @@ class Ranker:
         else:
             return False
 
+    def save_rankings_to_html(self):
+        # load the ranking template and render out the results to a file
+        template_loader = jinja2.FileSystemLoader(searchpath="templates")
+        template_env = jinja2.Environment(loader=template_loader)
+        template = template_env.get_template("ranking.html")
+        rendered_table = self.current_rankings_table()
+        rendered_table = rendered_table.replace(
+            "<table>", '<table id="ranking-table" class="display">'
+        )
+        rendered_html = template.render(
+            the_table=rendered_table, year=2025, sort_column=0, sort_order="asc"
+        )
+        with open("output/rankings.html", "w") as f:
+            f.write(rendered_html)
+
 
 if __name__ == "__main__":
     r = Ranker()
     r.main()
+    r.save_rankings_to_html()
