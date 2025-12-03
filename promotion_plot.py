@@ -47,9 +47,9 @@ def match_count_report(year: int = 2025):
                     "promotion": promo,
                     "women": total_wrestlers,
                     "matches": total_matches,
-                    "q1": quartiles[0],
+                    "25%": quartiles[0],
                     "median": quartiles[1],
-                    "q3": quartiles[2],
+                    "75%": quartiles[2],
                     "max": max_matches,
                     "histogram": sparkline,
                     "hist_data": series.tolist(),
@@ -110,6 +110,11 @@ def plot_results(results):
         ax = plt.gca()
         fig.patch.set_alpha(0.0)
         ax.patch.set_alpha(0.0)
+        # draw thin red lines at the 25th, 50th and 75th percentiles
+        if d.get("hist_data"):
+            p25, p50, p75 = np.percentile(d["hist_data"], [25, 50, 75])
+            for p in (p25, p50, p75):
+                ax.axvline(p, color="red", linewidth=0.8, alpha=0.9, zorder=3)
         plt.hist(
             d["hist_data"],
             bins=20,

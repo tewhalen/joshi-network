@@ -10,7 +10,7 @@ from joshirank.glicko2 import Player
 from joshirank.joshidb import get_name, get_promotion, get_promotion_with_location
 from joshirank.record import Record
 
-URL_TEMPLATE = "https://www.cagematch.net/?id=2&nr={}&view=&page=4&gimmick=&year=2025&promotion=&region=&location=&arena=&showtype=&constellationType=Singles&worker="
+URL_TEMPLATE = "https://www.cagematch.net/?id=2&nr={w_id}&view=&page=4&gimmick=&year={year}&promotion=&region=&location=&arena=&showtype=&constellationType=Singles&worker="
 
 
 class Wrestler(Player):
@@ -35,8 +35,9 @@ class Wrestler(Player):
 class Ranker:
     wrestler_objects: dict[str, Wrestler]
 
-    def __init__(self):
+    def __init__(self, year: int = 2025):
 
+        self.year = year
         self.wrestler_objects = {}
         self.rank_history = {}
         self.record_history = {}
@@ -157,7 +158,7 @@ class Ranker:
             # )
             html_link = (
                 '<a href="'
-                + URL_TEMPLATE.format(d["id"])
+                + URL_TEMPLATE.format(w_id=d["id"], year=self.year)
                 + '">{}</a>'.format(get_name(d["id"]))
             )
 
@@ -276,11 +277,11 @@ class Ranker:
         rendered_html = template.render(
             the_table=rendered_table, year=2025, sort_column=0, sort_order="asc"
         )
-        with open("output/rankings.html", "w") as f:
+        with open(f"output/{self.year}rankings.html", "w") as f:
             f.write(rendered_html)
 
 
 if __name__ == "__main__":
-    r = Ranker()
+    r = Ranker(2025)
     r.main()
     r.save_rankings_to_html()
