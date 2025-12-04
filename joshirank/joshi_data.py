@@ -179,3 +179,17 @@ promotion_abbreviations = {
 
 
 considered_female = {22620, 22139}  # abadon
+
+
+# name mapping for known wrestlers with inconsistent naming
+
+
+wrestler_name_overrides = {
+    4813: "Nanae Takahashi",
+    21791: "Elayna Black",
+    3709: "Kaori Yoneyama",
+    20441: "Haruna Neko",
+    4913: "Tanny Mouse",
+    16871: "Charli Evans",
+    11871: "HARUKAZE",
+}

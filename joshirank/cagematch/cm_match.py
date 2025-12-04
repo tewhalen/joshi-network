@@ -69,9 +69,12 @@ def parse_match(match: BeautifulSoup) -> dict:
 
     side_a, side_b, is_victory = parse_match_results(match)
     wrestlers = side_a + side_b
+    d = m_date(match)
+    if d == "Unknown":
+        logger.warning("Match with unknown date: {}", str(match))
 
     return {
-        "date": m_date(match),
+        "date": d,
         "country": _guess_country_of_match_soup(match),
         "wrestlers": wrestlers,
         "side_a": side_a,
@@ -139,7 +142,7 @@ def parse_match_results(match: BeautifulSoup) -> tuple:
         return side_one, side_two, False
     else:
         # CAN'T PARSE
-        logger.debug("Could not parse match result: {}", str(match))
+        # logger.debug("Could not parse match result: {}", str(match))
         return [], [], False
 
 

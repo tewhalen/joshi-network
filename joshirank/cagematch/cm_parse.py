@@ -29,21 +29,17 @@ def parse_wrestler_profile_page(html_data: str) -> dict:
     info_pairs = soup.findAll("div", class_="InformationBoxRow")
     for pair in info_pairs:
         label = pair.find("div", class_="InformationBoxTitle").text.strip().strip(":")
-        value = pair.find("div", class_="InformationBoxContents").text.strip()
-        if date_re.match(value):
+        value = pair.find("div", class_="InformationBoxContents")
+        if date_re.match(value.text.strip()):
             try:
-                value = parse_cm_date(value).isoformat()
+                value = parse_cm_date(value.text.strip()).isoformat()
             except ValueError:
                 pass
-        if label == "Alter egos":
-            # iterate over each <a> tag and extract the alter ego names
-            alter_egos = []
-            for a_tag in pair.find("div", class_="InformationBoxContents").find_all(
-                "a"
-            ):
-                alter_egos.append(a_tag.text.strip())
-            value = alter_egos
-
+        elif value.stripped_strings and len(list(value.stripped_strings)) > 1:
+            # multiple strings, make a list
+            value = [s.strip() for s in value.stripped_strings]
+        else:
+            value = value.text.strip()
         wrestler_data[label] = value
 
     return wrestler_data
