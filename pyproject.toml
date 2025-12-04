@@ -4,7 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["ted whalen <tewhalen@gmail.com>"]
 readme = "README.md"
-packages = [{include = "joshi_network"}]
+packages = [{include = "joshirank"}]
 
 [tool.poetry.dependencies]
 python = "^3.14"
