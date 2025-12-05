@@ -1,11 +1,8 @@
 """Parser for CageMatch website wrestler data."""
 
-import datetime
 import re
-import urllib
-from typing import Generator
 
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup
 from loguru import logger
 
 from joshirank.cagematch.util import parse_cm_date
@@ -43,23 +40,3 @@ def parse_wrestler_profile_page(html_data: str) -> dict:
         wrestler_data[label] = value
 
     return wrestler_data
-
-
-def parse_event(event: Tag) -> list[dict]:
-    # NOT USED
-    results = []
-    event_header = event.find("div", class_="QuickResultsHeader")
-    date_m = date_re.search(event_header.text)
-    if not date_m:
-        raise SyntaxError("no date found!")
-    day, month, year = date_m.groups()
-    datestr = f"{year}-{month}-{day}"
-
-    event_name = event_header.a.text
-
-    for match in event.find_all("span", class_="MatchResults"):
-        match_res = parse_match(match)
-        match_res["date"] = datestr
-        match_res["event"] = event_name
-        results.append(match_res)
-    return results

@@ -1,3 +1,5 @@
+"""Data mappings for cagematch data processing."""
+
 country_map = {
     "Mexiko": "Mexico",
     "Frankreich": "France",
@@ -59,4 +61,5 @@ missing_wrestlers = {
     "Jess E Quinn",
     "Jack Garcia",
     "Rosa Keaton",
+    "La Diva Milena",
 }
