@@ -1,3 +1,14 @@
+"""
+Docstring for joshirank.joshidb
+
+Handles persistent storage of wrestler data using shelve and sqlite3.
+
+We keep partially-parsed scraped JSON data in a shelve database,
+most notably match lists.
+We use sqlite3 for efficient querying of derived wrestler metadata.
+
+"""
+
 import functools
 import pathlib
 import shelve
@@ -64,7 +75,9 @@ class WrestlerDb:
         cursor.close()
         return bool(row[0])
 
-    def update_wrestler_metadata(self, wrestler_id: int, wrestler_info: dict):
+    def update_wrestler_metadata(self, wrestler_id: int):
+        """Update the SQL metadata for a wrestler based on their shelved profile info."""
+        wrestler_info = self.get_wrestler(wrestler_id)
         cursor = self.sqldb.cursor()
         name = get_name(wrestler_id)
         promotion = get_promotion_with_location(wrestler_id)
@@ -176,6 +189,14 @@ def get_name(wrestler_id: int) -> str:
         return wrestler_name_overrides[wrestler_id]
 
     wrestler_info = db.get_wrestler(wrestler_id)
+    best_name = _determine_name_from_profile(wrestler_info)
+    if best_name != "Unknown":
+        return best_name
+    else:
+        return f"Unknown Wrestler {wrestler_id}"
+
+
+def _determine_name_from_profile(wrestler_info: dict) -> str:
     wrestler_profile = wrestler_info.get("profile", {})
     best_name = wrestler_profile.get("Current gimmick")
     if best_name:
@@ -191,7 +212,7 @@ def get_name(wrestler_id: int) -> str:
         elif type(alter_ego) is list and len(alter_ego) > 0:
             return alter_ego[0]
         else:
-            return f"Unknown ({wrestler_id})"
+            return "Unknown"
 
 
 def get_promotion_with_location(wrestler_id: int) -> str:
