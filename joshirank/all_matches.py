@@ -1,3 +1,5 @@
+from typing import Generator
+
 from bs4 import BeautifulSoup
 from loguru import logger
 
@@ -10,9 +12,9 @@ def to_tuple(dict_obj):
     return tuple(sorted(dict_obj.items()))
 
 
-def all_singles_matches(wrestler_data: dict):
-    for i in range(wrestler_data.get("matches", []).__len__()):
-        res = wrestler_data["matches"][i]
+def extract_singles_matches(match_data: list[dict]) -> Generator[tuple]:
+    """Given a list of matches, yield tuples of info about only singles matches between joshi wrestlers."""
+    for res in match_data:
 
         if len(res["side_a"]) == 1 and len(res["side_b"]) == 1:
             if type(res["date"]) is not str:
@@ -35,7 +37,7 @@ def all_matches() -> set:
         if not is_joshi(int(wrestler)):
             continue
         j_count += 1
-        for match in all_singles_matches(wdata):
+        for match in extract_singles_matches(wrestler_db.get_matches(int(wrestler))):
             # print(match)
             all_matches.add(match)
 

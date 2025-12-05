@@ -7,7 +7,6 @@ from typing import Generator
 from bs4 import BeautifulSoup, Tag
 from loguru import logger
 
-import joshirank.cagematch.profile as profile
 import joshirank.cagematch.util as util
 from joshirank.cagematch.data import country_map, missing_wrestlers
 

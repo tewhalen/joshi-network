@@ -7,7 +7,7 @@ import requests
 from loguru import logger
 
 import joshirank.cagematch.cm_match as cm_match
-import joshirank.cagematch.cm_parse as cm_parse
+import joshirank.cagematch.profile as profile
 from joshirank.joshidb import db as wrestler_db
 from joshirank.joshidb import get_name, is_female
 
@@ -48,13 +48,12 @@ def refresh_wrestler(wrestler_id: int, year: int, force=False) -> dict:
             get_name(wrestler_id),
             wrestler_id,
         )
-        wrestler_info["matches"] = wrestler.scrape_matches(year)
+        matches = wrestler.scrape_matches(year)
+
         # sleep is built into scrape_matches
 
         # count countries worked
-        country_counter = Counter(
-            [x.get("country", "Unknown") for x in wrestler_info["matches"]]
-        )
+        country_counter = Counter([x.get("country", "Unknown") for x in matches])
         wrestler_info["_countries_worked"] = dict(country_counter)
         if country_counter:
             wrestler_info["_guessed_location"] = country_counter.most_common(1)[0][0]
@@ -68,6 +67,7 @@ def refresh_wrestler(wrestler_id: int, year: int, force=False) -> dict:
             wrestler_id,
         )
     wrestler_db.save_wrestler(wrestler_id, wrestler_info)
+    wrestler_db.save_matches(wrestler_id, matches)
 
     return wrestler_info
 
@@ -86,7 +86,7 @@ class WrestlerScrape:
         data_page = requests.get(
             self.wrestler_url, headers={"accept-encoding": "compress"}
         )
-        result = cm_parse.parse_wrestler_profile_page(data_page.text)
+        result = profile.parse_wrestler_profile_page(data_page.text)
         result["id"] = self.wrestler_id
         return result
 
@@ -120,30 +120,23 @@ class WrestlerScrape:
                 return []
 
 
-def get_all_colleagues(wrestler_info: dict) -> set[int]:
-    colleagues = set()
-    for match in wrestler_info.get("matches", []):
-        for wid in match["wrestlers"]:
-            if wid != wrestler_info.get("id"):
-                colleagues.add(wid)
-    return colleagues
-
-
 def find_missing_wrestlers():
     """Yield all wrestlers present in matches but missing from the database."""
-
+    appearance_counter = Counter()
     for wrestler_id in wrestler_db.all_wrestler_ids():
-        wrestler_info = wrestler_db.get_wrestler(int(wrestler_id))
-        colleagues = get_all_colleagues(wrestler_info)
+
+        colleagues = wrestler_db.get_all_colleagues(int(wrestler_id))
         for wid in colleagues:
             if not wrestler_db.wrestler_exists(wid):
-                yield wid
+                appearance_counter[wid] += 1
+    for wid, count in appearance_counter.most_common():
+        yield wid, count
 
 
 def follow_wrestlers(wrestler_id, year, deep=False):
-    wrestler_info = refresh_wrestler(wrestler_id, year)
+    refresh_wrestler(wrestler_id, year)
 
-    colleagues = get_all_colleagues(wrestler_info)
+    colleagues = wrestler_db.get_all_colleagues(int(wrestler_id))
     if colleagues:
         logger.success(
             "{} ({}) has {} colleagues.",
@@ -173,8 +166,7 @@ def wrestlers_sorted_by_match_count():
     "return a list of wrestler ids sorted by number of matches  descending"
     wrestler_match_counts = []
     for wid in wrestler_db.all_wrestler_ids():
-        wrestler_info = wrestler_db.get_wrestler(int(wid))
-        match_count = len(wrestler_info.get("matches", []))
+        match_count = len(wrestler_db.get_matches(int(wid)))
         wrestler_match_counts.append((int(wid), match_count))
     return sorted(wrestler_match_counts, key=lambda x: x[1], reverse=True)
 
@@ -185,8 +177,8 @@ if __name__ == "__main__":
     logger.remove()
 
     logger.add(sys.stderr, level="INFO")
-    # refresh_wrestler(32049, 2025, force=True)
-    # sys.exit(0)
+    refresh_wrestler(28004, 2025, force=True)
+    sys.exit(0)
     # follow_wrestlers(10962, 2025, deep=True)  # mercedes
     # follow_wrestlers(32147, 2025)
     # follow_wrestlers(31992, 2025)
@@ -207,7 +199,7 @@ if __name__ == "__main__":
             refresh_count += 1
         if refresh_count >= 20:
             break
-    for i, wid in enumerate(find_missing_wrestlers(), start=1):
+    for i, (wid, count) in enumerate(find_missing_wrestlers(), start=1):
         logger.info("({}) Missing wrestler id: {}", i, wid)
         follow_wrestlers(wid, 2025, deep=True)
 

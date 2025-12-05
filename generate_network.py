@@ -70,9 +70,9 @@ def build_graph(from_wrestlers: set, threshold=8):
     interactions = Counter()
     match_counts = Counter()
     for w_id in from_wrestlers:
-        info = wrestler_db.db[str(w_id)]
+        matches = wrestler_db.get_matches(int(w_id))
 
-        for match in info.get("matches", []):
+        for match in matches:
             match_counts[int(w_id)] += 1
             for wrestler in match["wrestlers"]:
                 if wrestler == w_id:

@@ -10,6 +10,7 @@ We use sqlite3 for efficient querying of derived wrestler metadata.
 """
 
 import functools
+import json
 import pathlib
 import shelve
 import sqlite3
@@ -53,6 +54,7 @@ class WrestlerDb:
             promotion TEXT,
             last_updated TIMESTAMP,
             location TEXT,
+            cm_profile_json TEXT,
             PRIMARY KEY (wrestler_id)  
         )
         """
@@ -85,11 +87,12 @@ class WrestlerDb:
         is_female_flag = is_female(wrestler_id, wrestler_info)
         location = wrestler_info.get("_guessed_location", "Unknown")
         timestamp = wrestler_info.get("timestamp", None)
+        cm_profile_json = json.dumps(wrestler_info.get("profile", {}))
         cursor.execute(
             """
         INSERT OR REPLACE INTO wrestlers
-        (wrestler_id, is_female, name, promotion, last_updated, location)
-        VALUES (?, ?, ?, ?, ?, ?)
+        (wrestler_id, is_female, name, promotion, last_updated, location, cm_profile_json)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
             (
                 wrestler_id,
@@ -98,6 +101,7 @@ class WrestlerDb:
                 promotion,
                 timestamp,
                 location,
+                cm_profile_json,
             ),
         )
 
@@ -110,14 +114,14 @@ class WrestlerDb:
 
     def save_wrestler(self, wrestler_id: int, data: dict):
         self.db[str(wrestler_id)] = data
-
-        self.update_wrestler_metadata(wrestler_id, data)
         self.db.sync()
+        self.update_wrestler_metadata(wrestler_id)
+
         self.sqldb.commit()
 
-    def all_wrestler_ids(self):
+    def all_wrestler_ids(self) -> list[int]:
         self.db.sync()
-        return list(self.db.keys())
+        return list(map(int, self.db.keys()))
 
     def wrestler_exists(self, wrestler_id: int) -> bool:
         return str(wrestler_id) in self.db
@@ -154,6 +158,24 @@ class WrestlerDb:
             return row[0]
         else:
             raise KeyError(f"Wrestler ID {wrestler_id} not found in database.")
+
+    def get_matches(self, wrestler_id: int) -> list[dict]:
+        wrestler_info = self.get_wrestler(wrestler_id)
+        return wrestler_info.get("matches", [])
+
+    def save_matches(self, wrestler_id: int, matches: list[dict]):
+        wrestler_info = self.get_wrestler(wrestler_id)
+        wrestler_info["matches"] = matches
+        self.save_wrestler(wrestler_id, wrestler_info)
+
+    def get_all_colleagues(self, wrestler_id: int) -> set[int]:
+        """Given a wrestler ID, return a set of all wrestler IDs that appeared in a match with them."""
+        colleagues = set()
+        for match in self.get_matches(wrestler_id):
+            for wid in match["wrestlers"]:
+                if wid != wrestler_id:
+                    colleagues.add(wid)
+        return colleagues
 
 
 def make_clean_shelve_db(path: pathlib.Path):
@@ -237,6 +259,7 @@ def get_promotion(wrestler_id: int) -> str:
 
 if __name__ == "__main__":
     # test some wrestler ids
+
     from pprint import pprint
 
     test_ids = [28004, 26912, 32147, 26559, 4813, 21791]
@@ -247,6 +270,6 @@ if __name__ == "__main__":
         print(f"Is Joshi: {is_joshi(wid)}")
         pprint(db.get_wrestler(wid))
         print()
-        db.update_wrestler_metadata(wid, db.get_wrestler(wid))
+        db.update_wrestler_metadata(wid)
         print(db._is_female(wid))
     db.sqldb.commit()
