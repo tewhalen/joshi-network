@@ -9,7 +9,7 @@ from loguru import logger
 import joshirank.cagematch.cm_match as cm_match
 import joshirank.cagematch.profile as profile
 from joshirank.joshidb import db as wrestler_db
-from joshirank.joshidb import get_name, is_female
+from joshirank.joshidb import get_name
 
 WEEK = 60 * 60 * 24 * 7
 
