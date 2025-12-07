@@ -18,7 +18,7 @@ max_val = 120
 def match_count_report(year: int = 2025):
     accumulator = []
     promotions = defaultdict(list)
-    for wid, wrestler_info in wrestler_db.all_female_wrestlers():
+    for wid in wrestler_db.all_female_wrestlers():
         name = get_name(int(wid))
         matches = wrestler_db.get_matches(int(wid))
         match_count = len(matches)
