@@ -1,4 +1,3 @@
-import csv
 import datetime
 from collections import defaultdict
 
@@ -7,7 +6,7 @@ from tabulate import tabulate
 
 from joshirank.all_matches import all_matches
 from joshirank.glicko2 import Player
-from joshirank.joshidb import get_name, get_promotion, get_promotion_with_location
+from joshirank.joshidb import get_name, get_promotion_with_location
 from joshirank.record import Record
 
 URL_TEMPLATE = "https://www.cagematch.net/?id=2&nr={w_id}&view=&page=4&gimmick=&year={year}&promotion=&region=&location=&arena=&showtype=&constellationType=Singles&worker="

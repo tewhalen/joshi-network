@@ -19,7 +19,7 @@ def refresh_this_wrestler(wrestler_id: int) -> bool:
     wrestler_info = wrestler_db.get_wrestler(wrestler_id)
     if not wrestler_info:
         return True
-    elif not is_female(wrestler_id, wrestler_info):
+    elif not wrestler_db.is_female(wrestler_id):
         return False
     elif "timestamp" not in wrestler_info or (
         time.time() - wrestler_info["timestamp"] > WEEK
@@ -33,41 +33,39 @@ def refresh_wrestler(wrestler_id: int, year: int, force=False) -> dict:
     """Reload wrestler profile and matches from CageMatch.net if older than a week."""
     if not refresh_this_wrestler(wrestler_id) and not force:
         return wrestler_db.get_wrestler(wrestler_id)
+    wrestler = WrestlerScrape(wrestler_id)
+    scraped_profile = wrestler.scrape_data()
+    wrestler_db.save_profile_for_wrestler(wrestler_id, scraped_profile.profile_data)
+    wrestler_db.update_wrestler_from_profile(wrestler_id)
+
     wrestler_info = wrestler_db.get_wrestler(wrestler_id)
 
-    wrestler = WrestlerScrape(wrestler_id)
-    wrestler_info["timestamp"] = time.time()
-    wrestler_info["profile"] = wrestler.scrape_data()
-    wrestler_info["id"] = wrestler_id
-    wrestler_db.save_wrestler(wrestler_id, wrestler_info)
     time.sleep(0.5)  # be polite to CageMatch
     # only load matches if the wrestler is a joshi
-    if is_female(wrestler_id, wrestler_info):
+    if wrestler_info["is_female"]:
         logger.info(
             "loading matches {} ({})",
-            get_name(wrestler_id),
+            wrestler_info.get("name", ""),
             wrestler_id,
         )
         matches = wrestler.scrape_matches(year)
 
-        # sleep is built into scrape_matches
+        wrestler_db.save_matches(wrestler_id, matches)
+        wrestler_db.update_matches_from_matches(wrestler_id)
+        wrestler_db.update_wrestler_from_matches(wrestler_id)
 
-        # count countries worked
-        country_counter = Counter([x.get("country", "Unknown") for x in matches])
-        wrestler_info["_countries_worked"] = dict(country_counter)
-        if country_counter:
-            wrestler_info["_guessed_location"] = country_counter.most_common(1)[0][0]
-        else:
-            wrestler_info["_guessed_location"] = "Unknown"
+        print("matches:", wrestler_db.get_matches(wrestler_id))
+
+        # update
+        wrestler_info = wrestler_db.get_wrestler(wrestler_id)
+        # sleep is built into scrape_matches
 
     else:
         logger.debug(
             "Wrestler {} ({}) is not female*, skipping matches.",
-            get_name(wrestler_id),
+            wrestler_info.get("name", ""),
             wrestler_id,
         )
-    wrestler_db.save_wrestler(wrestler_id, wrestler_info)
-    wrestler_db.save_matches(wrestler_id, matches)
 
     return wrestler_info
 
@@ -86,8 +84,8 @@ class WrestlerScrape:
         data_page = requests.get(
             self.wrestler_url, headers={"accept-encoding": "compress"}
         )
-        result = profile.parse_wrestler_profile_page(data_page.text)
-        result["id"] = self.wrestler_id
+        result = profile.CMProfile.from_html(self.wrestler_id, data_page.text)
+
         return result
 
     def scrape_matches(self, year: int) -> list[dict]:
@@ -174,10 +172,12 @@ def wrestlers_sorted_by_match_count():
 if __name__ == "__main__":
 
     logger.info("Starting scrape...")
-    logger.remove()
+    # logger.remove()
 
-    logger.add(sys.stderr, level="INFO")
-    refresh_wrestler(28004, 2025, force=True)
+    # logger.add(sys.stderr, level="INFO")
+    res = refresh_wrestler(28004, 2025, force=True)
+    print(res)
+    print(wrestler_db.get_match_info(28004))
     sys.exit(0)
     # follow_wrestlers(10962, 2025, deep=True)  # mercedes
     # follow_wrestlers(32147, 2025)

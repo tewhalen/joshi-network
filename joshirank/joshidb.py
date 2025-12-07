@@ -12,20 +12,23 @@ We use sqlite3 for efficient querying of derived wrestler metadata.
 import functools
 import json
 import pathlib
-import shelve
-import sqlite3
 
-from joshirank.joshi_data import (
-    considered_female,
-    promotion_abbreviations,
-    wrestler_name_overrides,
-)
+# import shelve
+import sqlite3
+from collections import Counter
+
+from loguru import logger
+
+from joshirank.cagematch.data import wrestler_name_overrides
+from joshirank.cagematch.profile import CMProfile
+from joshirank.joshi_data import considered_female, promotion_abbreviations
 
 
 @functools.lru_cache(maxsize=None)
 def is_joshi(wrestler_id: int) -> bool:
     """Determine if a wrestler is female based on their profile data."""
-    return db._is_female(wrestler_id)
+
+    return db.is_female(wrestler_id)
 
 
 def is_female(wrestler_id: int, wrestler_info: dict) -> bool:
@@ -38,7 +41,7 @@ def is_female(wrestler_id: int, wrestler_info: dict) -> bool:
 class WrestlerDb:
     def __init__(self, path: pathlib.Path):
         self.path = path
-        self.db = shelve.open(str(self.path), writeback=True)
+        # self.db = shelve.open(str(self.path), writeback=True)
         self.sqldb = sqlite3.connect(str(self.path.with_suffix(".sqlite3")))
         self.initialize_sql_db()
 
@@ -55,6 +58,7 @@ class WrestlerDb:
             last_updated TIMESTAMP,
             location TEXT,
             cm_profile_json TEXT,
+           
             PRIMARY KEY (wrestler_id)  
         )
         """
@@ -62,111 +66,298 @@ class WrestlerDb:
         cursor.execute(
             """CREATE INDEX IF NOT EXISTS idx_wrestler_fem ON wrestlers (is_female)"""
         )
+        cursor.execute(
+            """ CREATE TABLE IF NOT EXISTS matches (
+            wrestler_id INTEGER,
+            cm_matches_json TEXT,
+            opponents TEXT,
+            match_count INTEGER,
+            countries_worked TEXT,
+           
+           
+            PRIMARY KEY (wrestler_id) 
+             ) """
+        )
         cursor.close()
         self.sqldb.commit()
 
-    def _is_female(self, wrestler_id: int) -> bool:
-        if not self.wrestler_in_sql(wrestler_id):
-            self.update_wrestler_metadata(wrestler_id, self.get_wrestler(wrestler_id))
-
-        cursor = self.sqldb.cursor()
-        cursor.execute(
+    def is_female(self, wrestler_id: int) -> bool:
+        """Return True if the wrestler is considered female."""
+        row = self.select_and_fetchone(
             """Select is_female from wrestlers where wrestler_id=?""", (wrestler_id,)
         )
-        row = cursor.fetchone()
-        cursor.close()
+
+        if not row:
+            return False
         return bool(row[0])
 
-    def update_wrestler_metadata(self, wrestler_id: int):
-        """Update the SQL metadata for a wrestler based on their shelved profile info."""
-        wrestler_info = self.get_wrestler(wrestler_id)
+    def save_profile_for_wrestler(self, wrestler_id: int, profile_data: dict):
+        """Save the profile data for a wrestler in the sql table as JSON."""
+        cm_profile_json = json.dumps(profile_data)
         cursor = self.sqldb.cursor()
-        name = get_name(wrestler_id)
-        promotion = get_promotion_with_location(wrestler_id)
-
-        is_female_flag = is_female(wrestler_id, wrestler_info)
-        location = wrestler_info.get("_guessed_location", "Unknown")
-        timestamp = wrestler_info.get("timestamp", None)
-        cm_profile_json = json.dumps(wrestler_info.get("profile", {}))
         cursor.execute(
             """
         INSERT OR REPLACE INTO wrestlers
-        (wrestler_id, is_female, name, promotion, last_updated, location, cm_profile_json)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        (wrestler_id, cm_profile_json, last_updated)
+        VALUES (?, ?, CURRENT_TIMESTAMP)
         """,
-            (
-                wrestler_id,
-                is_female_flag,
-                name,
-                promotion,
-                timestamp,
-                location,
-                cm_profile_json,
-            ),
+            (wrestler_id, cm_profile_json),
+        )
+        # ensure the transaction is committed so the data is persisted,
+        # then close the cursor
+
+        self.sqldb.commit()
+        cursor.close()
+
+    def select_and_fetchone(self, query: str, params: tuple) -> tuple | None:
+        """Helper method to execute a select query and fetch one result."""
+        cursor = self.sqldb.cursor()
+        cursor.execute(query, params)
+        row = cursor.fetchone()
+        cursor.close()
+        return row
+
+    def select_and_fetchall(self, query: str, params: tuple) -> list[tuple]:
+        """Helper method to execute a select query and fetch all results."""
+        cursor = self.sqldb.cursor()
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+        cursor.close()
+        return rows
+
+    def get_cm_profile_for_wrestler(self, wrestler_id: int) -> dict:
+        """Return the CM profile data for a wrestler as a dict."""
+        row = self.select_and_fetchone(
+            """Select cm_profile_json from wrestlers where wrestler_id=?""",
+            (wrestler_id,),
         )
 
+        if row and row[0]:
+            return json.loads(row[0])
+        else:
+            return {}
+
+    def update_wrestler_from_profile(self, wrestler_id: int):
+        """Using the stored profile info for the wrestler, update their metadata in the SQL db."""
+
+        wrestler_profile = self.get_cm_profile_for_wrestler(wrestler_id)
+        if not wrestler_profile:
+            raise ValueError(
+                f"No profile data found for wrestler ID {wrestler_id} to update from."
+            )
+        cm_profile = CMProfile.from_dict(wrestler_id, wrestler_profile)
+
+        cursor = self.sqldb.cursor()
+
+        cursor.execute(
+            """
+        UPDATE wrestlers
+        SET is_female=?, name=?, promotion=?
+        WHERE wrestler_id=?
+        """,
+            (
+                cm_profile.is_female(),
+                cm_profile.name(),
+                cm_profile.promotion(),
+                wrestler_id,
+            ),
+        )
+        cursor.close()
+        self.sqldb.commit()
+
+    def save_matches_for_wrestler(self, wrestler_id: int, matches: list[dict]):
+        """Save the match data for a wrestler in the sql table as JSON."""
+        cm_matches_json = json.dumps(matches)
+        cursor = self.sqldb.cursor()
+        cursor.execute(
+            """
+        INSERT OR REPLACE INTO matches
+        (wrestler_id, cm_matches_json)
+        VALUES (?, ?)
+        """,
+            (wrestler_id, cm_matches_json),
+        )
+        cursor.close()
+        self.sqldb.commit()
+
+    def update_matches_from_matches(self, wrestler_id: int):
+        """Using the stored json matches for the wrestler, update their metadata in the SQL db."""
+        row = self.select_and_fetchone(
+            """Select cm_matches_json from matches where wrestler_id=?""",
+            (wrestler_id,),
+        )
+
+        if row and row[0]:
+            matches = json.loads(row[0])
+            if not matches:
+                return
+            opponents, countries_worked = Counter(), Counter()
+            for match in matches:
+                for wid in match["wrestlers"]:
+                    if wid != wrestler_id:
+                        opponents[wid] += 1
+                if "country" in match:
+                    countries_worked[match["country"]] += 1
+            cursor = self.sqldb.cursor()
+            cursor.execute(
+                """
+            UPDATE matches
+            SET opponents=?, match_count=?, countries_worked=?
+            WHERE wrestler_id=?
+            """,
+                (
+                    json.dumps([x[0] for x in opponents.most_common()]),
+                    len(matches),
+                    json.dumps(dict(countries_worked)),
+                    wrestler_id,
+                ),
+            )
+            cursor.close()
+            self.sqldb.commit()
+
+    def update_wrestler_from_matches(self, wrestler_id: int):
+        """Using the stored match info for the wrestler, update their metadata in the SQL db."""
+        # get countries worked from matches
+        row = self.select_and_fetchone(
+            """Select countries_worked from matches where wrestler_id=?""",
+            (wrestler_id,),
+        )
+
+        if row and row[0]:
+            # should be a dict stored as json
+            countries_worked = json.loads(row[0])
+            location = "Unknown"
+            if countries_worked:
+                # get the most common country
+                location = max(countries_worked.items(), key=lambda x: x[1])[0]
+
+            cursor = self.sqldb.cursor()
+            cursor.execute(
+                """
+            UPDATE wrestlers
+            SET location=?
+            WHERE wrestler_id=?
+            """,
+                (location, wrestler_id),
+            )
+            cursor.close()
+            self.sqldb.commit()
+
     def close(self):
-        self.db.close()
+        # self.db.close()
         self.sqldb.close()
 
     def get_wrestler(self, wrestler_id: int) -> dict:
-        return self.db.get(str(wrestler_id), {})
+        """Given a wrestler ID, return their stored data as a dict."""
+        cursor = self.sqldb.cursor()
+        cursor.execute(
+            """Select * from wrestlers where wrestler_id=?""", (wrestler_id,)
+        )
+        row = cursor.fetchone()
 
-    def save_wrestler(self, wrestler_id: int, data: dict):
-        self.db[str(wrestler_id)] = data
-        self.db.sync()
-        self.update_wrestler_metadata(wrestler_id)
-
-        self.sqldb.commit()
+        # convert the row to a dict using column names
+        if row:
+            d = {}
+            col_names = [description[0] for description in cursor.description]
+            d = dict(zip(col_names, row))
+            cursor.close()
+            # print(d.get("cm_profile_json", "{}"))
+            # d["profile"] = json.loads(d.get("cm_profile_json", "{}"))
+            # d["matches"] = json.loads(d.get("cm_matches_json", "[]"))
+            return d
+        else:
+            cursor.close()
+            raise KeyError(f"Wrestler ID {wrestler_id} not found in database.")
 
     def all_wrestler_ids(self) -> list[int]:
-        self.db.sync()
-        return list(map(int, self.db.keys()))
+        """Return a list of all wrestler IDs in the database."""
+        rows = self.select_and_fetchall("""Select wrestler_id from wrestlers""", ())
+        return [row[0] for row in rows]
 
     def wrestler_exists(self, wrestler_id: int) -> bool:
-        return str(wrestler_id) in self.db
+        row = self.select_and_fetchone(
+            """Select 1 from wrestlers where wrestler_id=?""", (wrestler_id,)
+        )
+
+        return row is not None
 
     def all_female_wrestlers(self):
         """Return a generator of wrestler ids and info"""
-        self.db.sync()
-        for wid, info in self.db.items():
-            if is_female(int(wid), info):
-                yield int(wid), info
+        rows = self.select_and_fetchall(
+            """Select wrestler_id from wrestlers where is_female=1""", ()
+        )
+        return [row[0] for row in rows]
 
     def wrestler_in_sql(self, wrestler_id: int) -> bool:
-        cursor = self.sqldb.cursor()
-        cursor.execute(
+        row = self.select_and_fetchone(
             """Select 1 from wrestlers where wrestler_id=?""", (wrestler_id,)
         )
-        row = cursor.fetchone()
-        cursor.close()
+
         return row is not None
 
     def get_name(self, wrestler_id: int) -> str:
-        # if wrestler_id not in sqldb, update it
-        if not self.wrestler_in_sql(wrestler_id):
-            self.update_wrestler_metadata(wrestler_id, self.get_wrestler(wrestler_id))
 
         # first try to retrieve from sqldb
-        cursor = self.sqldb.cursor()
-        cursor.execute(
-            "SELECT name FROM wrestlers WHERE wrestler_id = ?", (wrestler_id,)
+        row = self.select_and_fetchone(
+            """Select name from wrestlers where wrestler_id=?""", (wrestler_id,)
         )
-        row = cursor.fetchone()
-        cursor.close()
-        if row:
+        if row and row[0]:
             return row[0]
+
         else:
             raise KeyError(f"Wrestler ID {wrestler_id} not found in database.")
 
     def get_matches(self, wrestler_id: int) -> list[dict]:
-        wrestler_info = self.get_wrestler(wrestler_id)
-        return wrestler_info.get("matches", [])
+        # first try to get from sqlite
+        row = self.select_and_fetchone(
+            """Select cm_matches_json from matches where wrestler_id=?""",
+            (wrestler_id,),
+        )
+
+        if row and row[0]:
+            matches = json.loads(row[0])
+            if matches:
+                return matches
+
+        # fallback: return empty list
+        return []
+
+    def get_match_info(self, wrestler_id: int) -> dict:
+        """Return match metadata for a wrestler."""
+        row = self.select_and_fetchone(
+            """Select opponents, match_count, countries_worked from matches where wrestler_id=?""",
+            (wrestler_id,),
+        )
+
+        if row:
+            opponents = json.loads(row[0]) if row[0] else []
+            match_count = row[1] if row[1] else 0
+            countries_worked = json.loads(row[2]) if row[2] else {}
+            return {
+                "opponents": opponents,
+                "match_count": match_count,
+                "countries_worked": countries_worked,
+            }
+        else:
+            return {
+                "opponents": [],
+                "match_count": 0,
+                "countries_worked": {},
+            }
 
     def save_matches(self, wrestler_id: int, matches: list[dict]):
-        wrestler_info = self.get_wrestler(wrestler_id)
-        wrestler_info["matches"] = matches
-        self.save_wrestler(wrestler_id, wrestler_info)
+        match_json = json.dumps(matches)
+        cursor = self.sqldb.cursor()
+        cursor.execute(
+            """
+        UPDATE matches
+        SET cm_matches_json=?
+        WHERE wrestler_id=?
+        """,
+            (match_json, wrestler_id),
+        )
+        cursor.close()
+        self.sqldb.commit()
 
     def get_all_colleagues(self, wrestler_id: int) -> set[int]:
         """Given a wrestler ID, return a set of all wrestler IDs that appeared in a match with them."""
@@ -178,26 +369,6 @@ class WrestlerDb:
         return colleagues
 
 
-def make_clean_shelve_db(path: pathlib.Path):
-    """Load a shelve database, remove it, and replace it with a fresh one with the old contents."""
-    old_db = WrestlerDb(path)
-    # iterate over all possible wrestler ids 0-99999
-    old_contents = {}
-    for i in range(100000):
-        wid = str(i)
-        if wid in old_db.db:
-            old_contents[wid] = old_db.db[wid]
-
-    old_db.close()
-    # path.with_suffix(".db").unlink()
-    new_db = WrestlerDb(path.with_suffix(".y"))
-    for k, v in old_contents.items():
-        new_db.db[k] = v
-    new_db.close()
-
-
-# make_clean_shelve_db(pathlib.Path("data/joshi_wrestlers.new"))
-
 db = WrestlerDb(pathlib.Path("data/joshi_wrestlers.y"))
 wrestler_db = db
 # import dbm
@@ -207,24 +378,16 @@ wrestler_db = db
 
 @functools.lru_cache(maxsize=None)
 def get_name(wrestler_id: int) -> str:
-    if wrestler_id in wrestler_name_overrides:
-        return wrestler_name_overrides[wrestler_id]
-
-    wrestler_info = db.get_wrestler(wrestler_id)
-    best_name = _determine_name_from_profile(wrestler_info)
-    if best_name != "Unknown":
-        return best_name
-    else:
-        return f"Unknown Wrestler {wrestler_id}"
+    return db.get_name(wrestler_id)
 
 
-def _determine_name_from_profile(wrestler_info: dict) -> str:
-    wrestler_profile = wrestler_info.get("profile", {})
+def _determine_name_from_profile(wrestler_profile: dict) -> str:
+
     best_name = wrestler_profile.get("Current gimmick")
     if best_name:
         return best_name
-    elif wrestler_profile.get("_name"):
-        return wrestler_profile.get("_name")
+    elif "_name" in wrestler_profile:
+        return wrestler_profile["_name"]
     else:
         alter_ego = wrestler_profile.get("Alter egos")
         if type(alter_ego) is str and "a.k.a." in alter_ego:
@@ -238,10 +401,10 @@ def _determine_name_from_profile(wrestler_info: dict) -> str:
 
 
 def get_promotion_with_location(wrestler_id: int) -> str:
-    promotion = get_promotion(wrestler_id)
-    if promotion == "":
-        wrestler_info = db.get_wrestler(wrestler_id)
-        location = wrestler_info.get("_guessed_location", "Unknown")
+    wrestler_info = db.get_wrestler(wrestler_id)
+    promotion = wrestler_info.get("promotion", "")
+    if promotion == "" or promotion == "Freelancer":
+        location = wrestler_info.get("location", "Unknown")
         if location != "Unknown":
             promotion = f"Freelancer ({location})"
         else:
@@ -249,27 +412,11 @@ def get_promotion_with_location(wrestler_id: int) -> str:
     return promotion
 
 
-@functools.lru_cache(maxsize=None)
-def get_promotion(wrestler_id: int) -> str:
-    wrestler_info = db.get_wrestler(wrestler_id)
-    promotion = wrestler_info.get("profile", {}).get("Promotion", "")
-
-    return promotion_abbreviations.get(promotion, promotion)
-
-
 if __name__ == "__main__":
-    # test some wrestler ids
+    # remove the cm_matches_json column from the wrestlers table
+    import sys
 
-    from pprint import pprint
-
-    test_ids = [28004, 26912, 32147, 26559, 4813, 21791]
-    for wid in test_ids:
-        print(f"Wrestler ID: {wid}")
-        print(f"Name: {get_name(wid)}")
-        print(f"Promotion: {get_promotion(wid)}")
-        print(f"Is Joshi: {is_joshi(wid)}")
-        pprint(db.get_wrestler(wid))
-        print()
-        db.update_wrestler_metadata(wid)
-        print(db._is_female(wid))
+    cursor = db.sqldb.cursor()
+    cursor.execute("""ALTER TABLE wrestlers DROP COLUMN cm_matches_json""")
+    cursor.close()
     db.sqldb.commit()

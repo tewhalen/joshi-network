@@ -7,12 +7,7 @@ from guess_location import countries_worked
 from joshirank.identifier import Identifier
 from joshirank.joshi_data import joshi_promotions, non_joshi
 from joshirank.joshidb import db as wrestler_db
-from joshirank.joshidb import (
-    get_name,
-    get_promotion,
-    get_promotion_with_location,
-    is_joshi,
-)
+from joshirank.joshidb import get_name, get_promotion_with_location, is_joshi
 
 #
 # w_directory = json.load(open("joshi_dir.json"))
@@ -23,11 +18,7 @@ j_p = list(joshi_promotions)
 
 def all_female_wrestlers():
     """Return a set of all joshi wrestler IDs."""
-    joshi_wrestlers = set()
-    for w_id, info in wrestler_db.db.items():
-        if is_joshi(int(w_id)):
-            joshi_wrestlers.add(int(w_id))
-    return joshi_wrestlers
+    return set(wrestler_db.all_female_wrestlers())
 
 
 def is_japanese(wrestler_id: int):
@@ -44,11 +35,13 @@ def is_japanese(wrestler_id: int):
     }:
         return True
     wrestler_info = wrestler_db.get_wrestler(wrestler_id)
-    if wrestler_info.get("_guessed_location") == "Japan":
+    if wrestler_info.get("location") == "Japan":
         return True
-    elif "Japan" in wrestler_info.get("_countries_worked", {}):
+    elif "Japan" in wrestler_db.get_match_info(int(wrestler_id)).get(
+        "countries_worked", {}
+    ):
         return True
-    promotion = get_promotion(int(wrestler_id))
+    promotion = wrestler_info.get("promotion", "")
     if "Japan" in promotion or promotion in j_p:
         return True
     return False
@@ -57,8 +50,8 @@ def is_japanese(wrestler_id: int):
 def all_joshi_japanese_wrestlers():
     """Return a set of all joshi wrestler IDs."""
     joshi_wrestlers = set()
-    for w_id, info in wrestler_db.db.items():
-        if is_joshi(int(w_id)) and is_japanese(int(w_id)):
+    for w_id in wrestler_db.all_female_wrestlers():
+        if is_japanese(int(w_id)):
             joshi_wrestlers.add(int(w_id))
     return joshi_wrestlers
 
