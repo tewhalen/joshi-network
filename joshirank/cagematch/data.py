@@ -22,6 +22,7 @@ country_map = {
     "Estland": "Estonia",
     "Grapplemax Studio in Singapur": "Singapore",
     "Vereinigte Arabische Emirate": "United Arab Emirates",
+    "Japamn": "Japan",  # ygbfkm
 }
 
 
@@ -74,4 +75,5 @@ wrestler_name_overrides = {
     4913: "Tanny Mouse",
     16871: "Charli Evans",
     11871: "HARUKAZE",
+    9232: "Seleziya Sparx",
 }

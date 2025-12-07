@@ -178,7 +178,14 @@ promotion_abbreviations = {
 }
 
 
-considered_female = {22620, 22139}  # abadon
+considered_female = {
+    22620,
+    22139,
+    26282,  # (Kouki Amarei)
+    32870,  # ren konatsu
+    26191,  # sazzy boatright
+    9232,  # seleziya sparx
+}
 
 
 # name mapping for known wrestlers with inconsistent naming
