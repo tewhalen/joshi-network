@@ -12,17 +12,13 @@ We use sqlite3 for efficient querying of derived wrestler metadata.
 import functools
 import json
 import pathlib
-
-# import shelve
 import sqlite3
 from collections import Counter
 
 from loguru import logger
 
-from joshirank.cagematch.data import wrestler_name_overrides
 from joshirank.cagematch.profile import CMProfile
 from joshirank.db_wrapper import DBWrapper
-from joshirank.joshi_data import considered_female, promotion_abbreviations
 
 
 @functools.lru_cache(maxsize=None)
@@ -32,17 +28,10 @@ def is_joshi(wrestler_id: int) -> bool:
     return db.is_female(wrestler_id)
 
 
-def is_female(wrestler_id: int, wrestler_info: dict) -> bool:
-    if wrestler_id in considered_female:
-        return True
-    gender = wrestler_info.get("profile", {}).get("Gender", "")
-    return gender.lower() == "female"
-
-
 class WrestlerDb(DBWrapper):
     def __init__(self, path: pathlib.Path):
         self.path = path
-        # self.db = shelve.open(str(self.path), writeback=True)
+
         self.sqldb = sqlite3.connect(str(self.path.with_suffix(".sqlite3")))
         self._initialize_sql_db()
 
@@ -330,25 +319,6 @@ wrestler_db = db
 @functools.lru_cache(maxsize=None)
 def get_name(wrestler_id: int) -> str:
     return db.get_name(wrestler_id)
-
-
-def _determine_name_from_profile(wrestler_profile: dict) -> str:
-
-    best_name = wrestler_profile.get("Current gimmick")
-    if best_name:
-        return best_name
-    elif "_name" in wrestler_profile:
-        return wrestler_profile["_name"]
-    else:
-        alter_ego = wrestler_profile.get("Alter egos")
-        if type(alter_ego) is str and "a.k.a." in alter_ego:
-            alter_ego = alter_ego.split("a.k.a.")[0].strip()
-        if type(alter_ego) is str:
-            return alter_ego
-        elif type(alter_ego) is list and len(alter_ego) > 0:
-            return alter_ego[0]
-        else:
-            return "Unknown"
 
 
 def get_promotion_with_location(wrestler_id: int) -> str:
