@@ -11,7 +11,7 @@ from joshirank.joshi_data import considered_female, promotion_abbreviations
 
 date_re = re.compile(r"([0-9][0-9])\.([0-9][0-9])\.([0-9][0-9][0-9][0-9])")
 id_href = re.compile("nr=([0-9]+)")
-tag_href = re.compile("[?]id=(28|29)")
+
 event_href = re.compile("[?]id=1")
 
 
@@ -29,11 +29,13 @@ def parse_wrestler_profile_page(html_data: str) -> dict:
     for pair in info_pairs:
         label = pair.find("div", class_="InformationBoxTitle").text.strip().strip(":")
         value = pair.find("div", class_="InformationBoxContents")
-        if date_re.match(value.text.strip()):
+        m = date_re.match(value.text.strip())
+        if m:
             try:
-                value = parse_cm_date(value.text.strip()).isoformat()
+                value = parse_cm_date(m.group(0)).isoformat()
+                # throws away the non-matching stuff
             except ValueError:
-                pass
+                value = value.text.strip
         elif value.stripped_strings and len(list(value.stripped_strings)) > 1:
             # multiple strings, make a list
             value = [s.strip() for s in value.stripped_strings]

@@ -16,6 +16,9 @@ id_href = re.compile("nr=([0-9]+)")
 tag_href = re.compile("[?]id=(28|29)")
 event_href = re.compile("[?]id=1")
 
+# only find wrestler links, not tag teams
+wrestler_id_href = re.compile(r"id=2&nr=([0-9]+)")
+
 
 def extract_match_data_from_match_page(content: str) -> Generator[dict, None, None]:
     """Extract match data from a CageMatch match page HTML content."""
@@ -108,8 +111,9 @@ def parse_match_results(match: BeautifulSoup) -> tuple:
 
     if d_split:
 
-        winners = d_split.find_previous_siblings("a")
-        losers = d_split.find_next_siblings("a")
+        # these searches only find wrestler IDs (hopefully)
+        winners = d_split.find_previous_siblings("a", href=wrestler_id_href)
+        losers = d_split.find_next_siblings("a", href=wrestler_id_href)
 
         side_a = tuple(sorted(extract_wrestler_id(x) for x in winners))
         side_b = tuple(sorted(extract_wrestler_id(x) for x in losers))

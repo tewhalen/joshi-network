@@ -84,7 +84,15 @@ class WrestlerDb(DBWrapper):
 
     def save_profile_for_wrestler(self, wrestler_id: int, profile_data: dict):
         """Save the profile data for a wrestler in the sql table as JSON."""
-        cm_profile_json = json.dumps(profile_data)
+        try:
+            cm_profile_json = json.dumps(profile_data)
+        except:
+            logger.error(
+                "Could not serialize profile data for wrestler ID {}: {}",
+                wrestler_id,
+                profile_data,
+            )
+            raise
         self._execute_and_commit(
             """
         INSERT OR REPLACE INTO wrestlers
