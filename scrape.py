@@ -16,12 +16,16 @@ WEEK = 60 * 60 * 24 * 7
 
 def refresh_this_wrestler(wrestler_id: int) -> bool:
     """Return True if the wrestler should be refreshed."""
-    wrestler_info = wrestler_db.get_wrestler(wrestler_id)
+    try:
+        wrestler_info = wrestler_db.get_wrestler(wrestler_id)
+    except KeyError:
+        return True
+
     if not wrestler_info:
         return True
     elif not wrestler_db.is_female(wrestler_id):
         return False
-    elif "timestamp" not in wrestler_info or (
+    elif "last_updated" not in wrestler_info or (
         time.time() - wrestler_info["timestamp"] > WEEK
     ):
         return True
@@ -54,7 +58,7 @@ def refresh_wrestler(wrestler_id: int, year: int, force=False) -> dict:
         wrestler_db.update_matches_from_matches(wrestler_id)
         wrestler_db.update_wrestler_from_matches(wrestler_id)
 
-        print("matches:", wrestler_db.get_matches(wrestler_id))
+        # print("matches:", wrestler_db.get_matches(wrestler_id))
 
         # update
         wrestler_info = wrestler_db.get_wrestler(wrestler_id)
@@ -164,7 +168,7 @@ def wrestlers_sorted_by_match_count():
     "return a list of wrestler ids sorted by number of matches  descending"
     wrestler_match_counts = []
     for wid in wrestler_db.all_wrestler_ids():
-        match_count = len(wrestler_db.get_matches(int(wid)))
+        match_count = wrestler_db.get_match_info(int(wid))["match_count"]
         wrestler_match_counts.append((int(wid), match_count))
     return sorted(wrestler_match_counts, key=lambda x: x[1], reverse=True)
 
@@ -176,9 +180,7 @@ if __name__ == "__main__":
 
     # logger.add(sys.stderr, level="INFO")
     res = refresh_wrestler(28004, 2025, force=True)
-    print(res)
-    print(wrestler_db.get_match_info(28004))
-    sys.exit(0)
+
     # follow_wrestlers(10962, 2025, deep=True)  # mercedes
     # follow_wrestlers(32147, 2025)
     # follow_wrestlers(31992, 2025)
@@ -186,6 +188,8 @@ if __name__ == "__main__":
     # follow_wrestlers(21999, 2025)
 
     refresh_count = 0
+    mc_wrestlers = wrestlers_sorted_by_match_count()
+    print(mc_wrestlers[:20])
     for i, (wrestler_id, match_count) in enumerate(wrestlers_sorted_by_match_count()):
         if refresh_this_wrestler(wrestler_id):
             logger.info(
@@ -206,5 +210,5 @@ if __name__ == "__main__":
         if i > 50:
             break
 
-    follow_random_wrestlers(10, 2025)
+    # follow_random_wrestlers(10, 2025)
     wrestler_db.close()

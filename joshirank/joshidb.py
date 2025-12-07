@@ -9,6 +9,7 @@ We use sqlite3 for efficient querying of derived wrestler metadata.
 
 """
 
+import datetime
 import functools
 import json
 import pathlib
@@ -197,8 +198,6 @@ class WrestlerDb(DBWrapper):
             """,
                 (location, wrestler_id),
             )
-            cursor.close()
-            self.sqldb.commit()
 
     def close(self):
         # self.db.close()
@@ -210,6 +209,13 @@ class WrestlerDb(DBWrapper):
             """Select * from wrestlers where wrestler_id=?""", (wrestler_id,)
         )
         if row:
+            # convert last_updated to epoch timestamp
+            if "last_updated" in row and row["last_updated"]:
+                row["timestamp"] = datetime.datetime.fromisoformat(
+                    row["last_updated"]
+                ).timestamp()
+            else:
+                row["timestamp"] = 0
             return row
         else:
             raise KeyError(f"Wrestler ID {wrestler_id} not found in database.")
