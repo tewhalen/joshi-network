@@ -1,4 +1,5 @@
-import datetime
+"""Script to scrape wrestler profiles and matches from CageMatch.net."""
+
 import sys
 import time
 from collections import Counter
@@ -179,8 +180,14 @@ if __name__ == "__main__":
     # logger.remove()
 
     # logger.add(sys.stderr, level="INFO")
-    res = refresh_wrestler(28004, 2025, force=True)
+    FORCE_SCRAPES = []
+    for wid in FORCE_SCRAPES:
+        refresh_wrestler(wid, 2025, force=True)
 
+        print(wrestler_db.get_wrestler(wid))
+        print(wrestler_db.get_match_info(wid))
+    if FORCE_SCRAPES:
+        sys.exit()
     # follow_wrestlers(10962, 2025, deep=True)  # mercedes
     # follow_wrestlers(32147, 2025)
     # follow_wrestlers(31992, 2025)
@@ -191,6 +198,8 @@ if __name__ == "__main__":
     mc_wrestlers = wrestlers_sorted_by_match_count()
     print(mc_wrestlers[:20])
     for i, (wrestler_id, match_count) in enumerate(wrestlers_sorted_by_match_count()):
+        if match_count > 100:
+            refresh_wrestler(wrestler_id, 2025, force=True)
         if refresh_this_wrestler(wrestler_id):
             logger.info(
                 "{} Refreshing wrestler {} ({}) with {} matches",
