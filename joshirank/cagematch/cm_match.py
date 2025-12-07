@@ -110,43 +110,39 @@ def parse_match_results(match: BeautifulSoup) -> tuple:
     vs_split = match.find(string=re.compile("vs[.]"))  # indicates draw
 
     if d_split:
-
-        # these searches only find wrestler IDs (hopefully)
-        winners = d_split.find_previous_siblings("a", href=wrestler_id_href)
-        losers = d_split.find_next_siblings("a", href=wrestler_id_href)
-
-        side_a = tuple(sorted(extract_wrestler_id(x) for x in winners))
-        side_b = tuple(sorted(extract_wrestler_id(x) for x in losers))
-
-        side_a_txt, side_b_txt = match.text.split("defeat")
-        if check_missing(side_a_txt):
-            # prepend a -1 to indicate missing wrestler
-            side_a = (-1,) + side_a
-        if check_missing(side_b_txt):
-            side_b = (-1,) + side_b
-
-        return side_a, side_b, True
-
+        splitter = d_split
+        is_victory = True
     elif vs_split:
-        # draw?
-
-        side_one = tuple(
-            sorted(extract_wrestler_id(x) for x in vs_split.find_previous_siblings("a"))
-        )
-        side_two = tuple(
-            sorted(extract_wrestler_id(x) for x in vs_split.find_next_siblings("a"))
-        )
-        side_a_txt, side_b_txt = match.text.split("vs.", maxsplit=1)
-        if check_missing(side_a_txt):
-            # prepend a -1 to indicate missing wrestler
-            side_one = (-1,) + side_one
-        if check_missing(side_b_txt):
-            side_two = (-1,) + side_two
-        return side_one, side_two, False
+        splitter = vs_split
+        is_victory = False
     else:
-        # CAN'T PARSE
+        # no recognizable result
         # logger.debug("Could not parse match result: {}", str(match))
         return [], [], False
+
+    # these searches only find wrestler IDs (hopefully)
+    side_a_raw = splitter.find_previous_siblings("a", href=wrestler_id_href)
+    side_b_raw = splitter.find_next_siblings("a", href=wrestler_id_href)
+
+    side_a = tuple(sorted(extract_wrestler_id(x) for x in side_a_raw))
+    side_b = tuple(sorted(extract_wrestler_id(x) for x in side_b_raw))
+
+    # sanity check - if any wrestlers are on both sides, that's wrong
+    for w in side_a:
+        if w in side_b:
+            logger.warning(
+                "Wrestler {} found on both sides of match: {} / {}", w, side_a, side_b
+            )
+
+    side_a_txt, side_b_txt = match.text.split(splitter.text, maxsplit=1)
+
+    if check_missing(side_a_txt):
+        # prepend a -1 to indicate missing wrestler
+        side_a = (-1,) + side_a
+    if check_missing(side_b_txt):
+        side_b = (-1,) + side_b
+
+    return side_a, side_b, is_victory
 
 
 def guess_country_of_match(html_content):
