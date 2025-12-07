@@ -21,6 +21,7 @@ from loguru import logger
 
 from joshirank.cagematch.data import wrestler_name_overrides
 from joshirank.cagematch.profile import CMProfile
+from joshirank.db_wrapper import DBWrapper
 from joshirank.joshi_data import considered_female, promotion_abbreviations
 
 
@@ -38,14 +39,14 @@ def is_female(wrestler_id: int, wrestler_info: dict) -> bool:
     return gender.lower() == "female"
 
 
-class WrestlerDb:
+class WrestlerDb(DBWrapper):
     def __init__(self, path: pathlib.Path):
         self.path = path
         # self.db = shelve.open(str(self.path), writeback=True)
         self.sqldb = sqlite3.connect(str(self.path.with_suffix(".sqlite3")))
-        self.initialize_sql_db()
+        self._initialize_sql_db()
 
-    def initialize_sql_db(self):
+    def _initialize_sql_db(self):
         """If necessary, create the SQL tables for wrestler metadata."""
         cursor = self.sqldb.cursor()
         cursor.execute(
@@ -83,7 +84,7 @@ class WrestlerDb:
 
     def is_female(self, wrestler_id: int) -> bool:
         """Return True if the wrestler is considered female."""
-        row = self.select_and_fetchone(
+        row = self._select_and_fetchone(
             """Select is_female from wrestlers where wrestler_id=?""", (wrestler_id,)
         )
 
@@ -94,8 +95,7 @@ class WrestlerDb:
     def save_profile_for_wrestler(self, wrestler_id: int, profile_data: dict):
         """Save the profile data for a wrestler in the sql table as JSON."""
         cm_profile_json = json.dumps(profile_data)
-        cursor = self.sqldb.cursor()
-        cursor.execute(
+        self._execute_and_commit(
             """
         INSERT OR REPLACE INTO wrestlers
         (wrestler_id, cm_profile_json, last_updated)
@@ -103,31 +103,10 @@ class WrestlerDb:
         """,
             (wrestler_id, cm_profile_json),
         )
-        # ensure the transaction is committed so the data is persisted,
-        # then close the cursor
-
-        self.sqldb.commit()
-        cursor.close()
-
-    def select_and_fetchone(self, query: str, params: tuple) -> tuple | None:
-        """Helper method to execute a select query and fetch one result."""
-        cursor = self.sqldb.cursor()
-        cursor.execute(query, params)
-        row = cursor.fetchone()
-        cursor.close()
-        return row
-
-    def select_and_fetchall(self, query: str, params: tuple) -> list[tuple]:
-        """Helper method to execute a select query and fetch all results."""
-        cursor = self.sqldb.cursor()
-        cursor.execute(query, params)
-        rows = cursor.fetchall()
-        cursor.close()
-        return rows
 
     def get_cm_profile_for_wrestler(self, wrestler_id: int) -> dict:
         """Return the CM profile data for a wrestler as a dict."""
-        row = self.select_and_fetchone(
+        row = self._select_and_fetchone(
             """Select cm_profile_json from wrestlers where wrestler_id=?""",
             (wrestler_id,),
         )
@@ -147,9 +126,7 @@ class WrestlerDb:
             )
         cm_profile = CMProfile.from_dict(wrestler_id, wrestler_profile)
 
-        cursor = self.sqldb.cursor()
-
-        cursor.execute(
+        self._execute_and_commit(
             """
         UPDATE wrestlers
         SET is_female=?, name=?, promotion=?
@@ -162,14 +139,11 @@ class WrestlerDb:
                 wrestler_id,
             ),
         )
-        cursor.close()
-        self.sqldb.commit()
 
     def save_matches_for_wrestler(self, wrestler_id: int, matches: list[dict]):
         """Save the match data for a wrestler in the sql table as JSON."""
         cm_matches_json = json.dumps(matches)
-        cursor = self.sqldb.cursor()
-        cursor.execute(
+        self._execute_and_commit(
             """
         INSERT OR REPLACE INTO matches
         (wrestler_id, cm_matches_json)
@@ -177,12 +151,10 @@ class WrestlerDb:
         """,
             (wrestler_id, cm_matches_json),
         )
-        cursor.close()
-        self.sqldb.commit()
 
     def update_matches_from_matches(self, wrestler_id: int):
         """Using the stored json matches for the wrestler, update their metadata in the SQL db."""
-        row = self.select_and_fetchone(
+        row = self._select_and_fetchone(
             """Select cm_matches_json from matches where wrestler_id=?""",
             (wrestler_id,),
         )
@@ -198,8 +170,7 @@ class WrestlerDb:
                         opponents[wid] += 1
                 if "country" in match:
                     countries_worked[match["country"]] += 1
-            cursor = self.sqldb.cursor()
-            cursor.execute(
+            self._execute_and_commit(
                 """
             UPDATE matches
             SET opponents=?, match_count=?, countries_worked=?
@@ -212,13 +183,11 @@ class WrestlerDb:
                     wrestler_id,
                 ),
             )
-            cursor.close()
-            self.sqldb.commit()
 
     def update_wrestler_from_matches(self, wrestler_id: int):
         """Using the stored match info for the wrestler, update their metadata in the SQL db."""
         # get countries worked from matches
-        row = self.select_and_fetchone(
+        row = self._select_and_fetchone(
             """Select countries_worked from matches where wrestler_id=?""",
             (wrestler_id,),
         )
@@ -231,8 +200,7 @@ class WrestlerDb:
                 # get the most common country
                 location = max(countries_worked.items(), key=lambda x: x[1])[0]
 
-            cursor = self.sqldb.cursor()
-            cursor.execute(
+            self._execute_and_commit(
                 """
             UPDATE wrestlers
             SET location=?
@@ -249,33 +217,21 @@ class WrestlerDb:
 
     def get_wrestler(self, wrestler_id: int) -> dict:
         """Given a wrestler ID, return their stored data as a dict."""
-        cursor = self.sqldb.cursor()
-        cursor.execute(
+        row = self._select_and_fetchone_dict(
             """Select * from wrestlers where wrestler_id=?""", (wrestler_id,)
         )
-        row = cursor.fetchone()
-
-        # convert the row to a dict using column names
         if row:
-            d = {}
-            col_names = [description[0] for description in cursor.description]
-            d = dict(zip(col_names, row))
-            cursor.close()
-            # print(d.get("cm_profile_json", "{}"))
-            # d["profile"] = json.loads(d.get("cm_profile_json", "{}"))
-            # d["matches"] = json.loads(d.get("cm_matches_json", "[]"))
-            return d
+            return row
         else:
-            cursor.close()
             raise KeyError(f"Wrestler ID {wrestler_id} not found in database.")
 
     def all_wrestler_ids(self) -> list[int]:
         """Return a list of all wrestler IDs in the database."""
-        rows = self.select_and_fetchall("""Select wrestler_id from wrestlers""", ())
+        rows = self._select_and_fetchall("""Select wrestler_id from wrestlers""", ())
         return [row[0] for row in rows]
 
     def wrestler_exists(self, wrestler_id: int) -> bool:
-        row = self.select_and_fetchone(
+        row = self._select_and_fetchone(
             """Select 1 from wrestlers where wrestler_id=?""", (wrestler_id,)
         )
 
@@ -283,13 +239,13 @@ class WrestlerDb:
 
     def all_female_wrestlers(self):
         """Return a generator of wrestler ids and info"""
-        rows = self.select_and_fetchall(
+        rows = self._select_and_fetchall(
             """Select wrestler_id from wrestlers where is_female=1""", ()
         )
         return [row[0] for row in rows]
 
     def wrestler_in_sql(self, wrestler_id: int) -> bool:
-        row = self.select_and_fetchone(
+        row = self._select_and_fetchone(
             """Select 1 from wrestlers where wrestler_id=?""", (wrestler_id,)
         )
 
@@ -298,7 +254,7 @@ class WrestlerDb:
     def get_name(self, wrestler_id: int) -> str:
 
         # first try to retrieve from sqldb
-        row = self.select_and_fetchone(
+        row = self._select_and_fetchone(
             """Select name from wrestlers where wrestler_id=?""", (wrestler_id,)
         )
         if row and row[0]:
@@ -309,7 +265,7 @@ class WrestlerDb:
 
     def get_matches(self, wrestler_id: int) -> list[dict]:
         # first try to get from sqlite
-        row = self.select_and_fetchone(
+        row = self._select_and_fetchone(
             """Select cm_matches_json from matches where wrestler_id=?""",
             (wrestler_id,),
         )
@@ -324,20 +280,18 @@ class WrestlerDb:
 
     def get_match_info(self, wrestler_id: int) -> dict:
         """Return match metadata for a wrestler."""
-        row = self.select_and_fetchone(
+        row = self._select_and_fetchone_dict(
             """Select opponents, match_count, countries_worked from matches where wrestler_id=?""",
             (wrestler_id,),
         )
 
         if row:
-            opponents = json.loads(row[0]) if row[0] else []
-            match_count = row[1] if row[1] else 0
-            countries_worked = json.loads(row[2]) if row[2] else {}
-            return {
-                "opponents": opponents,
-                "match_count": match_count,
-                "countries_worked": countries_worked,
-            }
+            row["opponents"] = json.loads(row["opponents"]) if row["opponents"] else []
+            row["match_count"] = row["match_count"] if row["match_count"] else 0
+            row["countries_worked"] = (
+                json.loads(row["countries_worked"]) if row["countries_worked"] else {}
+            )
+            return row
         else:
             return {
                 "opponents": [],
@@ -347,8 +301,7 @@ class WrestlerDb:
 
     def save_matches(self, wrestler_id: int, matches: list[dict]):
         match_json = json.dumps(matches)
-        cursor = self.sqldb.cursor()
-        cursor.execute(
+        self._execute_and_commit(
             """
         UPDATE matches
         SET cm_matches_json=?
@@ -356,8 +309,6 @@ class WrestlerDb:
         """,
             (match_json, wrestler_id),
         )
-        cursor.close()
-        self.sqldb.commit()
 
     def get_all_colleagues(self, wrestler_id: int) -> set[int]:
         """Given a wrestler ID, return a set of all wrestler IDs that appeared in a match with them."""
