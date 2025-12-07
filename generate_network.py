@@ -1,19 +1,11 @@
 import json
 import math
-import pathlib
 from collections import Counter
 
-from guess_location import countries_worked
 from joshirank.identifier import Identifier
-from joshirank.joshi_data import joshi_promotions, non_joshi
+from joshirank.joshi_data import joshi_promotions
 from joshirank.joshidb import db as wrestler_db
-from joshirank.joshidb import get_name, get_promotion_with_location, is_joshi
-
-#
-# w_directory = json.load(open("joshi_dir.json"))
-
-
-j_p = list(joshi_promotions)
+from joshirank.joshidb import get_name, get_promotion_with_location
 
 
 def all_female_wrestlers():
@@ -42,7 +34,7 @@ def is_japanese(wrestler_id: int):
     ):
         return True
     promotion = wrestler_info.get("promotion", "")
-    if "Japan" in promotion or promotion in j_p:
+    if "Japan" in promotion or promotion in joshi_promotions:
         return True
     return False
 
