@@ -276,7 +276,7 @@ class Ranker:
         rendered_html = template.render(
             the_table=rendered_table, year=2025, sort_column=0, sort_order="asc"
         )
-        with open(f"output/{self.year}_rankings.html", "w") as f:
+        with open(f"output/{self.year}_ranking.html", "w") as f:
             f.write(rendered_html)
 
 
