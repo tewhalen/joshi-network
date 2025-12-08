@@ -22,7 +22,10 @@ def match_count_report(year: int = 2025):
         name = get_name(int(wid))
         matches = wrestler_db.get_matches(int(wid))
         match_count = len(matches)
+        if not match_count:
+            continue  # don't count zeros
         promotion = get_promotion_with_location(int(wid))
+
         promotions[promotion].append((name, match_count))
         # accumulator.append((name, promotion, match_count))
 
@@ -142,6 +145,6 @@ def plot_results(results):
 
 if __name__ == "__main__":
     results = match_count_report()
-    # print_results(results)
+
     save_results(results)
     plot_results(results)
