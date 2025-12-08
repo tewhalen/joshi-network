@@ -118,10 +118,10 @@ class WrestlerDb(DBWrapper):
         """Using the stored profile info for the wrestler, update their metadata in the SQL db."""
 
         wrestler_profile = self.get_cm_profile_for_wrestler(wrestler_id)
-        if not wrestler_profile:
-            raise ValueError(
-                f"No profile data found for wrestler ID {wrestler_id} to update from."
-            )
+        # if not wrestler_profile:
+        #    raise ValueError(
+        #        f"No profile data found for wrestler ID {wrestler_id} to update from."
+        #    )
         cm_profile = CMProfile.from_dict(wrestler_id, wrestler_profile)
 
         self._execute_and_commit(
