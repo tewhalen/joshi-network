@@ -14,6 +14,8 @@ from joshirank.joshidb import get_name
 
 WEEK = 60 * 60 * 24 * 7
 
+LOAD_COUNT = 0
+
 
 def refresh_this_wrestler(wrestler_id: int) -> bool:
     """Return True if the wrestler should be refreshed."""
@@ -86,6 +88,9 @@ class WrestlerScrape:
         self.wrestler_id = wrestler_id
 
     def scrape_data(self):
+        global LOAD_COUNT
+        LOAD_COUNT += 1
+
         data_page = requests.get(
             self.wrestler_url, headers={"accept-encoding": "compress"}
         )
@@ -174,32 +179,33 @@ def wrestlers_sorted_by_match_count():
     return sorted(wrestler_match_counts, key=lambda x: x[1], reverse=True)
 
 
-if __name__ == "__main__":
+def update_missing_wrestlers():
+    refresh_count = 0
+    for i, (wid, count) in enumerate(find_missing_wrestlers(), start=1):
+        logger.info("({}) Missing wrestler id: {}", count, wid)
+        follow_wrestlers(wid, 2025, deep=True)
+        refresh_count += 1
+        if refresh_count > 20:
+            break
 
-    logger.info("Starting scrape...")
-    # logger.remove()
 
-    # logger.add(sys.stderr, level="INFO")
-    FORCE_SCRAPES = []
-    for wid in FORCE_SCRAPES:
-        refresh_wrestler(wid, 2025, force=True)
+def update_wrestlers_without_profiles():
+    """Yield all wrestler ids that have matches but no profile."""
+    for wrestler_id in wrestler_db.all_wrestler_ids():
+        wrestler_info = wrestler_db.get_cm_profile_for_wrestler(int(wrestler_id))
+        if not wrestler_info:
+            logger.info(
+                "Wrestler {} has matches but no profile, refreshing...", wrestler_id
+            )
+            refresh_wrestler(wrestler_id, 2025)
 
-        print(wrestler_db.get_wrestler(wid))
-        print(wrestler_db.get_match_info(wid))
-    if FORCE_SCRAPES:
-        sys.exit()
-    # follow_wrestlers(10962, 2025, deep=True)  # mercedes
-    # follow_wrestlers(32147, 2025)
-    # follow_wrestlers(31992, 2025)
-    # follow_wrestlers(11675, 2025)
-    # follow_wrestlers(21999, 2025)
 
+def update_top_wrestlers():
     refresh_count = 0
     mc_wrestlers = wrestlers_sorted_by_match_count()
     print(mc_wrestlers[:20])
     for i, (wrestler_id, match_count) in enumerate(wrestlers_sorted_by_match_count()):
-        if match_count > 100:
-            refresh_wrestler(wrestler_id, 2025, force=True)
+
         if refresh_this_wrestler(wrestler_id):
             logger.info(
                 "{} Refreshing wrestler {} ({}) with {} matches",
@@ -212,12 +218,35 @@ if __name__ == "__main__":
             refresh_count += 1
         if refresh_count >= 20:
             break
-    for i, (wid, count) in enumerate(find_missing_wrestlers(), start=1):
-        logger.info("({}) Missing wrestler id: {}", i, wid)
-        follow_wrestlers(wid, 2025, deep=True)
 
-        if i > 50:
-            break
 
-    # follow_random_wrestlers(10, 2025)
+def seed_database():
+    """Seed the database known missing profiles..."""
+    missing_wrestlers = [9232]
+    for wid in missing_wrestlers:
+
+        wrestler_db.save_profile_for_wrestler(wid, {})
+        wrestler_db.update_wrestler_from_profile(wid)
+        wrestler_db.save_matches_for_wrestler(wid, [])
+
+
+if __name__ == "__main__":
+
+    logger.info("Starting scrape...")
+    seed_database()
+    # logger.remove()
+
+    # logger.add(sys.stderr, level="INFO")
+    FORCE_SCRAPES = []
+    for wid in FORCE_SCRAPES:
+        refresh_wrestler(wid, 2025, force=True)
+
+        print(wrestler_db.get_wrestler(wid))
+        print(wrestler_db.get_match_info(wid))
+    if FORCE_SCRAPES:
+        sys.exit()
+
+    update_wrestlers_without_profiles()
+    update_missing_wrestlers()
+    # update_top_wrestlers()
     wrestler_db.close()
