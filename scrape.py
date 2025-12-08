@@ -47,7 +47,7 @@ def refresh_wrestler(wrestler_id: int, year: int, force=False) -> dict:
 
     wrestler_info = wrestler_db.get_wrestler(wrestler_id)
 
-    time.sleep(0.5)  # be polite to CageMatch
+    time.sleep(1)  # be polite to CageMatch
     # only load matches if the wrestler is a joshi
     if wrestler_info["is_female"]:
         logger.info(
@@ -114,7 +114,7 @@ class WrestlerScrape:
         )
         with requests.Session() as s:
             # print(matches_url.format(wrestler_id=wrestler_id, year=year))
-            time.sleep(0.25)
+            time.sleep(1)
             if start:
                 url = matches_url + f"&s={start}"
             else:
@@ -219,7 +219,7 @@ def update_top_wrestlers():
                 wrestler_id,
                 match_count,
             )
-            follow_wrestlers(wrestler_id, 2025, deep=True)
+            follow_wrestlers(wrestler_id, 2025)
             refresh_count += 1
         if refresh_count >= 20:
             break

@@ -244,6 +244,11 @@ class WrestlerDb(DBWrapper):
 
     def get_wrestler(self, wrestler_id: int) -> dict:
         """Given a wrestler ID, return their stored data as a dict."""
+        if wrestler_id == -1:
+            return {
+                "name": "Placeholder",
+                "last_updated": datetime.datetime.now().isoformat(),
+            }
         row = self._select_and_fetchone_dict(
             """SELECT * FROM wrestlers WHERE wrestler_id=?""", (wrestler_id,)
         )
