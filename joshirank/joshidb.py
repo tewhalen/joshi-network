@@ -14,6 +14,7 @@ import functools
 import json
 import pathlib
 import sqlite3
+import sys
 from collections import Counter
 
 from loguru import logger
@@ -64,8 +65,7 @@ class WrestlerDb(DBWrapper):
             opponents TEXT,
             match_count INTEGER,
             countries_worked TEXT,
-           
-           
+            year INTEGER,
             PRIMARY KEY (wrestler_id) 
              ) """
         )
@@ -75,7 +75,7 @@ class WrestlerDb(DBWrapper):
     def is_female(self, wrestler_id: int) -> bool:
         """Return True if the wrestler is considered female."""
         row = self._select_and_fetchone(
-            """Select is_female from wrestlers where wrestler_id=?""", (wrestler_id,)
+            """SELECT is_female FROM wrestlers WHERE wrestler_id=?""", (wrestler_id,)
         )
 
         if not row:
@@ -105,7 +105,7 @@ class WrestlerDb(DBWrapper):
     def get_cm_profile_for_wrestler(self, wrestler_id: int) -> dict:
         """Return the CM profile data for a wrestler as a dict."""
         row = self._select_and_fetchone(
-            """Select cm_profile_json from wrestlers where wrestler_id=?""",
+            """SELECT cm_profile_json FROM wrestlers WHERE wrestler_id=?""",
             (wrestler_id,),
         )
 
@@ -138,74 +138,82 @@ class WrestlerDb(DBWrapper):
             ),
         )
 
-    def save_matches_for_wrestler(self, wrestler_id: int, matches: list[dict]):
+    def save_matches_for_wrestler(
+        self, wrestler_id: int, matches: list[dict], year: int = 2025
+    ):
         """Save the match data for a wrestler in the sql table as JSON."""
         cm_matches_json = json.dumps(matches)
         self._execute_and_commit(
             """
         INSERT OR REPLACE INTO matches
-        (wrestler_id, cm_matches_json)
-        VALUES (?, ?)
+        (wrestler_id, cm_matches_json, year)
+        VALUES (?, ?, ?)
         """,
-            (wrestler_id, cm_matches_json),
+            (wrestler_id, cm_matches_json, year),
         )
 
     def update_matches_from_matches(self, wrestler_id: int):
         """Using the stored json matches for the wrestler, update their metadata in the SQL db."""
-        row = self._select_and_fetchone(
-            """Select cm_matches_json from matches where wrestler_id=?""",
+        rows = self._select_and_fetchall(
+            """SELECT cm_matches_json, year FROM matches WHERE wrestler_id=?""",
             (wrestler_id,),
         )
-
-        if row and row[0]:
-            matches = json.loads(row[0])
-            if not matches:
-                return
-            opponents, countries_worked = Counter(), Counter()
-            for match in matches:
-                for wid in match["wrestlers"]:
-                    if wid != wrestler_id:
-                        opponents[wid] += 1
-                if "country" in match:
-                    countries_worked[match["country"]] += 1
-            self._execute_and_commit(
-                """
-            UPDATE matches
-            SET opponents=?, match_count=?, countries_worked=?
-            WHERE wrestler_id=?
-            """,
-                (
-                    json.dumps([x[0] for x in opponents.most_common()]),
-                    len(matches),
-                    json.dumps(dict(countries_worked)),
-                    wrestler_id,
-                ),
-            )
+        for row in rows:
+            if row and row[0]:
+                matches = json.loads(row[0])
+                year = row[1]
+                if not matches:
+                    return
+                opponents, countries_worked = Counter(), Counter()
+                for match in matches:
+                    for wid in match["wrestlers"]:
+                        if wid != wrestler_id:
+                            opponents[wid] += 1
+                    if "country" in match:
+                        countries_worked[match["country"]] += 1
+                self._execute_and_commit(
+                    """
+                UPDATE matches
+                SET opponents=?, match_count=?, countries_worked=?
+                WHERE wrestler_id=? AND year=?
+                """,
+                    (
+                        json.dumps([x[0] for x in opponents.most_common()]),
+                        len(matches),
+                        json.dumps(dict(countries_worked)),
+                        wrestler_id,
+                        year,
+                    ),
+                )
 
     def update_wrestler_from_matches(self, wrestler_id: int):
         """Using the stored match info for the wrestler, update their metadata in the SQL db."""
         # get countries worked from matches
-        row = self._select_and_fetchone(
-            """Select countries_worked from matches where wrestler_id=?""",
+        rows = self._select_and_fetchall(
+            """SELECT countries_worked FROM matches WHERE wrestler_id=?""",
             (wrestler_id,),
         )
+        if not rows:
+            return
 
-        if row and row[0]:
-            # should be a dict stored as json
-            countries_worked = json.loads(row[0])
-            location = "Unknown"
-            if countries_worked:
-                # get the most common country
-                location = max(countries_worked.items(), key=lambda x: x[1])[0]
-
-            self._execute_and_commit(
-                """
-            UPDATE wrestlers
-            SET location=?
-            WHERE wrestler_id=?
-            """,
-                (location, wrestler_id),
-            )
+        country_counter = Counter()
+        for row in rows:
+            if row and row[0]:
+                # should be a dict stored as json
+                countries_worked = json.loads(row[0])
+                country_counter.update(countries_worked)
+        location = "Unknown"
+        if country_counter:
+            # get the most common country
+            location = max(country_counter.items(), key=lambda x: x[1])[0]
+        self._execute_and_commit(
+            """
+        UPDATE wrestlers
+        SET location=?
+        WHERE wrestler_id=?
+        """,
+            (location, wrestler_id),
+        )
 
     def close(self):
         # self.db.close()
@@ -214,7 +222,7 @@ class WrestlerDb(DBWrapper):
     def get_wrestler(self, wrestler_id: int) -> dict:
         """Given a wrestler ID, return their stored data as a dict."""
         row = self._select_and_fetchone_dict(
-            """Select * from wrestlers where wrestler_id=?""", (wrestler_id,)
+            """SELECT * FROM wrestlers WHERE wrestler_id=?""", (wrestler_id,)
         )
         if row:
             # convert last_updated to epoch timestamp
@@ -230,12 +238,12 @@ class WrestlerDb(DBWrapper):
 
     def all_wrestler_ids(self) -> list[int]:
         """Return a list of all wrestler IDs in the database."""
-        rows = self._select_and_fetchall("""Select wrestler_id from wrestlers""", ())
+        rows = self._select_and_fetchall("""SELECT wrestler_id FROM wrestlers""", ())
         return [row[0] for row in rows]
 
     def wrestler_exists(self, wrestler_id: int) -> bool:
         row = self._select_and_fetchone(
-            """Select 1 from wrestlers where wrestler_id=?""", (wrestler_id,)
+            """SELECT 1 FROM wrestlers WHERE wrestler_id=?""", (wrestler_id,)
         )
 
         return row is not None
@@ -243,13 +251,13 @@ class WrestlerDb(DBWrapper):
     def all_female_wrestlers(self):
         """Return a generator of wrestler ids and info"""
         rows = self._select_and_fetchall(
-            """Select wrestler_id from wrestlers where is_female=1""", ()
+            """SELECT wrestler_id FROM wrestlers WHERE is_female=1""", ()
         )
         return [row[0] for row in rows]
 
     def wrestler_in_sql(self, wrestler_id: int) -> bool:
         row = self._select_and_fetchone(
-            """Select 1 from wrestlers where wrestler_id=?""", (wrestler_id,)
+            """SELECT 1 FROM wrestlers WHERE wrestler_id=?""", (wrestler_id,)
         )
 
         return row is not None
@@ -258,7 +266,7 @@ class WrestlerDb(DBWrapper):
 
         # first try to retrieve from sqldb
         row = self._select_and_fetchone(
-            """Select name from wrestlers where wrestler_id=?""", (wrestler_id,)
+            """SELECT name FROM wrestlers WHERE wrestler_id=?""", (wrestler_id,)
         )
         if row and row[0]:
             return row[0]
@@ -266,11 +274,11 @@ class WrestlerDb(DBWrapper):
         else:
             raise KeyError(f"Wrestler ID {wrestler_id} not found in database.")
 
-    def get_matches(self, wrestler_id: int) -> list[dict]:
+    def get_matches(self, wrestler_id: int, year: int = 2025) -> list[dict]:
         # first try to get from sqlite
         row = self._select_and_fetchone(
-            """Select cm_matches_json from matches where wrestler_id=?""",
-            (wrestler_id,),
+            """SELECT cm_matches_json FROM matches WHERE wrestler_id=? AND year=?""",
+            (wrestler_id, year),
         )
 
         if row and row[0]:
@@ -281,11 +289,12 @@ class WrestlerDb(DBWrapper):
         # fallback: return empty list
         return []
 
-    def get_match_info(self, wrestler_id: int) -> dict:
+    def get_match_info(self, wrestler_id: int, year: int = 2025) -> dict:
         """Return match metadata for a wrestler."""
         row = self._select_and_fetchone_dict(
-            """Select opponents, match_count, countries_worked from matches where wrestler_id=?""",
-            (wrestler_id,),
+            """SELECT opponents, match_count, countries_worked 
+            FROM matches WHERE wrestler_id=? AND year=?""",
+            (wrestler_id, year),
         )
 
         if row:
@@ -349,7 +358,6 @@ def get_promotion_with_location(wrestler_id: int) -> str:
 
 if __name__ == "__main__":
     # remove the cm_matches_json column from the wrestlers table
-    import sys
 
     cursor = db.sqldb.cursor()
     cursor.execute("""ALTER TABLE wrestlers DROP COLUMN cm_matches_json""")
