@@ -34,9 +34,13 @@ class DBWrapper:
         cursor.close()
         return rows
 
-    def _execute_and_commit(self, query: str, params: tuple) -> None:
+    def _execute_and_commit(self, query: str, params: tuple) -> int:
         """Helper method to execute a query and commit changes."""
         cursor = self.sqldb.cursor()
         cursor.execute(query, params)
         self.sqldb.commit()
+        rowcount = cursor.rowcount
         cursor.close()
+
+        # return the status of the execution if needed
+        return rowcount
