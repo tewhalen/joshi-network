@@ -35,7 +35,7 @@ def parse_wrestler_profile_page(html_data: str) -> dict:
                 value = parse_cm_date(m.group(0)).isoformat()
                 # throws away the non-matching stuff
             except ValueError:
-                value = value.text.strip
+                value = value.text.strip()
         elif value.stripped_strings and len(list(value.stripped_strings)) > 1:
             # multiple strings, make a list
             value = [s.strip() for s in value.stripped_strings]
