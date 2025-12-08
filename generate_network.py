@@ -48,7 +48,7 @@ def all_joshi_japanese_wrestlers():
     return joshi_wrestlers
 
 
-def build_graph(from_wrestlers: set, threshold=8):
+def build_graph(from_wrestlers: set, threshold=8, year=2025):
 
     promotion_id = Identifier()
     wrestlers = set()
@@ -58,6 +58,8 @@ def build_graph(from_wrestlers: set, threshold=8):
         matches = wrestler_db.get_matches(int(w_id))
 
         for match in matches:
+            if year and not match["date"].startswith(str(year)):
+                continue
             match_counts[int(w_id)] += 1
             for wrestler in match["wrestlers"]:
                 if wrestler == w_id:
