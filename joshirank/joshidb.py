@@ -58,6 +58,14 @@ class WrestlerDb(DBWrapper):
         cursor.execute(
             """CREATE INDEX IF NOT EXISTS idx_wrestler_fem ON wrestlers (is_female)"""
         )
+        cursor.close()
+        self.sqldb.commit()
+
+        self._create_matches_table()
+
+    def _create_matches_table(self):
+        """Create the matches table if it does not exist."""
+        cursor = self.sqldb.cursor()
         cursor.execute(
             """ CREATE TABLE IF NOT EXISTS matches (
             wrestler_id INTEGER,
@@ -65,8 +73,8 @@ class WrestlerDb(DBWrapper):
             opponents TEXT,
             match_count INTEGER,
             countries_worked TEXT,
-            year INTEGER,
-            PRIMARY KEY (wrestler_id) 
+            year INTEGER NOT NULL DEFAULT 2025,
+            PRIMARY KEY (wrestler_id, year) 
              ) """
         )
         cursor.close()
@@ -100,6 +108,21 @@ class WrestlerDb(DBWrapper):
         VALUES (?, ?, CURRENT_TIMESTAMP)
         """,
             (wrestler_id, cm_profile_json),
+        )
+
+    def set_timestamp(self, wrestler_id: int, timestamp: float | datetime.datetime):
+        """Set the last_updated timestamp for a wrestler."""
+        if isinstance(timestamp, float):
+            str_timestamp = datetime.datetime.fromtimestamp(timestamp).isoformat()
+        else:
+            str_timestamp = timestamp.isoformat()
+        self._execute_and_commit(
+            """
+        UPDATE wrestlers
+        SET last_updated=?
+        WHERE wrestler_id=?
+        """,
+            (str_timestamp, wrestler_id),
         )
 
     def get_cm_profile_for_wrestler(self, wrestler_id: int) -> dict:
@@ -143,7 +166,7 @@ class WrestlerDb(DBWrapper):
     ):
         """Save the match data for a wrestler in the sql table as JSON."""
         cm_matches_json = json.dumps(matches)
-        self._execute_and_commit(
+        return self._execute_and_commit(
             """
         INSERT OR REPLACE INTO matches
         (wrestler_id, cm_matches_json, year)
@@ -281,10 +304,8 @@ class WrestlerDb(DBWrapper):
             (wrestler_id, year),
         )
 
-        if row and row[0]:
-            matches = json.loads(row[0])
-            if matches:
-                return matches
+        if row:
+            return json.loads(row[0])
 
         # fallback: return empty list
         return []
@@ -310,17 +331,6 @@ class WrestlerDb(DBWrapper):
                 "match_count": 0,
                 "countries_worked": {},
             }
-
-    def save_matches(self, wrestler_id: int, matches: list[dict]):
-        match_json = json.dumps(matches)
-        self._execute_and_commit(
-            """
-        UPDATE matches
-        SET cm_matches_json=?
-        WHERE wrestler_id=?
-        """,
-            (match_json, wrestler_id),
-        )
 
     def get_all_colleagues(self, wrestler_id: int) -> set[int]:
         """Given a wrestler ID, return a set of all wrestler IDs that appeared in a match with them."""

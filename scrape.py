@@ -57,7 +57,13 @@ def refresh_wrestler(wrestler_id: int, year: int, force=False) -> dict:
         )
         matches = wrestler.scrape_matches(year)
 
-        wrestler_db.save_matches(wrestler_id, matches)
+        rows = wrestler_db.save_matches_for_wrestler(wrestler_id, matches)
+        logger.info(
+            "Saved {}/{} matches for wrestler {}",
+            len(wrestler_db.get_matches(wrestler_id, year)),
+            len(matches),
+            wrestler_id,
+        )
         wrestler_db.update_matches_from_matches(wrestler_id)
         wrestler_db.update_wrestler_from_matches(wrestler_id)
 
@@ -193,10 +199,8 @@ def update_wrestlers_without_profiles():
     for wrestler_id in wrestler_db.all_wrestler_ids():
         wrestler_info = wrestler_db.get_cm_profile_for_wrestler(int(wrestler_id))
 
-        if not wrestler_info and wrestler_db.get_matches(int(wrestler_id)):
-            logger.info(
-                "Wrestler {} has matches but no profile, refreshing...", wrestler_id
-            )
+        if not wrestler_info:
+            logger.info("Wrestler {} has no profile, refreshing...", wrestler_id)
             refresh_wrestler(wrestler_id, 2025, force=True)
             time.sleep(0.5)
 
