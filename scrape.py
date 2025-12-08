@@ -99,8 +99,7 @@ class WrestlerScrape:
         return result
 
     def scrape_matches(self, year: int) -> list[dict]:
-        self.matches = self.load_matches(year)
-        return self.matches
+        return self.load_matches(year)
 
     def load_matches(self, year: int, start=0) -> list[dict]:
         """Get all the matches for that wrestler_id for the given year."""
@@ -193,11 +192,13 @@ def update_wrestlers_without_profiles():
     """Yield all wrestler ids that have matches but no profile."""
     for wrestler_id in wrestler_db.all_wrestler_ids():
         wrestler_info = wrestler_db.get_cm_profile_for_wrestler(int(wrestler_id))
-        if not wrestler_info:
+
+        if not wrestler_info and wrestler_db.get_matches(int(wrestler_id)):
             logger.info(
                 "Wrestler {} has matches but no profile, refreshing...", wrestler_id
             )
-            refresh_wrestler(wrestler_id, 2025)
+            refresh_wrestler(wrestler_id, 2025, force=True)
+            time.sleep(0.5)
 
 
 def update_top_wrestlers():
@@ -246,7 +247,8 @@ if __name__ == "__main__":
     if FORCE_SCRAPES:
         sys.exit()
 
+    update_top_wrestlers()
+
     update_wrestlers_without_profiles()
     update_missing_wrestlers()
-    # update_top_wrestlers()
     wrestler_db.close()
