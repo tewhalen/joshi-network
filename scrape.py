@@ -5,67 +5,14 @@ import sys
 import time
 from collections import Counter, defaultdict
 
-import requests
 from loguru import logger
 
-import joshirank.cagematch.cm_match as cm_match
 import joshirank.cagematch.data as cm_data
-import joshirank.cagematch.profile as profile
+from joshirank.cagematch.scraper import CageMatchScraper
 from joshirank.joshidb import db as wrestler_db
 from joshirank.joshidb import get_name
 
 WEEK = 60 * 60 * 24 * 7
-
-
-class CageMatchScraper:
-
-    session: requests.Session
-    sleep_delay: float = 1.0
-    max_requests_per_session: int = 100
-    requests_made: int = 0
-
-    def __init__(self):
-        self.session = requests.Session()
-        self.session.headers = {"accept-encoding": "compress"}
-        self.requests_made = 0
-
-    def keep_going(self) -> bool:
-        return self.requests_made < self.max_requests_per_session
-
-    def scrape_profile(self, wrestler_id: int) -> profile.CMProfile:
-        url = f"https://www.cagematch.net/?id=2&nr={wrestler_id}"
-        time.sleep(self.sleep_delay)
-        r = self.session.get(url)
-        self.requests_made += 1
-        if r:
-            return profile.CMProfile.from_html(wrestler_id, r.text)
-        else:
-            raise ValueError(f"Failed to load profile for wrestler {wrestler_id}")
-
-    def scrape_matches(self, wrestler_id: int, year: int, start=0) -> list[dict]:
-        """Get all the matches for that wrestler_id for the given year."""
-        matches_url = (
-            f"https://www.cagematch.net/?id=2&nr={wrestler_id}&page=4&year={year}"
-        )
-        all_matches = []
-        while True:
-            time.sleep(self.sleep_delay)
-            if start:
-                url = matches_url + f"&s={start}"
-            else:
-                url = matches_url
-            r = self.session.get(url)
-            self.requests_made += 1
-            if r:
-                matches = list(cm_match.extract_match_data_from_match_page(r.text))
-                all_matches.extend(matches)
-                if len(matches) == 100:
-                    start += 100
-                else:
-                    break
-            else:
-                break
-        return all_matches
 
 
 class ScrapingSession:
