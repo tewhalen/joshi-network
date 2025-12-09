@@ -36,7 +36,9 @@ def refresh_this_wrestler(wrestler_id: int) -> bool:
         return False
 
 
-def refresh_wrestler(wrestler_id: int, year: int, force=False) -> dict:
+def refresh_wrestler(
+    wrestler_id: int, year: int, force=False, force_matches=False
+) -> dict:
     """Reload wrestler profile and matches from CageMatch.net if older than a week."""
     if not refresh_this_wrestler(wrestler_id) and not force:
         return wrestler_db.get_wrestler(wrestler_id)
@@ -49,7 +51,7 @@ def refresh_wrestler(wrestler_id: int, year: int, force=False) -> dict:
 
     time.sleep(1)  # be polite to CageMatch
     # only load matches if the wrestler is a joshi
-    if wrestler_info["is_female"]:
+    if wrestler_info["is_female"] or force_matches:
         logger.info(
             "loading matches {} ({})",
             wrestler_info.get("name", ""),
@@ -184,6 +186,13 @@ def wrestlers_sorted_by_match_count():
     return sorted(wrestler_match_counts, key=lambda x: x[1], reverse=True)
 
 
+def update_gender_diverse_wrestlers():
+    """Update all wrestlers whose gender is not male or female."""
+    for wrestler_id in wrestler_db.gender_diverse_wrestlers():
+
+        refresh_wrestler(wrestler_id, 2025, force_matches=True, force=True)
+
+
 def update_missing_wrestlers():
     refresh_count = 0
     for i, (wid, count) in enumerate(find_missing_wrestlers(), start=1):
@@ -250,7 +259,7 @@ if __name__ == "__main__":
         print(wrestler_db.get_match_info(wid))
     if FORCE_SCRAPES:
         sys.exit()
-
+    update_gender_diverse_wrestlers()
     update_top_wrestlers()
 
     update_wrestlers_without_profiles()

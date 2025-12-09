@@ -211,6 +211,47 @@ class WrestlerDb(DBWrapper):
 
     def update_wrestler_from_matches(self, wrestler_id: int):
         """Using the stored match info for the wrestler, update their metadata in the SQL db."""
+
+        self._execute_and_commit(
+            """
+                UPDATE wrestlers
+                SET location=?
+                WHERE wrestler_id=?
+                """,
+            (self.guess_location_from_matches(wrestler_id), wrestler_id),
+        )
+
+        if self._is_gender_diverse(wrestler_id):
+            # if the wrestler is gender-diverse, set is_female if the
+            # majority of colleagues are female
+            if self.percentage_of_female_colleagues(wrestler_id) > 0.5:
+                logger.info(
+                    "Setting wrestler {} to female based on colleagues", wrestler_id
+                )
+                self._execute_and_commit(
+                    """
+                UPDATE wrestlers
+                SET is_female=1
+                WHERE wrestler_id=?
+                """,
+                    (wrestler_id,),
+                )
+            else:
+                logger.info(
+                    "Gender-diverse wrestler {} not set to female based on colleagues",
+                    wrestler_id,
+                )
+
+    def percentage_of_female_colleagues(self, wrestler_id: int) -> float:
+        """return the percentage of colleagues known to be female"""
+        colleagues = self.get_all_colleagues(wrestler_id)
+        if not colleagues:
+            return 0.0
+        female_count = sum(1 for c in colleagues if self.is_female(c))
+        return female_count / len(colleagues)
+
+    def guess_location_from_matches(self, wrestler_id: int):
+        """Guess the wrestler's location based on countries worked in matches."""
         # get countries worked from matches
         rows = self._select_and_fetchall(
             """SELECT countries_worked FROM matches WHERE wrestler_id=?""",
@@ -228,15 +269,7 @@ class WrestlerDb(DBWrapper):
         location = "Unknown"
         if country_counter:
             # get the most common country
-            location = max(country_counter.items(), key=lambda x: x[1])[0]
-        self._execute_and_commit(
-            """
-        UPDATE wrestlers
-        SET location=?
-        WHERE wrestler_id=?
-        """,
-            (location, wrestler_id),
-        )
+            return max(country_counter.items(), key=lambda x: x[1])[0]
 
     def close(self):
         # self.db.close()
@@ -346,8 +379,22 @@ class WrestlerDb(DBWrapper):
                     colleagues.add(wid)
         return colleagues
 
+    def _is_gender_diverse(self, wrestler_id: int) -> bool:
+        """Return True if the wrestler is considered gender-diverse."""
+        profile = self.get_cm_profile_for_wrestler(wrestler_id)
+        g = profile.get("Gender")
+        return g == "diverse"
+
+    def gender_diverse_wrestlers(self):
+        """Yield wrestler ids considered gender-diverse."""
+        for wrestler_id in self.all_wrestler_ids():
+            if self._is_gender_diverse(wrestler_id):
+                yield wrestler_id
+
 
 db = WrestlerDb(pathlib.Path("data/joshi_wrestlers.y"))
+
+
 wrestler_db = db
 # import dbm
 
