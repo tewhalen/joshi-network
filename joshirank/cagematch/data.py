@@ -77,3 +77,8 @@ wrestler_name_overrides = {
     11871: "HARUKAZE",
     9232: "Seleziya Sparx",
 }
+
+
+missing_profiles = [
+    9232,  # Seleziya Sparx
+]

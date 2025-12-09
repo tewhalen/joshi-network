@@ -91,7 +91,9 @@ class WrestlerDb(DBWrapper):
         return bool(row[0])
 
     def save_profile_for_wrestler(self, wrestler_id: int, profile_data: dict):
-        """Save the profile data for a wrestler in the sql table as JSON."""
+        """Save the profile data for a wrestler in the sql table as JSON.
+
+        Sets the last_updated timestamp to current time."""
         try:
             cm_profile_json = json.dumps(profile_data)
         except:
@@ -301,6 +303,14 @@ class WrestlerDb(DBWrapper):
         """Return a list of all wrestler IDs in the database."""
         rows = self._select_and_fetchall("""SELECT wrestler_id FROM wrestlers""", ())
         return [row[0] for row in rows]
+
+    def wrestlers_sorted_by_match_count(self):
+        "return a list of wrestler ids sorted by number of matches descending"
+        wrestler_match_counts = []
+        for wid in self.all_wrestler_ids():
+            match_count = self.get_match_info(int(wid))["match_count"]
+            wrestler_match_counts.append((int(wid), match_count))
+        return sorted(wrestler_match_counts, key=lambda x: x[1], reverse=True)
 
     def wrestler_exists(self, wrestler_id: int) -> bool:
         row = self._select_and_fetchone(
