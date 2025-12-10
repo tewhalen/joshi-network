@@ -51,7 +51,7 @@ class ScrapingSession:
         wrestler_info = wrestler_db.get_wrestler(wrestler_id)
         if not wrestler_info or "last_updated" not in wrestler_info:
             return "never"
-        age_seconds = time.time() - wrestler_info["timestamp"]
+        age_seconds = max(0, time.time() - wrestler_info["timestamp"])
         if age_seconds < 60:
             return f"{int(age_seconds)} seconds"
         elif age_seconds < 3600:
