@@ -9,10 +9,12 @@ from loguru import logger
 
 import joshirank.cagematch.data as cm_data
 from joshirank.cagematch.scraper import CageMatchScraper
-from joshirank.joshidb import db as wrestler_db
-from joshirank.joshidb import get_name
+from joshirank.joshidb import get_name, reopen_rw
 
 WEEK = 60 * 60 * 24 * 7
+
+# reopen in main
+wrestler_db = None
 
 
 class ScrapingSession:
@@ -266,7 +268,7 @@ class ScrapingSession:
 
 
 if __name__ == "__main__":
-
+    wrestler_db = reopen_rw()
     scraper = ScrapingSession()
 
     # logger.add(sys.stderr, level="INFO")

@@ -4,8 +4,7 @@ from bs4 import BeautifulSoup
 from loguru import logger
 
 import joshirank.cagematch.cm_match as cm_match
-from joshirank.joshidb import db as wrestler_db
-from joshirank.joshidb import is_joshi
+from joshirank.joshidb import is_joshi, wrestler_db
 
 
 def to_tuple(dict_obj):

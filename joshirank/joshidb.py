@@ -27,15 +27,20 @@ from joshirank.db_wrapper import DBWrapper
 def is_joshi(wrestler_id: int) -> bool:
     """Determine if a wrestler is female based on their profile data."""
 
-    return db.is_female(wrestler_id)
+    return wrestler_db.is_female(wrestler_id)
 
 
 class WrestlerDb(DBWrapper):
-    def __init__(self, path: pathlib.Path):
+    def __init__(self, path: pathlib.Path, readonly=True):
         self.path = path
 
-        self.sqldb = sqlite3.connect(str(self.path.with_suffix(".sqlite3")))
-        self._initialize_sql_db()
+        if readonly:
+            self.sqldb = sqlite3.connect(
+                f'file:{self.path.with_suffix(".sqlite3")}?mode=ro', uri=True
+            )
+        else:
+            self.sqldb = sqlite3.connect(str(self.path.with_suffix(".sqlite3")))
+            self._initialize_sql_db()
 
     def _initialize_sql_db(self):
         """If necessary, create the SQL tables for wrestler metadata."""
@@ -402,22 +407,25 @@ class WrestlerDb(DBWrapper):
                 yield wrestler_id
 
 
-db = WrestlerDb(pathlib.Path("data/joshi_wrestlers.y"))
+# go ahead and open it read-only
+wrestler_db = WrestlerDb(pathlib.Path("data/joshi_wrestlers.y"), readonly=True)
 
 
-wrestler_db = db
-# import dbm
-
-# print("xx", dbm.whichdb(pathlib.Path("data/joshi_wrestlers.db")))
+def reopen_rw():
+    # reopen wrestler_db as read/write
+    global wrestler_db
+    wrestler_db.close()
+    wrestler_db = WrestlerDb(pathlib.Path("data/joshi_wrestlers.y"), readonly=False)
+    return wrestler_db
 
 
 @functools.lru_cache(maxsize=None)
 def get_name(wrestler_id: int) -> str:
-    return db.get_name(wrestler_id)
+    return wrestler_db.get_name(wrestler_id)
 
 
 def get_promotion_with_location(wrestler_id: int) -> str:
-    wrestler_info = db.get_wrestler(wrestler_id)
+    wrestler_info = wrestler_db.get_wrestler(wrestler_id)
     promotion = wrestler_info.get("promotion", "")
     if promotion == "" or promotion == "Freelancer":
         location = wrestler_info.get("location", "Unknown")
@@ -431,7 +439,4 @@ def get_promotion_with_location(wrestler_id: int) -> str:
 if __name__ == "__main__":
     # remove the cm_matches_json column from the wrestlers table
 
-    cursor = db.sqldb.cursor()
-    cursor.execute("""ALTER TABLE wrestlers DROP COLUMN cm_matches_json""")
-    cursor.close()
-    db.sqldb.commit()
+    pass
