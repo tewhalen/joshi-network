@@ -59,3 +59,14 @@ class CageMatchScraper:
             else:
                 break
         return all_matches
+
+    def match_years(self, wrestler_id: int) -> set[int]:
+        """Get all years that wrestler has matches in."""
+        matches_url = f"https://www.cagematch.net/?id=2&nr={wrestler_id}&page=4"
+
+        r = self.session.get(matches_url)
+        self.requests_made += 1
+        years = set()
+        if r:
+            years = cm_match.extract_years_from_match_page(r.text)
+        return years
