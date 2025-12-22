@@ -167,3 +167,16 @@ def _guess_country_of_match_soup(soup: BeautifulSoup) -> str:
 
     # Placeholder for actual country guessing logic
     return "Unknown"
+
+
+def extract_years_from_match_page(content: str) -> set[int]:
+    """Extract all years that matches exist for from a CageMatch match page HTML content."""
+    soup = BeautifulSoup(content, "html.parser")
+    years = set()
+    year_selector = soup.find("select", {"name": "year"})
+    if not year_selector:
+        return years
+    for option in year_selector.find_all("option"):
+        if option["value"].isnumeric():
+            years.add(int(option["value"]))
+    return years
