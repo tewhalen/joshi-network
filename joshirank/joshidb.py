@@ -273,7 +273,7 @@ class WrestlerDb(DBWrapper):
                 # should be a dict stored as json
                 countries_worked = json.loads(row[0])
                 country_counter.update(countries_worked)
-        location = "Unknown"
+
         if country_counter:
             # get the most common country
             return max(country_counter.items(), key=lambda x: x[1])[0]
@@ -362,6 +362,16 @@ class WrestlerDb(DBWrapper):
 
         # fallback: return empty list
         return []
+
+    def match_years_available(self, wrestler_id: int) -> set[int]:
+        """Return all years that matches exist for a wrestler."""
+        rows = self._select_and_fetchall(
+            """SELECT year FROM matches WHERE wrestler_id=?""", (wrestler_id,)
+        )
+        years = set()
+        for row in rows:
+            years.add(int(row[0]))
+        return years
 
     def get_match_info(self, wrestler_id: int, year: int = 2025) -> dict:
         """Return match metadata for a wrestler."""
