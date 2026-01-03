@@ -46,7 +46,6 @@ def m_date(match: BeautifulSoup) -> str | None:
     for cell in match.find_all("td"):
         m = date_re.search(cell.text)
         if m:
-
             date = util.parse_cm_date(m.group(0))
             return date.isoformat()
     return "Unknown"

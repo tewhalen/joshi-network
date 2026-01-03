@@ -13,7 +13,6 @@ URL_TEMPLATE = "https://www.cagematch.net/?id=2&nr={w_id}&view=&page=4&gimmick=&
 
 
 class Wrestler(Player):
-
     record: Record
     last_month: datetime.date | None = None
     year_records: dict[int, Record]
@@ -35,7 +34,6 @@ class Ranker:
     wrestler_objects: dict[str, Wrestler]
 
     def __init__(self, year: int = 2025):
-
         self.year = year
         self.wrestler_objects = {}
         self.rank_history = {}
@@ -145,7 +143,6 @@ class Ranker:
         # self.save_long_data()
 
     def current_rankings_table(self):
-
         rankings = self.current_rankings()
 
         output = []
@@ -186,7 +183,6 @@ class Ranker:
         )
 
     def current_rankings(self):
-
         rankings = [
             {
                 "id": wrestler_id,

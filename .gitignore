@@ -1,7 +1,9 @@
 
 data/*.json
 **/__pycache__/*
-poetry.lock
+uv.lock
+.venv/
+.python-version
 /output
 /data
 .DS_Store

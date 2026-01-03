@@ -8,7 +8,6 @@ import joshirank.cagematch.profile as profile
 
 
 class CageMatchScraper:
-
     session: requests.Session
     sleep_delay: float = 1.0
     max_requests_per_session: int = 100

@@ -37,14 +37,12 @@ def match_count_report(year: int = 2025):
         hist = np.histogram(series, bins=20, range=(min_val, max_val))
         sparkline = sparklines(hist[0])[0]
         if total_wrestlers > 2:
-
             quartiles = statistics.quantiles([count for _, count in wrestlers], n=4)
         else:
             quartiles = "-", statistics.median([count for _, count in wrestlers]), "-"
         max_matches = max(count for _, count in wrestlers)
 
         if total_wrestlers >= 5:
-
             accumulator.append(
                 {
                     "promotion": promo,
@@ -91,7 +89,6 @@ def save_results(results, year: int = 2025):
 
 
 def plot_results(results):
-
     for row, d in enumerate(results):
         fig = plt.figure(figsize=(6, 0.5))
         # Option A: black background (make bars light so they show up)

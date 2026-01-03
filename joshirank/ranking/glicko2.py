@@ -113,7 +113,7 @@ class Player:
         self._preRatingRD()
 
         # Step 7. Update the rating and RD to the new values
-        self.__rd = 1 / math.sqrt((1 / self.__rd ** 2) + (1 / v))
+        self.__rd = 1 / math.sqrt((1 / self.__rd**2) + (1 / v))
 
         self.__rating += math.pow(self.__rd, 2) * sum(
             self._g(opp_rd) * (outcome - opp_E)
@@ -137,22 +137,22 @@ class Player:
         delta = self._delta(rating_list, RD_list, outcome_list, v)
 
         # 1.
-        a = math.log(self.vol ** 2)
+        a = math.log(self.vol**2)
         eps = 0.000001
 
         def _f(x):
             ex = math.exp(x)
-            num1 = ex * (delta ** 2 - self.__rd ** 2 - v - ex)
-            denom1 = 2 * ((self.__rd ** 2 + v + ex) ** 2)
-            return (num1 / denom1) - ((x - a) / (self._tau ** 2))
+            num1 = ex * (delta**2 - self.__rd**2 - v - ex)
+            denom1 = 2 * ((self.__rd**2 + v + ex) ** 2)
+            return (num1 / denom1) - ((x - a) / (self._tau**2))
 
         # step 2
         A = a
 
         B = None
         tau = self._tau
-        if (delta ** 2) > ((self.__rd ** 2) + v):
-            B = math.log(delta ** 2 - self.__rd ** 2 - v)
+        if (delta**2) > ((self.__rd**2) + v):
+            B = math.log(delta**2 - self.__rd**2 - v)
         else:
             k = 1
             while _f(a - k * tau) < 0:
