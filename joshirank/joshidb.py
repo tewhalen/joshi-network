@@ -36,7 +36,7 @@ class WrestlerDb(DBWrapper):
 
         if readonly:
             self.sqldb = sqlite3.connect(
-                f'file:{self.path.with_suffix(".sqlite3")}?mode=ro', uri=True
+                f"file:{self.path.with_suffix('.sqlite3')}?mode=ro", uri=True
             )
         else:
             self.sqldb = sqlite3.connect(str(self.path.with_suffix(".sqlite3")))
@@ -232,9 +232,7 @@ class WrestlerDb(DBWrapper):
             # if the wrestler is gender-diverse, set is_female if the
             # majority of colleagues are female
             if self.percentage_of_female_colleagues(wrestler_id) > 0.5:
-                logger.info(
-                    "Setting wrestler {} to female based on colleagues", wrestler_id
-                )
+                logger.info("Considering {} as female based on colleagues", wrestler_id)
                 self._execute_and_commit(
                     """
                 UPDATE wrestlers
@@ -245,7 +243,7 @@ class WrestlerDb(DBWrapper):
                 )
             else:
                 logger.info(
-                    "Gender-diverse wrestler {} not set to female based on colleagues",
+                    "Gender-diverse {} not set to female based on colleagues",
                     wrestler_id,
                 )
 
@@ -339,7 +337,6 @@ class WrestlerDb(DBWrapper):
         return row is not None
 
     def get_name(self, wrestler_id: int) -> str:
-
         # first try to retrieve from sqldb
         row = self._select_and_fetchone(
             """SELECT name FROM wrestlers WHERE wrestler_id=?""", (wrestler_id,)

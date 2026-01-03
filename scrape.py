@@ -72,7 +72,6 @@ class WrestlerScrapeInfo:
         appearance_counter = Counter()
         opponent_tracker = defaultdict(set)
         for wrestler_id in self.wrestler_db.all_wrestler_ids():
-
             colleagues = self.wrestler_db.get_all_colleagues(int(wrestler_id))
             for wid in colleagues:
                 if not self.wrestler_db.wrestler_exists(wid):
@@ -82,7 +81,6 @@ class WrestlerScrapeInfo:
             yield wid, count, opponent_tracker[wid]
 
     def random_wrestlers(self, count: int, year: int):
-
         all_wrestler_ids = self.wrestler_db.all_wrestler_ids()
         random_ids = random.sample(all_wrestler_ids, count)
         return random_ids
@@ -91,7 +89,6 @@ class WrestlerScrapeInfo:
         """Yield all wrestler ids that have matches but no profile."""
 
         for wrestler_id in self.wrestler_db.all_wrestler_ids():
-
             wrestler_info = self.wrestler_db.get_cm_profile_for_wrestler(wrestler_id)
 
             if not wrestler_info:
@@ -111,7 +108,9 @@ class ScrapingSession:
     def wrestler_should_be_refreshed(
         self, wrestler_id: int, skip_gender_check=False
     ) -> bool:
-        """Return True if the wrestler should be refreshed."""
+        """Return True if the wrestler should be refreshed.
+
+        Wrestlers with missing profiles, or female wrestlers with stale info, are refreshed."""
         if self.scrape_info.wrestler_profile_missing(wrestler_id):
             return True
         elif self.scrape_info.wrestler_info_is_stale(wrestler_id):
@@ -129,7 +128,12 @@ class ScrapingSession:
         force_matches=False,
         skip_gender_check=False,
     ) -> dict:
-        """Reload wrestler profile and matches from CageMatch.net if older than a week."""
+        """Reload wrestler profile and matches from CageMatch.net if refresh criteria are met.
+
+        Loads the wrestler profile and updates the wrestler info in the database.
+        If the wrestler is female, also loads matches for the given year and updates match info.
+
+        """
         new_wrestler = False
         if not force and not self.wrestler_should_be_refreshed(
             wrestler_id, skip_gender_check=skip_gender_check
@@ -150,31 +154,35 @@ class ScrapingSession:
             wrestler_id, scraped_profile.profile_data
         )
         self.wrestler_db.update_wrestler_from_profile(wrestler_id)
-
-        # only load matches if the wrestler is a joshi
-        if self.wrestler_db.is_female(wrestler_id) or force_matches:
-            self.scrape_matches(wrestler_id, year)
-
-            # self.scrape_missing_years(wrestler_id)
-            self.wrestler_db.update_matches_from_matches(wrestler_id)
-            self.wrestler_db.update_wrestler_from_matches(wrestler_id)
-
         if new_wrestler:
             logger.info(
                 "Added new wrestler: {} ({})",
                 self.wrestler_db.get_name(wrestler_id),
                 wrestler_id,
             )
+        # only load matches if the wrestler is female or if forced
+        if self.wrestler_db.is_female(wrestler_id) or force_matches:
+            self.scrape_matches(wrestler_id, year)
+            self.wrestler_db.update_matches_from_matches(wrestler_id)
+            self.wrestler_db.update_wrestler_from_matches(wrestler_id)
+
+        # only load history for female wrestlers
+        if self.wrestler_db.is_female(wrestler_id):
+            self.scrape_missing_years(wrestler_id)
+            self.wrestler_db.update_matches_from_matches(wrestler_id)
+            self.wrestler_db.update_wrestler_from_matches(wrestler_id)
+
         return self.wrestler_db.get_wrestler(wrestler_id)
 
     def scrape_matches(self, wrestler_id: int, year: int):
-        name = self.wrestler_db.get_name(wrestler_id)
+        """Scrape matches for a wrestler for a given year."""
 
         matches = self.scraper.scrape_matches(wrestler_id, year)
 
         self.wrestler_db.save_matches_for_wrestler(wrestler_id, matches, year)
 
     def scrape_missing_years(self, wrestler_id: int):
+        """Looks for missing years of matches and scrapes them."""
         missing_years = self.missing_match_years_for_wrestler(wrestler_id)
         logger.info(
             "Scraping {} missing years for {} ({})",
@@ -183,7 +191,6 @@ class ScrapingSession:
             wrestler_id,
         )
         for year in missing_years:
-
             self.scrape_matches(wrestler_id, year)
 
     def follow_wrestlers(self, wrestler_id: int, year, deep=False):
@@ -199,20 +206,17 @@ class ScrapingSession:
             )
 
         for wid in colleagues:
-
             if deep:
                 self.follow_wrestlers(wid, year)
             else:
                 self.refresh_wrestler(wid, year)
 
     def follow_random_wrestlers(self, count: int, year: int):
-
         random_ids = self.scrape_info.random_wrestlers(count, year)
         for wid in random_ids:
             self.follow_wrestlers(int(wid), year)
 
     def follow_random_wrestler(self, year: int):
-
         all_wrestler_ids = self.wrestler_db.all_wrestler_ids()
         wid = random.choice(all_wrestler_ids)
         self.follow_wrestlers(wid, year)
@@ -246,7 +250,7 @@ class ScrapingSession:
                     )
                 ),
             )
-            self.follow_wrestlers(wid, YEAR, deep=True)
+            self.refresh_wrestler(wid, YEAR)
 
     def update_wrestlers_without_profiles(self):
         """Yield all wrestler ids that have matches but no profile."""
@@ -292,12 +296,21 @@ class ScrapingSession:
         logger.info("Seeding database with known missing profiles...")
         missing_wrestlers = [9232]
         for wid in missing_wrestlers:
-
             self.wrestler_db.save_profile_for_wrestler(wid, {"Missing Profile": True})
             self.wrestler_db.update_wrestler_from_profile(wid)
             self.wrestler_db.save_matches_for_wrestler(wid, [])
 
     def main(self):
+        """Main scraping session logic."""
+        # set up the logging format
+        # to be slightly more compact
+        logger.remove()
+        logger.add(
+            sys.stderr,
+            format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <level>{message}</level>",
+            level="INFO",
+        )
+
         logger.success("Starting scraping session...")
         self.seed_database()
         for update_function in [
