@@ -14,7 +14,6 @@ def to_tuple(dict_obj):
 def extract_singles_matches(match_data: list[dict]) -> Generator[tuple]:
     """Given a list of matches, yield tuples of info about only singles matches between joshi wrestlers."""
     for res in match_data:
-
         if len(res["side_a"]) == 1 and len(res["side_b"]) == 1:
             if type(res["date"]) is not str:
                 logger.warning("Match with unknown date: {}", res)
@@ -32,11 +31,11 @@ def all_matches() -> set:
     all_matches = set()
     j_count = 0
     for wrestler in wrestler_db.all_wrestler_ids():
-        wdata = wrestler_db.get_wrestler(int(wrestler))
-        if not is_joshi(int(wrestler)):
+        wdata = wrestler_db.get_wrestler(wrestler)
+        if not is_joshi(wrestler):
             continue
         j_count += 1
-        for match in extract_singles_matches(wrestler_db.get_matches(int(wrestler))):
+        for match in extract_singles_matches(wrestler_db.get_matches(wrestler)):
             # print(match)
             all_matches.add(match)
 

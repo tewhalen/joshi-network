@@ -14,7 +14,6 @@ import functools
 import json
 import pathlib
 import sqlite3
-import sys
 from collections import Counter
 
 from loguru import logger
@@ -311,8 +310,8 @@ class WrestlerDb(DBWrapper):
         "return a list of wrestler ids sorted by number of matches descending"
         wrestler_match_counts = []
         for wid in self.all_wrestler_ids():
-            match_count = self.get_match_info(int(wid))["match_count"]
-            wrestler_match_counts.append((int(wid), match_count))
+            match_count = self.get_match_info(wid)["match_count"]
+            wrestler_match_counts.append((wid, match_count))
         return sorted(wrestler_match_counts, key=lambda x: x[1], reverse=True)
 
     def wrestler_exists(self, wrestler_id: int) -> bool:

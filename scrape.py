@@ -72,7 +72,7 @@ class WrestlerScrapeInfo:
         appearance_counter = Counter()
         opponent_tracker = defaultdict(set)
         for wrestler_id in self.wrestler_db.all_wrestler_ids():
-            colleagues = self.wrestler_db.get_all_colleagues(int(wrestler_id))
+            colleagues = self.wrestler_db.get_all_colleagues(wrestler_id)
             for wid in colleagues:
                 if not self.wrestler_db.wrestler_exists(wid):
                     appearance_counter[wid] += 1
@@ -196,7 +196,7 @@ class ScrapingSession:
     def follow_wrestlers(self, wrestler_id: int, year, deep=False):
         self.refresh_wrestler(wrestler_id, year)
 
-        colleagues = self.wrestler_db.get_all_colleagues(int(wrestler_id))
+        colleagues = self.wrestler_db.get_all_colleagues(wrestler_id)
         if colleagues:
             logger.info(
                 "Follow: {} ({}) has {} colleagues.",

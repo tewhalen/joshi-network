@@ -28,9 +28,7 @@ def is_japanese(wrestler_id: int):
     wrestler_info = wrestler_db.get_wrestler(wrestler_id)
     if wrestler_info.get("location") == "Japan":
         return True
-    elif "Japan" in wrestler_db.get_match_info(int(wrestler_id)).get(
-        "countries_worked", {}
-    ):
+    elif "Japan" in wrestler_db.get_match_info(wrestler_id).get("countries_worked", {}):
         return True
     promotion = wrestler_info.get("promotion", "")
     if "Japan" in promotion or promotion in joshi_promotions:
@@ -42,29 +40,28 @@ def all_joshi_japanese_wrestlers():
     """Return a set of all joshi wrestler IDs."""
     joshi_wrestlers = set()
     for w_id in wrestler_db.all_female_wrestlers():
-        if is_japanese(int(w_id)):
-            joshi_wrestlers.add(int(w_id))
+        if is_japanese(w_id):
+            joshi_wrestlers.add(w_id)
     return joshi_wrestlers
 
 
 def build_graph(from_wrestlers: set, threshold=8, year=2025):
-
     promotion_id = Identifier()
     wrestlers = set()
     interactions = Counter()
     match_counts = Counter()
     for w_id in from_wrestlers:
-        matches = wrestler_db.get_matches(int(w_id))
+        matches = wrestler_db.get_matches(w_id)
 
         for match in matches:
             if year and not match["date"].startswith(str(year)):
                 continue
-            match_counts[int(w_id)] += 1
+            match_counts[w_id] += 1
             for wrestler in match["wrestlers"]:
                 if wrestler == w_id:
                     continue
                 try:
-                    pairing = [int(w_id), int(wrestler)]
+                    pairing = [w_id, wrestler]
                 except TypeError:
                     print(repr(w_id), repr(wrestler))
                     continue
@@ -76,21 +73,21 @@ def build_graph(from_wrestlers: set, threshold=8, year=2025):
     print(match_counts.most_common(20))
     d = {}
     nodes = []
-    to_remove = {x for x in wrestlers if match_counts[int(x)] < threshold}
+    to_remove = {x for x in wrestlers if match_counts[x] < threshold}
     wrestlers = wrestlers.difference(to_remove)
     print("Removed", len(to_remove), "wrestlers with <", threshold, "matches")
     print("Remaining wrestlers:", len(wrestlers))
     # wrestlers = wrestlers.intersection(joshi_wrestlers())
     for wrestler in wrestlers:
-        promotion = get_promotion_with_location(int(wrestler))
+        promotion = get_promotion_with_location(wrestler)
 
         nodes.append(
             {
                 "id": str(wrestler),
                 "group": promotion_id[promotion],
                 "promotion": promotion,
-                "name": get_name(int(wrestler)),
-                "matches": math.log10(match_counts[int(wrestler)]),
+                "name": get_name(wrestler),
+                "matches": math.log10(match_counts[wrestler]),
             }
         )
     d["nodes"] = nodes
