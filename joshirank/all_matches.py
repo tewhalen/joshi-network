@@ -18,7 +18,9 @@ def extract_singles_matches(match_data: list[dict]) -> Generator[tuple]:
             if type(res["date"]) is not str:
                 logger.warning("Match with unknown date: {}", res)
                 continue
-            if wrestler_db.is_female(res["side_a"][0]) and wrestler_db.is_female(res["side_b"][0]):
+            if wrestler_db.is_female(res["side_a"][0]) and wrestler_db.is_female(
+                res["side_b"][0]
+            ):
                 yield (
                     ("date", res["date"]),
                     ("side_a", (res["side_a"][0],)),

@@ -330,18 +330,18 @@ class ScrapingSession:
 
 
 if __name__ == "__main__":
-    wrestler_db = reopen_rw()
-    scraper = ScrapingSession(wrestler_db)
+    with reopen_rw() as wrestler_db:
+        scraper = ScrapingSession(wrestler_db)
 
-    # logger.add(sys.stderr, level="INFO")
-    FORCE_SCRAPES = []
+        # logger.add(sys.stderr, level="INFO")
+        FORCE_SCRAPES = []
 
-    for wid in FORCE_SCRAPES:
-        scraper.refresh_wrestler(wid, YEAR, force=True)
+        for wid in FORCE_SCRAPES:
+            scraper.refresh_wrestler(wid, YEAR, force=True)
 
-        print(wrestler_db.get_wrestler(wid))
-        print(wrestler_db.get_match_info(wid))
-    if FORCE_SCRAPES:
-        sys.exit()
+            print(wrestler_db.get_wrestler(wid))
+            print(wrestler_db.get_match_info(wid))
+        if FORCE_SCRAPES:
+            sys.exit()
 
-    scraper.main()
+        scraper.main()

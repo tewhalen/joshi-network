@@ -15,6 +15,7 @@ import json
 import pathlib
 import sqlite3
 from collections import Counter
+from contextlib import contextmanager
 
 from loguru import logger
 
@@ -55,6 +56,15 @@ class WrestlerDb(DBWrapper):
         cursor.execute(
             """CREATE INDEX IF NOT EXISTS idx_wrestler_fem ON wrestlers (is_female)"""
         )
+        cursor.execute(
+            """CREATE INDEX IF NOT EXISTS idx_wrestler_updated ON wrestlers (last_updated)"""
+        )
+        cursor.execute(
+            """CREATE INDEX IF NOT EXISTS idx_wrestler_promotion ON wrestlers (promotion)"""
+        )
+        cursor.execute(
+            """CREATE INDEX IF NOT EXISTS idx_wrestler_location ON wrestlers (location)"""
+        )
         cursor.close()
         self.sqldb.commit()
 
@@ -73,6 +83,9 @@ class WrestlerDb(DBWrapper):
             year INTEGER NOT NULL DEFAULT 2025,
             PRIMARY KEY (wrestler_id, year) 
              ) """
+        )
+        cursor.execute(
+            """CREATE INDEX IF NOT EXISTS idx_matches_year ON matches (year)"""
         )
         cursor.close()
         self.sqldb.commit()
@@ -406,16 +419,35 @@ class WrestlerDb(DBWrapper):
                 yield wrestler_id
 
 
-# go ahead and open it read-only
-wrestler_db = WrestlerDb(pathlib.Path("data/joshi_wrestlers.y"), readonly=True)
+# Default read-only database instance for convenience
+_default_db_path = pathlib.Path("data/joshi_wrestlers.y")
+wrestler_db = WrestlerDb(_default_db_path, readonly=True)
 
 
+@contextmanager
 def reopen_rw():
-    # reopen wrestler_db as read/write
+    """Context manager for temporarily opening the database in read-write mode.
+
+    Usage:
+        with reopen_rw() as db:
+            db.save_profile_for_wrestler(...)
+
+    The database is automatically reopened as read-only when exiting the context.
+    """
     global wrestler_db
-    wrestler_db.close()
-    wrestler_db = WrestlerDb(pathlib.Path("data/joshi_wrestlers.y"), readonly=False)
-    return wrestler_db
+    old_db = wrestler_db
+    old_db.close()
+
+    try:
+        # Open in read-write mode
+        rw_db = WrestlerDb(_default_db_path, readonly=False)
+        # Update the global reference
+        wrestler_db = rw_db
+        yield rw_db
+    finally:
+        # Always restore read-only mode
+        rw_db.close()
+        wrestler_db = WrestlerDb(_default_db_path, readonly=True)
 
 
 @functools.lru_cache(maxsize=None)
