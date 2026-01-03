@@ -1,0 +1,820 @@
+interactions:
+- request:
+    body: null
+    headers:
+      accept-encoding:
+      - compress
+    method: GET
+    uri: https://www.cagematch.net/?id=2&nr=4629&page=4&year=2025
+  response:
+    body:
+      string: "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"\n    \"https://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n<html
+        xmlns=\"https://www.w3.org/1999/xhtml\" lang=\"en\">\n    <head>\n        <link
+        href=\"/2k16/css/2k16.css?20251027c\" rel=\"stylesheet\" type=\"text/css\"
+        />\n        <meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-15\"
+        />\n        <meta http-equiv=\"Content-Security-Policy-Report-Only\" content=\"require-trusted-types-for
+        'script'; default-src 'self'; script-src 'self'; connect-src 'self'; img-src
+        'self'; style-src 'unsafe-inline'; base-uri 'self'; form-action 'self'; object-src
+        'none'\" />\n        <meta name=\"viewport\" content=\"width=1120\" />\n        <meta
+        name=\"description\" content=\"Internet Wrestling Database\" />\n        <meta
+        name=\"author\" content=\"Philip Kreikenbohm\" />\n        <meta name=\"robots\"
+        content=\"noindex,nofollow\" />\n        <title>Matches &laquo; Emi Sakura
+        &laquo; Wrestlers Database &laquo; CAGEMATCH - The Internet Wrestling Database</title>\n<script
+        language=\"JavaScript\" id=\"erasable\" type=\"text/javascript\" defer>\n\n\t\t\t\t\t\twindow.onload=ChangeState;\n\t\t\t\t\t\t\n\n
+        \           function ChangeStateSearchBar( searchBar )\n            {\n                if
+        ( searchBar.value == \"Enter text here to search the database\")\n\t\t{\n
+        \                   searchBar.value = \"\";\n                    searchBar.style.color
+        = \"#000\";\n\t\t}\n\t\telse if ( searchBar.value == \"\" )\n\t\t{\n                    searchBar.value
+        = \"Enter text here to search the database\";\n                    searchBar.style.color
+        = \"#666\";\n\t\t}\n            }\n        \n\n\t\t\t\t\tfunction ChangeState()\n\t\t\t\t\t{\n\t\t\t\t\t
+        \   if ( document.getElementById(\"ParamSetState\").value == \"+\")\n\t\t\t\t\t
+        \   {\n\t\t\t\t\t        document.getElementById(\"TableParameters\").className
+        = \"TableParametersOn\";\n\t\t\t\t\t        document.getElementById(\"TableHeader\").className
+        = \"TableHeaderOn\";\n\t\t\t\t\t        document.getElementById(\"ParamSetState\").value
+        = \"-\";\n\t\t\t\t\t    }\n\t\t\t\t\t    else\n\t\t\t\t\t    {\n\t\t\t\t\t
+        \       document.getElementById(\"TableParameters\").className = \"TableParametersOff\";\n\t\t\t\t\t
+        \       document.getElementById(\"TableHeader\").className = \"TableHeaderOff\";\n\t\t\t\t\t
+        \       document.getElementById(\"ParamSetState\").value = \"+\";\n\t\t\t\t\t
+        \   }\n\t\t\t\t\t}\n\t\t\t\t\t\n</script>\n \n    </head>\n    <body class=\"TemplateBody\">\n
+        \       <div class=\"LayoutUserAccount LayoutWidth\"><a href=\"https://www.cagematch.net/de/\"><img
+        src=\"/2k16/img/german.png\" class=\"LayoutLanguage\" alt=\"Deutsch\" title=\"Deutsch\"
+        /></a><a href=\"https://www.cagematch.net/en/\"><img src=\"/2k16/img/english.png\"
+        class=\"LayoutLanguage\" alt=\"English\" title=\"English\" /></a><div class=\"UserHeader\">You
+        are on the public version of the site. | <a href=\"/r/?id=872\">Log In</a>
+        | <a href=\"/r/?id=871\">Register</a> | <a href=\"/r/?id=879\">Password lost?</a></div></div>\n
+        \       <div class=\"LayoutHeader\">\n            <div class=\"LayoutMainHeader
+        LayoutWidth\">\n                <div class=\"LayoutLogo\">\n<a href=\"?id=\"><img
+        class=\"HeaderLogoLeft\" src=\"/2k16/img/header/header_2022.webp\" alt=\"CAGEMATCH
+        Logo\" style=\"width:610px;height:100px;\" title=\"CAGEMATCH - The Internet
+        Wrestling Database\" /></a></div>\n                <div class=\"LayoutSearch\"><form
+        action=\"\" method=\"get\" id=\"Search\"><input name=\"id\" type=\"hidden\"
+        value=\"666\" /><input type=\"text\" name=\"search\" class=\"HeaderSearchInput\"
+        value=\"Search the site...\" onclick=\"changeStateHeaderSearchBar(this,'en')\"
+        onBlur=\"changeStateHeaderSearchBar(this,'en')\" /><input type=\"submit\"
+        class=\"HeaderSearchButton\" value=\"Search\" /></form></div>\n                <div
+        class=\"LayoutTopMenu\"><div class=\"TopMenu\"><ul><li><a href=\"?id=401\">About
+        Us</a></li><li><a href=\"?id=900\">Contact</a></li><li><a href=\"?id=777\">CAGEMATCH
+        Team</a></li><li><a href=\"https://www.youtube.com/user/CMPodcasts\">YouTube</a></li><li><a
+        href=\"https://www.patreon.com/bePatron?u=328386\">Patreon</a></li><ul></div></div>\n
+        \           </div>\n            <div class=\"LayoutMainMenu LayoutWidth\"><div
+        class=\"HeaderMenu\"><ul><li class=\"HeaderSubMenu\"><a href=\"#\">Wrestlers</a><ul><li><a
+        href=\"?id=2\">Overview</a></li><li><a href=\"?id=2&amp;view=workers\">Wrestlers</a></li><li><a
+        href=\"?id=2&amp;view=gimmicks\">Gimmicks</a></li><li><a href=\"?id=2&amp;view=statistics\">Top
+        Lists</a></li><li><a href=\"?id=2&amp;view=comments\">Comments</a></li><li><a
+        href=\"?id=2&amp;view=changes\">Changes</a></li></ul></li><li class=\"HeaderSubMenu\"><a
+        href=\"#\">Events</a><ul><li><a href=\"?id=1\">Overview</a></li><li><a href=\"?id=1&amp;view=results\">Results</a></li><li><a
+        href=\"?id=1&amp;view=tvppv\">TV + PPV</a></li><li><a href=\"?id=1&amp;view=cards\">Upcoming
+        Shows</a></li><li><a href=\"?id=1&amp;view=statistics\">Top Lists</a></li><li><a
+        href=\"?id=1&amp;view=search\">Advanced Search</a></li><li><a href=\"?id=1&amp;view=comments\">Comments</a></li><li><a
+        href=\"?id=1&amp;view=changes\">Changes</a></li></ul></li><li class=\"HeaderSubMenu\"><a
+        href=\"#\">Matches</a><ul><li><a href=\"?id=111\">Overview</a></li><li><a
+        href=\"?id=111&amp;view=list\">Matchguide</a></li><li><a href=\"?id=111&amp;view=statistics\">Top
+        Lists</a></li><li><a href=\"?id=111&amp;view=search\">Advanced Search</a></li><li><a
+        href=\"?id=111&amp;view=matchstatistics\">Statistics</a></li><li><a href=\"?id=111&amp;view=comments\">Comments</a></li><li><a
+        href=\"?id=111&amp;view=changes\">Changes</a></li></ul></li><li class=\"HeaderSubMenu\"><a
+        href=\"#\">Promotions</a><ul><li><a href=\"?id=8\">Overview</a></li><li><a
+        href=\"?id=8&amp;view=promotions\">Promotions</a></li><li><a href=\"?id=8&amp;view=names\">Promotion
+        Names</a></li><li><a href=\"?id=8&amp;view=statistics\">Top Lists</a></li><li><a
+        href=\"?id=8&amp;view=comments\">Comments</a></li><li><a href=\"?id=8&amp;view=changes\">Changes</a></li></ul></li><li
+        class=\"HeaderSubMenu\"><a href=\"#\">Titles</a><ul><li><a href=\"?id=5\">Overview</a></li><li><a
+        href=\"?id=5&amp;view=names\">Title Names</a></li><li><a href=\"?id=5&amp;view=titlechanges\">Title
+        Changes</a></li><li><a href=\"?id=5&amp;view=statistics\">Top Lists</a></li><li><a
+        href=\"?id=5&amp;view=comments\">Comments</a></li><li><a href=\"?id=5&amp;view=changes\">Changes</a></li></ul></li><li
+        class=\"HeaderSubMenu\"><a href=\"#\">Databases</a><ul><li><a href=\"?id=28\">Tag
+        Teams</a></li><li><a href=\"?id=29\">Stables</a></li><li><a href=\"?id=93\">Promos</a></li><li><a
+        href=\"?id=87\">Feuds</a></li><li><a href=\"?id=91\">Rivalries</a></li><li><a
+        href=\"?id=26\">Tournaments</a></li><li><a href=\"?id=97\">Awards</a></li><li><a
+        href=\"?id=65\">Books</a></li><li><a href=\"?id=223\">DVDs</a></li><li><a
+        href=\"?id=77\">Wrestling Games</a></li><li><a href=\"?id=89\">Movies</a></li><li><a
+        href=\"?id=66\">Themes</a></li></ul></li><li class=\"HeaderSubMenu\"><a href=\"#\">Other</a><ul><li><a
+        href=\"?id=13\">SOTW</a></li><li><a href=\"?id=555\">Articles</a></li><li><a
+        href=\"?id=128\">Podcasts</a></li><li><a href=\"?id=4\">Documentaries</a></li><li><a
+        href=\"?id=71\">Newsboard</a></li><li><a href=\"?id=790\">Changes Tracker</a></li><li><a
+        href=\"?view=roulette\">Random Item</a></li><li><a href=\"?id=68&amp;page=2\">Ratings
+        Center</a></li><li><a href=\"?id=403\">Ratings System Rules</a></li><li><a
+        href=\"?id=406\">Help</a></li></ul></li>\n</ul></div></div>\n        </div>\n
+        \       <div class=\"LayoutWidth\">\n            <div class=\"LayoutOptionsAndBody\">\n
+        \               <div class=\"LayoutOptions\">\n                    <div class=\"LayoutNavigationTree\"><div
+        class=\"NavigationTree BoxBgColor\">\n<span class=\"NavigationTreeBranch\"><a
+        href=\"?id=\">CAGEMATCH</a></span> &raquo; \n<span class=\"NavigationTreeBranch\"><a
+        href=\"?id=2\">Wrestlers Database</a></span> &raquo; \n<span class=\"NavigationTreeBranch\"><a
+        href=\"?id=2&nr=4629\">Emi Sakura</a></span> &raquo; \n<span class=\"NavigationTreeBranch\">Matches</span></div></div>\n
+        \                   <div class=\"LayoutPageOptions\"><div></div></div>\n                </div>\n
+        \               <div class=\"LayoutBodyHeader\"><div class=\"HeaderBox\"><h1
+        class=\"TextHeader\">Emi Sakura</h1><h2 class=\"TextSubHeader\">Also known
+        as Emi Motokawa, Kyoko Inoue #5</h2></div><ul class=\"ContentNavigator\"><li
+        class=\"ContentNavigatorItem\"><a href=\"?id=2&amp;nr=4629\">Overview</a></li><li
+        class=\"ContentNavigatorItem\"><a href=\"?id=2&amp;nr=4629&amp;page=9\">Articles</a></li><li
+        class=\"ContentNavigatorItem\"><a href=\"?id=2&amp;nr=4629&amp;page=20\">Career</a></li><li
+        class=\"ContentNavigatorItem\"><a href=\"?id=2&amp;nr=4629&amp;page=3\">Career
+        highlights</a></li><li class=\"ContentNavigatorItem\"><a href=\"?id=2&amp;nr=4629&amp;page=11\">Titles</a></li><li
+        class=\"ContentNavigatorItem ContentNavigatorPageActive\"><a href=\"?id=2&amp;nr=4629&amp;page=4\">Matches</a></li><li
+        class=\"ContentNavigatorItem\"><a href=\"?id=2&amp;nr=4629&amp;page=22\">Match
+        Statistics</a></li><li class=\"ContentNavigatorItem\"><a href=\"?id=2&amp;nr=4629&amp;page=10\">Matchguide</a></li><li
+        class=\"ContentNavigatorItem\"><a href=\"?id=2&amp;nr=4629&amp;page=16\">Tournaments</a></li><li
+        class=\"ContentNavigatorItem\"><a href=\"?id=2&amp;nr=4629&amp;page=8\">Tag
+        Teams &amp; Stables</a></li><li class=\"ContentNavigatorItem\"><a href=\"?id=2&amp;nr=4629&amp;page=14\">Entourage</a></li><li
+        class=\"ContentNavigatorItem\"><a href=\"?id=2&amp;nr=4629&amp;page=12\">Awards</a></li><li
+        class=\"ContentNavigatorItem\"><a href=\"?id=2&amp;nr=4629&amp;page=98\">Ratings</a></li><li
+        class=\"ContentNavigatorItem\"><a href=\"?id=2&amp;nr=4629&amp;page=99\">Comments</a></li></ul></div>\n
+        \               <div class=\"LayoutBody\">\n                    <div class=\"LayoutContent\"><div
+        class=\"Caption\"><a name=\"matches\" href=\"#matches\">Matches</a></div><div
+        class=\"SearchBar\"><form action=\"\" method=\"GET\"><input type=\"hidden\"
+        name=\"id\" value=\"2\" /><input type=\"hidden\" name=\"nr\" value=\"4629\"
+        /><input type=\"hidden\" name=\"page\" value=\"4\" /><input type=\"text\"
+        class=\"SearchBarInput\" style=\"color: #666\" name=\"search\" value=\"Enter
+        text here to search the database\" onclick=\"ChangeStateSearchBar(this)\"
+        onBlur=\"ChangeStateSearchBar(this)\" /><input type=\"submit\" class=\"SearchBarButton\"
+        value=\"Search\" /></form></div><div class=\"Table\"><div class=\"TableHeaderOff\"
+        id=\"TableHeader\"><input type=\"button\" class=\"TableHeaderParamSetState\"
+        id=\"ParamSetState\" onclick=\"ChangeState()\" value=\"+\" />Displaying items
+        1 to 45 of total 45 items that match the search parameters.</div><div class=\"TableParametersOff\"
+        id=\"TableParameters\"><form action=\"\" method=\"get\"><input type=\"hidden\"
+        name=\"id\" value=\"2\" /><input type=\"hidden\" name=\"nr\" value=\"4629\"
+        /><input type=\"hidden\" name=\"view\" value=\"\" /><input type=\"hidden\"
+        name=\"page\" value=\"4\" /><div class=\"FormTable\"><div class=\"FormRow\"><div
+        class=\"FormElementTitle\">Gimmick:</div><div class=\"FormElement\"><select
+        name=\"gimmick\" class=\"FormSelect\"><option value=\"\" selected class=\"FormSO\">All
+        gimmicks</option><option value=\"Emi Motokawa\" class=\"FormSO\">Emi Motokawa</option><option
+        value=\"Emi Sakura\" class=\"FormSO\">Emi Sakura</option><option value=\"Kyoko
+        Inoue #5\" class=\"FormSO\">Kyoko Inoue #5</option></select></div></div><div
+        class=\"FormRow\"><div class=\"FormElementTitle\">Year:</div><div class=\"FormElement\"><select
+        name=\"year\" class=\"FormSelect\"><option value=\"\" class=\"FormSO\">All
+        years</option><option value=\"2026\" class=\"FormSO\">2026</option><option
+        value=\"2025\" selected class=\"FormSO\">2025</option><option value=\"2024\"
+        class=\"FormSO\">2024</option><option value=\"2023\" class=\"FormSO\">2023</option><option
+        value=\"2022\" class=\"FormSO\">2022</option><option value=\"2021\" class=\"FormSO\">2021</option><option
+        value=\"2020\" class=\"FormSO\">2020</option><option value=\"2019\" class=\"FormSO\">2019</option><option
+        value=\"2018\" class=\"FormSO\">2018</option><option value=\"2017\" class=\"FormSO\">2017</option><option
+        value=\"2016\" class=\"FormSO\">2016</option><option value=\"2015\" class=\"FormSO\">2015</option><option
+        value=\"2014\" class=\"FormSO\">2014</option><option value=\"2013\" class=\"FormSO\">2013</option><option
+        value=\"2012\" class=\"FormSO\">2012</option><option value=\"2011\" class=\"FormSO\">2011</option><option
+        value=\"2010\" class=\"FormSO\">2010</option><option value=\"2009\" class=\"FormSO\">2009</option><option
+        value=\"2008\" class=\"FormSO\">2008</option><option value=\"2007\" class=\"FormSO\">2007</option><option
+        value=\"2006\" class=\"FormSO\">2006</option><option value=\"2005\" class=\"FormSO\">2005</option><option
+        value=\"2004\" class=\"FormSO\">2004</option><option value=\"2003\" class=\"FormSO\">2003</option><option
+        value=\"2002\" class=\"FormSO\">2002</option><option value=\"2001\" class=\"FormSO\">2001</option><option
+        value=\"2000\" class=\"FormSO\">2000</option><option value=\"1999\" class=\"FormSO\">1999</option><option
+        value=\"1998\" class=\"FormSO\">1998</option><option value=\"1997\" class=\"FormSO\">1997</option><option
+        value=\"1996\" class=\"FormSO\">1996</option><option value=\"1995\" class=\"FormSO\">1995</option></select></div></div><div
+        class=\"FormRow\"><div class=\"FormElementTitle\">Promotion:</div><div class=\"FormElement\"><select
+        name=\"promotion\" class=\"FormSelect\"><option value=\"\" selected class=\"FormSO\">All
+        promotions</option><option value=\"126\" class=\"FormSO\">3 Count Wrestling</option><option
+        value=\"137\" class=\"FormSO\">Active Advance Pro Wrestling</option><option
+        value=\"2287\" class=\"FormSO\">All Elite Wrestling</option><option value=\"295\"
+        class=\"FormSO\">All Japan Women's Pro-Wrestling</option><option value=\"249\"
+        class=\"FormSO\">Alternative Wrestling World</option><option value=\"2225\"
+        class=\"FormSO\">Best Body Japan Pro-Wrestling</option><option value=\"117\"
+        class=\"FormSO\">Big Japan Pro-Wrestling</option><option value=\"3845\" class=\"FormSO\">Bikkuri
+        Pro Wrestling Promotion</option><option value=\"1781\" class=\"FormSO\">Chinese
+        Wrestling Federation</option><option value=\"2143\" class=\"FormSO\">ChocoPro</option><option
+        value=\"118\" class=\"FormSO\">DDT Pro Wrestling</option><option value=\"3180\"
+        class=\"FormSO\">DEADLOCK Pro-Wrestling</option><option value=\"724\" class=\"FormSO\">DREAMWAVE
+        Wrestling</option><option value=\"3\" class=\"FormSO\">Extreme Championship
+        Wrestling</option><option value=\"242\" class=\"FormSO\">Frontier Martial-Arts
+        Wrestling</option><option value=\"608\" class=\"FormSO\">Fuyuki Army Promotion</option><option
+        value=\"2734\" class=\"FormSO\">Gatokunyan</option><option value=\"3203\"
+        class=\"FormSO\">Girl's Pro-Wrestling Unit Color's</option><option value=\"2793\"
+        class=\"FormSO\">Grapplemax</option><option value=\"2626\" class=\"FormSO\">Hokuto
+        Pro Wrestling</option><option value=\"1096\" class=\"FormSO\">Hong Kong Pro
+        Wrestling Federation</option><option value=\"156\" class=\"FormSO\">IBUKI</option><option
+        value=\"665\" class=\"FormSO\">Ice Ribbon</option><option value=\"200\" class=\"FormSO\">Independent
+        Wrestling Federation  </option><option value=\"83\" class=\"FormSO\">International
+        Wrestling Association Japan</option><option value=\"3230\" class=\"FormSO\">IWA
+        Kokusai</option><option value=\"120\" class=\"FormSO\">Japanese Women Pro-Wrestling
+        Project</option><option value=\"153\" class=\"FormSO\">JD Star Women's Pro
+        Wrestling</option><option value=\"4067\" class=\"FormSO\">JWA Tokai Pro Wrestling</option><option
+        value=\"2176\" class=\"FormSO\">King Of Pro Wrestling</option><option value=\"3395\"
+        class=\"FormSO\">Labor Of Love</option><option value=\"560\" class=\"FormSO\">Ladies
+        Legend Pro Wrestling-X</option><option value=\"122\" class=\"FormSO\">Lucha
+        Libre AAA World Wide</option><option value=\"2205\" class=\"FormSO\">Lucha
+        Libre And Laughs</option><option value=\"348\" class=\"FormSO\">M's Style
+        - New Style System</option><option value=\"116\" class=\"FormSO\">Major Girl's
+        Fighting AtoZ</option><option value=\"2522\" class=\"FormSO\">Malaysia Pro
+        Wrestling</option><option value=\"82\" class=\"FormSO\">Michinoku Pro Wrestling</option><option
+        value=\"2469\" class=\"FormSO\">Mystery Wrestling</option><option value=\"157\"
+        class=\"FormSO\">NEO Women's Pro Wrestling</option><option value=\"1097\"
+        class=\"FormSO\">New Taiwan Entertainment Wrestling</option><option value=\"81\"
+        class=\"FormSO\">Osaka Pro Wrestling</option><option value=\"1481\" class=\"FormSO\">Over
+        The Top Wrestling</option><option value=\"327\" class=\"FormSO\">OZ Academy</option><option
+        value=\"798\" class=\"FormSO\">PCW UK Live</option><option value=\"2529\"
+        class=\"FormSO\">Philippine Wrestling Revolution</option><option value=\"659\"
+        class=\"FormSO\">Pro-Wrestling: EVE</option><option value=\"3767\" class=\"FormSO\">Pro-Wrestling
+        Evolution</option><option value=\"602\" class=\"FormSO\">Pro Wrestling FREEDOMS</option><option
+        value=\"3107\" class=\"FormSO\">Pro Wrestling GRIND</option><option value=\"1533\"
+        class=\"FormSO\">Pro Wrestling HEAT UP</option><option value=\"1896\" class=\"FormSO\">Pro
+        Wrestling Land's End</option><option value=\"783\" class=\"FormSO\">Pro Wrestling
+        Secret Base</option><option value=\"3554\" class=\"FormSO\">Pro Wrestling
+        Wallabee</option><option value=\"326\" class=\"FormSO\">Pro Wrestling WAVE</option><option
+        value=\"13\" class=\"FormSO\">Pro Wrestling ZERO1</option><option value=\"1999\"
+        class=\"FormSO\">PURE-J</option><option value=\"752\" class=\"FormSO\">REINA</option><option
+        value=\"962\" class=\"FormSO\">Revolution Pro Wrestling </option><option value=\"4\"
+        class=\"FormSO\">Ring Of Honor</option><option value=\"1763\" class=\"FormSO\">SEAdLINNNG</option><option
+        value=\"154\" class=\"FormSO\">Sendai Girls' Pro Wrestling</option><option
+        value=\"2654\" class=\"FormSO\">SETUP Thailand Pro Wrestling</option><option
+        value=\"1139\" class=\"FormSO\">Singapore Pro Wrestling</option><option value=\"617\"
+        class=\"FormSO\">SMASH</option><option value=\"806\" class=\"FormSO\">Southside
+        Wrestling Entertainment</option><option value=\"3580\" class=\"FormSO\">SPARK
+        Joshi Puroresu Of America</option><option value=\"3719\" class=\"FormSO\">Super
+        FMW</option><option value=\"3801\" class=\"FormSO\">Super Hard Fighting Group
+        Kazushi Gumi</option><option value=\"559\" class=\"FormSO\">Super Professional
+        Wrestling Federation</option><option value=\"139\" class=\"FormSO\">The Woman</option><option
+        value=\"1779\" class=\"FormSO\">The Wrestling Revolver</option><option value=\"1393\"
+        class=\"FormSO\">Tokyo Gurentai</option><option value=\"1467\" class=\"FormSO\">Tokyo
+        Joshi Pro-Wrestling</option><option value=\"3486\" class=\"FormSO\">Underground
+        Wrestling EXIT</option><option value=\"615\" class=\"FormSO\">Union Pro Wrestling</option><option
+        value=\"3864\" class=\"FormSO\">Uprising Women Athletes</option><option value=\"746\"
+        class=\"FormSO\">World Woman Pro-Wrestling Diana</option><option value=\"745\"
+        class=\"FormSO\">World Wonder Ring Stardom</option><option value=\"1127\"
+        class=\"FormSO\">WRESTLE-1</option><option value=\"161\" class=\"FormSO\">Wrestle
+        Association-R</option><option value=\"1783\" class=\"FormSO\">Wrestle Square</option><option
+        value=\"2379\" class=\"FormSO\">Wrestling In Japan - Freelance Shows</option><option
+        value=\"2382\" class=\"FormSO\">Wrestling In The USA - Freelance Shows</option><option
+        value=\"121\" class=\"FormSO\">Wrestling Marvelous Future</option><option
+        value=\"4291\" class=\"FormSO\">Wrestling Xtreme Mania</option><option value=\"257\"
+        class=\"FormSO\">X Wrestling Alliance</option>\n</optgroup></select></div></div><div
+        class=\"FormRow\"><div class=\"FormElementTitle\">Region:</div><div class=\"FormElement\"><select
+        name=\"region\" class=\"FormSelect\"><option value=\"\" selected>All regions</option><option
+        value=\"Amerika\" class=\"FormSO\">North America</option><option value=\"Suedamerika\"
+        class=\"FormSO\">South America</option><option value=\"Asien\" class=\"FormSO\">Asia</option><option
+        value=\"Europa\" class=\"FormSO\">Europe</option><option value=\"Afrika\"
+        class=\"FormSO\">Africa</option><option value=\"Ozeanien\" class=\"FormSO\">Oceania</option><option
+        value=\"Rest der Welt\" class=\"FormSO\">Rest of the world</option>\n</optgroup></select></div></div><div
+        class=\"FormRow\"><div class=\"FormElementTitle\">Location:</div><div class=\"FormElement\"><input
+        type=\"text\" class=\"FormInput\" name=\"location\" value=\"\" /></div></div><div
+        class=\"FormRow\"><div class=\"FormElementTitle\">Arena:</div><div class=\"FormElement\"><input
+        type=\"text\" class=\"FormInput\" name=\"arena\" value=\"\" /></div></div><div
+        class=\"FormRow\"><div class=\"FormElementTitle\">Event&nbsp;type:</div><div
+        class=\"FormElement\"><select name=\"showtype\" class=\"FormSelect\"><option
+        value=\"\" selected>All types</option><optgroup label=\"Categories\"><option
+        value=\"TV-Show|Pay Per View|Premium Live Event|Online Stream\" class=\"FormSO\">Broadcasted
+        Shows</option><option value=\"Pay Per View|Premium Live Event\" class=\"FormSO\">PPVs
+        & PLEs</option><option value=\"Event|House\" class=\"FormSO\">Events &amp;
+        House Shows</option>\n</optgroup><optgroup label=\"Specific\"><option value=\"Event\"
+        class=\"FormSO\">Events</option><option value=\"TV-Show\" class=\"FormSO\">TV
+        Shows</option><option value=\"Pay Per View\" class=\"FormSO\">Pay Per Views</option><option
+        value=\"Premium Live Event\" class=\"FormSO\">Premium Live Events</option><option
+        value=\"Online Stream\" class=\"FormSO\">Online Streams</option><option value=\"House
+        Show\" class=\"FormSO\">House Shows</option>\n</optgroup></select></div></div><div
+        class=\"FormRow\"><div class=\"FormElementTitle\">Match&nbsp;constellation:</div><div
+        class=\"FormElement\"><select name=\"constellationType\" class=\"FormSelect\"><option
+        value=\"\" class=\"FormSO\">--- Please select ---</option><option value=\"Singles\"
+        class=\"FormSO\">only singles matches (1 vs. 1)</option><option value=\"Multi\"
+        class=\"FormSO\">only multi-person matches (1 vs. 1 vs. 1, ...)</option><option
+        value=\"Team\" class=\"FormSO\">only tag team matches (2 vs. 2, 3 vs. 3, ...)</option></select></div></div><div
+        class=\"FormRow\"><div class=\"FormElementTitle\">Worker:</div><div class=\"FormElement\"><input
+        type=\"text\" class=\"FormInput\" name=\"worker\" value=\"\" /></div></div></div><input
+        type=\"submit\" class=\"FormSubmitButton\" value=\"Submit\" /><input type=\"reset\"
+        class=\"FormResetButton\" value=\"Reset\" /></form></div><div class=\"TableContents\"><table
+        class=\"TBase TableBorderColor\"><tr class=\"THeaderRow\"><td class=\"THeaderCol
+        AlignCenter\" style=\"width: 30px\">#</td><td class=\"THeaderCol TColSeparator\"
+        style=\"white-space:nowrap;width:1%;\">Date</td><td class=\"THeaderCol TColSeparator\"
+        style=\"width:25px;\">Promotion</td><td class=\"THeaderCol TColSeparator\">Match</td></tr>\n<tr
+        class=\"TRow1 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">1</td><td
+        class=\"TCol TColSeparator\">31.12.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=21376&amp;name=Chie+Koishikawa\">Chie
+        Koishikawa</a>, <a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi Sakura</a>,
+        <a href=\"?id=2&amp;nr=21423&amp;name=Sayaka\">Sayaka</a> & <a href=\"?id=2&amp;nr=21426&amp;name=Tokiko+Kirihara\">Tokiko
+        Kirihara</a> defeat <a href=\"?id=2&amp;nr=29562&amp;name=Erii+Kanae\">Erii
+        Kanae</a>, <a href=\"?id=2&amp;nr=30089&amp;name=Hiyori+Yawata\">Hiyori Yawata</a>,
+        <a href=\"?id=2&amp;nr=31375&amp;name=Kaho+Hiromi\">Kaho Hiromi</a> & <a href=\"?id=2&amp;nr=19811&amp;name=Mei+Suruga\">Mei
+        Suruga</a> (17:50)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=443207\">ChocoPro
+        #497</a> - Online Stream @ Ichigaya Chocolate Hiroba in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow2 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">2</td><td
+        class=\"TCol TColSeparator\">05.12.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=659\"><img src=\"/site/main/img/ligen/normal/659.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"Pro-Wrestling: EVE\" title=\"Pro-Wrestling: EVE\" /></a></td><td class=\"TCol
+        TColSeparator\">\n<span class=\"MatchCard\"><a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a> defeats <a href=\"?id=2&amp;nr=27103&amp;name=Rayne+Leverkusen\">Rayne
+        Leverkusen</a> (12:56)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=436186\">EVE
+        142: Let's Slam Santa</a> - Online Stream @ The Big Penny Social in London,
+        England, UK</div></td></tr><tr class=\"TRow1 TRowOnlineStream\"><td class=\"TCol
+        AlignCenter TextLowlight\">3</td><td class=\"TCol TColSeparator\">02.11.2025</td><td
+        class=\"TCol TColSeparator\"><a href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a> & <a href=\"?id=2&amp;nr=19811&amp;name=Mei+Suruga\">Mei Suruga</a>
+        defeat <a href=\"?id=2&amp;nr=20998&amp;name=Haruka+Umesaki\">Haruka Umesaki</a>
+        & <a href=\"?id=2&amp;nr=25382&amp;name=Himiko+\">Himiko</a> (19:25)</span><div
+        class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=439145\">ChocoPro #487</a>
+        - Online Stream @ Ichigaya Chocolate Hiroba in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow2 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">4</td><td
+        class=\"TCol TColSeparator\">01.11.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a> defeats <a href=\"?id=2&amp;nr=29562&amp;name=Erii+Kanae\">Erii
+        Kanae</a> (7:06)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=438591\">ChocoPro
+        #486</a> - Online Stream @ Ichigaya Chocolate Hiroba in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow1 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">5</td><td
+        class=\"TCol TColSeparator\">01.11.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchType\">Halloween Battle Royal: </span><span class=\"MatchCard\"><a
+        href=\"?id=2&amp;nr=26532&amp;name=Miya+Yotsuba\">Miya Yotsuba</a> defeats
+        <a href=\"?id=2&amp;nr=20364&amp;name=Baliyan+Akki\">Baliyan Akki</a> and
+        <a href=\"?id=2&amp;nr=21376&amp;name=Chie+Koishikawa\">Chie Koishikawa</a>
+        and <a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi Sakura</a> and <a
+        href=\"?id=2&amp;nr=29562&amp;name=Erii+Kanae\">Erii Kanae</a> and <a href=\"?id=2&amp;nr=30089&amp;name=Hiyori+Yawata\">Hiyori
+        Yawata</a> and <a href=\"?id=2&amp;nr=19811&amp;name=Mei+Suruga\">Mei Suruga</a>
+        and <a href=\"?id=2&amp;nr=21423&amp;name=Sayaka\">Sayaka</a> and <a href=\"?id=2&amp;nr=9501&amp;name=Sayaka+Obihiro\">Sayaka
+        Obihiro</a> and <a href=\"?id=2&amp;nr=21426&amp;name=Tokiko+Kirihara\">Tokiko
+        Kirihara</a> (19:47)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=438591\">ChocoPro
+        #486</a> - Online Stream @ Ichigaya Chocolate Hiroba in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow2 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">6</td><td
+        class=\"TCol TColSeparator\">30.10.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a> defeats <a href=\"?id=2&amp;nr=31375&amp;name=Kaho+Hiromi\">Kaho
+        Hiromi</a> (4:59)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=438455\">ChocoPro
+        #485 Emi Sakura 30th Debut Anniversary Cult Heroine</a> - Online Stream @
+        Shinjuku FACE in Tokyo, Japan</div></td></tr><tr class=\"TRow1 TRowOnlineStream\"><td
+        class=\"TCol AlignCenter TextLowlight\">7</td><td class=\"TCol TColSeparator\">30.10.2025</td><td
+        class=\"TCol TColSeparator\"><a href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchType\">Gauntlet: </span><span class=\"MatchCard\"><a href=\"?id=2&amp;nr=6020&amp;name=Aoi+Kizuki\">Aoi
+        Kizuki</a>, <a href=\"?id=2&amp;nr=3709&amp;name=Kaori+Yoneyama\">Kaori Yoneyama</a>,
+        <a href=\"?id=2&amp;nr=19811&amp;name=Mei+Suruga\">Mei Suruga</a>, <a href=\"?id=2&amp;nr=1025&amp;name=Momoe+Nakanishi\">Momoe
+        Nakanishi</a> & <a href=\"?id=2&amp;nr=9434&amp;name=Riho\">Riho</a> defeat
+        <a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi Sakura</a> [3:2] (19:19)</span><div
+        class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=438455\">ChocoPro #485 Emi
+        Sakura 30th Debut Anniversary Cult Heroine</a> - Online Stream @ Shinjuku
+        FACE in Tokyo, Japan</div></td></tr><tr class=\"TRow2 TRowOnlineStream\"><td
+        class=\"TCol AlignCenter TextLowlight\">8</td><td class=\"TCol TColSeparator\">27.10.2025</td><td
+        class=\"TCol TColSeparator\"><a href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a> vs. <a href=\"?id=2&amp;nr=15843&amp;name=Mizuki\">Mizuki</a> -
+        Time Limit Draw (15:00)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=438227\">ChocoPro
+        #484</a> - Online Stream @ Ichigaya Chocolate Hiroba in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow1\"><td class=\"TCol AlignCenter TextLowlight\">9</td><td class=\"TCol
+        TColSeparator\">26.10.2025</td><td class=\"TCol TColSeparator\"><a href=\"?id=8&amp;nr=154\"><img
+        src=\"/site/main/img/ligen/normal/154.gif\" class=\"ImagePromotionLogoMini
+        ImagePromotionLogo_mini\" width=\"36\" height=\"18\" alt=\"Sendai Girls' Pro
+        Wrestling\" title=\"Sendai Girls' Pro Wrestling\" /></a></td><td class=\"TCol
+        TColSeparator\">\n<span class=\"MatchCard\"><a href=\"?id=28&amp;nr=9607&amp;name=Team+200kg\">Team
+        200kg</a> (<a href=\"?id=2&amp;nr=17195&amp;name=Chihiro+Hashimoto\">Chihiro
+        Hashimoto</a> & <a href=\"?id=2&amp;nr=18051&amp;name=Yuu\">Yuu</a>) defeat
+        <a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi Sakura</a> & <a href=\"?id=2&amp;nr=19811&amp;name=Mei+Suruga\">Mei
+        Suruga</a> (18:22)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=438095\">Sendai
+        Girls</a> - Event @ Shin-Kiba 1st RING in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow2 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">10</td><td
+        class=\"TCol TColSeparator\">26.10.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a> & <a href=\"?id=2&amp;nr=9476&amp;name=Hiragi+Kurumi\">Hiragi Kurumi</a>
+        defeat <a href=\"?id=2&amp;nr=26532&amp;name=Miya+Yotsuba\">Miya Yotsuba</a>
+        & <a href=\"?id=2&amp;nr=30292&amp;name=Soy\">Soy</a> (10:59)</span><div class=\"MatchEventLine\"><a
+        href=\"?id=1&amp;nr=438225\">ChocoPro #483</a> - Online Stream @ Ichigaya
+        Chocolate Hiroba in Tokyo, Japan</div></td></tr><tr class=\"TRow1 TRowOnlineStream\"><td
+        class=\"TCol AlignCenter TextLowlight\">11</td><td class=\"TCol TColSeparator\">24.10.2025</td><td
+        class=\"TCol TColSeparator\"><a href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a> & <a href=\"?id=2&amp;nr=19811&amp;name=Mei+Suruga\">Mei Suruga</a>
+        defeat <a href=\"?id=2&amp;nr=31375&amp;name=Kaho+Hiromi\">Kaho Hiromi</a>
+        & <a href=\"?id=2&amp;nr=9416&amp;name=Makoto\">Makoto</a> (15:23)</span><div
+        class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=437948\">ChocoPro #482</a>
+        - Online Stream @ Ichigaya Chocolate Hiroba in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow2 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">12</td><td
+        class=\"TCol TColSeparator\">20.10.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=745\"><img src=\"/site/main/img/ligen/normal/745__2021-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"World Wonder Ring Stardom\" title=\"World Wonder Ring Stardom\" /></a></td><td
+        class=\"TCol TColSeparator\">\n<span class=\"MatchCard\"><a href=\"?id=2&amp;nr=21342&amp;name=Ram+Kaicho\">Ram
+        Kaicho</a>, <a href=\"?id=2&amp;nr=9434&amp;name=Riho\">Riho</a> & <a href=\"?id=2&amp;nr=20416&amp;name=Rina\">Rina</a>
+        defeat <a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi Sakura</a>, <a
+        href=\"?id=2&amp;nr=20443&amp;name=Hina\">Hina</a> & <a href=\"?id=2&amp;nr=19839&amp;name=Yuna+Mizumori\">Yuna
+        Mizumori</a> (9:37)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=437575\">Stardom/Starlight
+        Kid Produce Starlight Kid Debut 10th Anniversary ~ Ki-chan Family In Crisis!?</a>
+        - Online Stream @ Shinjuku FACE in Tokyo, Japan</div></td></tr><tr class=\"TRow1
+        TRowPayPayView\"><td class=\"TCol AlignCenter TextLowlight\">13</td><td class=\"TCol
+        TColSeparator\">19.10.2025</td><td class=\"TCol TColSeparator\"><a href=\"?id=8&amp;nr=327\"><img
+        src=\"/site/main/img/ligen/normal/327.gif\" class=\"ImagePromotionLogoMini
+        ImagePromotionLogo_mini\" width=\"36\" height=\"18\" alt=\"OZ Academy\" title=\"OZ
+        Academy\" /></a></td><td class=\"TCol TColSeparator\">\n<span class=\"MatchCard\"><a
+        href=\"?id=2&amp;nr=2514&amp;name=Jaguar+Yokota\">Jaguar Yokota</a>, <a href=\"?id=2&amp;nr=19811&amp;name=Mei+Suruga\">Mei
+        Suruga</a> & <a href=\"?id=2&amp;nr=20470&amp;name=Momoka+Hanazono\">Momoka
+        Hanazono</a> defeat <a href=\"?id=2&amp;nr=20218&amp;name=Cohaku\">Cohaku</a>,
+        <a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi Sakura</a> & <a href=\"?id=2&amp;nr=4348&amp;name=Tsubasa+Kuragaki\">Tsubasa
+        Kuragaki</a> (11:10)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=437459\">OZ
+        Academy Judgement Waltz</a> - Pay Per View @ Yokohama Budokan in Yokohama,
+        Kanagawa, Japan</div></td></tr><tr class=\"TRow2 TRowOnlineStream\"><td class=\"TCol
+        AlignCenter TextLowlight\">14</td><td class=\"TCol TColSeparator\">18.10.2025</td><td
+        class=\"TCol TColSeparator\"><a href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a> & <a href=\"?id=2&amp;nr=3889&amp;name=Kuishinbo+Kamen\">Kuishinbo
+        Kamen</a> defeat <a href=\"?id=2&amp;nr=21376&amp;name=Chie+Koishikawa\">Chie
+        Koishikawa</a> & <a href=\"?id=2&amp;nr=10160&amp;name=Mochi+Natsumi\">Mochi
+        Natsumi</a> (14:50)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=437361\">ChocoPro
+        #481</a> - Online Stream @ Ichigaya Chocolate Hiroba in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow1 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">15</td><td
+        class=\"TCol TColSeparator\">21.09.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=2469\"><img src=\"/site/main/img/ligen/normal/2469__2023-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"Mystery Wrestling\" title=\"Mystery Wrestling\" /></a></td><td class=\"TCol
+        TColSeparator\">\n<span class=\"MatchCard\"><a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a> defeats <a href=\"?id=2&amp;nr=14089&amp;name=Alexia+Nicole\">Alexia
+        Nicole</a> (9:35)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=434855\">Mystery
+        Wrestling #18</a> - Online Stream @ Rec Room in Toronto, Ontario, Canada</div></td></tr><tr
+        class=\"TRow2 TRowTVShow\"><td class=\"TCol AlignCenter TextLowlight\">16</td><td
+        class=\"TCol TColSeparator\">10.09.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=2287\"><img src=\"/site/main/img/ligen/normal/2287_AEW
+        Dynamite_20240306-.gif\" class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\"
+        width=\"36\" height=\"18\" alt=\"All Elite Wrestling\" title=\"All Elite Wrestling\"
+        /></a></td><td class=\"TCol TColSeparator\">\n<span class=\"MatchCard\"><a
+        href=\"?id=2&amp;nr=12199&amp;name=Alex+Windsor\">Alex Windsor</a> & <a href=\"?id=2&amp;nr=9434&amp;name=Riho\">Riho</a>
+        defeat <a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi Sakura</a> &
+        <a href=\"?id=2&amp;nr=10962&amp;name=Mercedes+Mone\">Mercedes Mone</a> (9:43)</span><div
+        class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=424656\">AEW Dynamite #310</a>
+        - TV-Show @ 2300 Arena in Philadelphia, Pennsylvania, USA</div></td></tr><tr
+        class=\"TRow1 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">17</td><td
+        class=\"TCol TColSeparator\">23.08.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=200\"><img src=\"/site/main/img/ligen/normal/200.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"Independent Wrestling Federation  \" title=\"Independent Wrestling Federation
+        \ \" /></a></td><td class=\"TCol TColSeparator\">\n<span class=\"MatchCard\"><a
+        href=\"?id=2&amp;nr=19763&amp;name=Mefisto\">Mefisto</a> defeats <a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a> (11:38)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=434662\">IWF
+        Wrestling Fest 2025 - Part. 3</a> - Online Stream @ Lovely Loft in Moskau,
+        Russland</div></td></tr><tr class=\"TRow2 TRowOnlineStream\"><td class=\"TCol
+        AlignCenter TextLowlight\">18</td><td class=\"TCol TColSeparator\">10.08.2025</td><td
+        class=\"TCol TColSeparator\"><a href=\"?id=8&amp;nr=3180\"><img src=\"/site/main/img/ligen/normal/3180.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"DEADLOCK Pro-Wrestling\" title=\"DEADLOCK Pro-Wrestling\" /></a></td><td
+        class=\"TCol TColSeparator\">\n<span class=\"MatchType\">Battle Of The Best
+        2025 First Round: </span><span class=\"MatchCard\"><a href=\"?id=2&amp;nr=19811&amp;name=Mei+Suruga\">Mei
+        Suruga</a> defeats <a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi Sakura</a>
+        (13:03)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=419706\">DPW
+        Beast Coast 2025</a> - Online Stream @ White Eagle Hall in Jersey City, New
+        Jersey, USA</div></td></tr><tr class=\"TRow1 TRowOnlineStream\"><td class=\"TCol
+        AlignCenter TextLowlight\">19</td><td class=\"TCol TColSeparator\">21.07.2025</td><td
+        class=\"TCol TColSeparator\"><a href=\"?id=8&amp;nr=1467\"><img src=\"/site/main/img/ligen/normal/1467__20220828-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"Tokyo Joshi Pro-Wrestling\" title=\"Tokyo Joshi Pro-Wrestling\" /></a></td><td
+        class=\"TCol TColSeparator\">\n<span class=\"MatchCard\"><a href=\"?id=2&amp;nr=12878&amp;name=Chris+Brookes\">Chris
+        Brookes</a> & <a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi Sakura</a>
+        defeat <a href=\"?id=2&amp;nr=9038&amp;name=El+Desperado\">El Desperado</a>
+        & <a href=\"?id=2&amp;nr=18491&amp;name=Maki+Itoh\">Maki Itoh</a> (12:36)</span><div
+        class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=430577\">TJPW Summer Sun Princess
+        '25</a> - Online Stream @ Ota City General Gymnasium in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow2 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">20</td><td
+        class=\"TCol TColSeparator\">20.07.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a> & <a href=\"?id=2&amp;nr=19811&amp;name=Mei+Suruga\">Mei Suruga</a>
+        defeat <a href=\"?id=2&amp;nr=30089&amp;name=Hiyori+Yawata\">Hiyori Yawata</a>
+        & <a href=\"?id=2&amp;nr=31375&amp;name=Kaho+Hiromi\">Kaho Hiromi</a> (8:45)</span><div
+        class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=430453\">ChocoPro #463</a>
+        - Online Stream @ Ichigaya Chocolate Hiroba in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow1 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">21</td><td
+        class=\"TCol TColSeparator\">18.07.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a> defeats <a href=\"?id=2&amp;nr=30292&amp;name=Soy\">Soy</a> (9:01)</span><div
+        class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=430302\">ChocoPro #462 It's
+        Timeee</a> - Online Stream @ TOKYOSQUARE In Itabashi in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow2 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">22</td><td
+        class=\"TCol TColSeparator\">10.05.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a>, <a href=\"?id=2&amp;nr=1219&amp;name=Minoru+Fujita\">Minoru Fujita</a>
+        & <a href=\"?id=2&amp;nr=21426&amp;name=Tokiko+Kirihara\">Tokiko Kirihara</a>
+        defeat <a href=\"?id=2&amp;nr=20364&amp;name=Baliyan+Akki\">Baliyan Akki</a>,
+        <a href=\"?id=2&amp;nr=31375&amp;name=Kaho+Hiromi\">Kaho Hiromi</a> & <a href=\"?id=2&amp;nr=19811&amp;name=Mei+Suruga\">Mei
+        Suruga</a> (9:25)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=425279\">ChocoPro
+        #449</a> - Online Stream @ Ichigaya Chocolate Hiroba in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow1 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">23</td><td
+        class=\"TCol TColSeparator\">06.05.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=5266&amp;name=Chon+Shiryu\">Chon
+        Shiryu</a> & <a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi Sakura</a>
+        defeat <a href=\"?id=2&amp;nr=3887&amp;name=Antonio+Honda\">Antonio Honda</a>
+        & <a href=\"?id=2&amp;nr=30089&amp;name=Hiyori+Yawata\">Hiyori Yawata</a>
+        (9:17)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=424930\">ChocoPro
+        #448</a> - Online Stream @ Ichigaya Chocolate Hiroba in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow2 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">24</td><td
+        class=\"TCol TColSeparator\">05.05.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchType\"><a href=\"?id=5&amp;nr=3723\">Super Asia Title</a>: </span><span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=19811&amp;name=Mei+Suruga\">Mei
+        Suruga</a> (c) defeats <a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a> (20:23)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=424853\">ChocoPro
+        #447 Sakura-ism</a> - Online Stream @ TOKYOSQUARE In Itabashi in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow1 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">25</td><td
+        class=\"TCol TColSeparator\">04.05.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=31375&amp;name=Kaho+Hiromi\">Kaho
+        Hiromi</a>, <a href=\"?id=2&amp;nr=19811&amp;name=Mei+Suruga\">Mei Suruga</a>
+        & <a href=\"?id=2&amp;nr=8929&amp;name=TAMURA+GENE\">TAMURA GENE</a> defeat
+        <a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi Sakura</a>, <a href=\"?id=2&amp;nr=14276&amp;name=Rina+Yamashita\">Rina
+        Yamashita</a> & <a href=\"?id=2&amp;nr=21426&amp;name=Tokiko+Kirihara\">Tokiko
+        Kirihara</a> (10:24)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=424767\">ChocoPro
+        #446</a> - Online Stream @ Ichigaya Chocolate Hiroba in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow2 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">26</td><td
+        class=\"TCol TColSeparator\">02.05.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=4291\"><img src=\"/site/main/img/ligen/normal/4291.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"Wrestling Xtreme Mania\" title=\"Wrestling Xtreme Mania\" /></a></td><td
+        class=\"TCol TColSeparator\">\n<span class=\"MatchCard\"><a href=\"?id=28&amp;nr=9870&amp;name=BestBros\">BestBros</a>
+        (<a href=\"?id=2&amp;nr=20364&amp;name=Baliyan+Akki\">Baliyan Akki</a> & <a
+        href=\"?id=2&amp;nr=19811&amp;name=Mei+Suruga\">Mei Suruga</a>) defeat <a
+        href=\"?id=2&amp;nr=31921&amp;name=Dev+\">Dev</a> & <a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a> (9:55)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=424787\">WXM
+        Ground Zero: Powerbomb At WAVES Mumbai</a> - Online Stream @ NSCI Dome in
+        Mumbai, Maharashtra, Indien</div></td></tr><tr class=\"TRow1 TRowOnlineStream\"><td
+        class=\"TCol AlignCenter TextLowlight\">27</td><td class=\"TCol TColSeparator\">29.04.2025</td><td
+        class=\"TCol TColSeparator\"><a href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a>, <a href=\"?id=2&amp;nr=10160&amp;name=Mochi+Natsumi\">Mochi Natsumi</a>
+        & <a href=\"?id=2&amp;nr=21423&amp;name=Sayaka\">Sayaka</a> defeat <a href=\"?id=2&amp;nr=31375&amp;name=Kaho+Hiromi\">Kaho
+        Hiromi</a>, <a href=\"?id=2&amp;nr=26532&amp;name=Miya+Yotsuba\">Miya Yotsuba</a>
+        & <a href=\"?id=2&amp;nr=21426&amp;name=Tokiko+Kirihara\">Tokiko Kirihara</a>
+        (10:46)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=424417\">ChocoPro
+        #444</a> - Online Stream @ Ichigaya Chocolate Hiroba in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow2 TRowTVShow\"><td class=\"TCol AlignCenter TextLowlight\">28</td><td
+        class=\"TCol TColSeparator\">27.04.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=2379\"><img src=\"/site/main/img/ligen/normal/2379.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"Wrestling In Japan - Freelance Shows\" title=\"Wrestling In Japan -
+        Freelance Shows\" /></a></td><td class=\"TCol TColSeparator\">\n<span class=\"MatchType\">16
+        Man Torneo Cibernetico Elimination: </span><span class=\"MatchCard\"><a href=\"?id=2&amp;nr=25120&amp;name=Hera\">Hera</a>,
+        <a href=\"?id=2&amp;nr=23268&amp;name=Kira[+7]\">Kira</a>, <a href=\"?id=2&amp;nr=25350&amp;name=Olympia++\">Olympia</a>,
+        <a href=\"?id=2&amp;nr=20938&amp;name=Sadie+Gibbs\">Sadie Gibbs</a>, <a href=\"?id=2&amp;nr=32234&amp;name=Samantha+Black\">Samantha
+        Black</a>, <a href=\"?id=2&amp;nr=30572&amp;name=Tabata\">Tabata</a>, <a href=\"?id=2&amp;nr=21054&amp;name=Viva+Van\">Viva
+        Van</a> & <a href=\"?id=2&amp;nr=17272&amp;name=Willow+Nightingale\">Willow
+        Nightingale</a> defeat <a href=\"?id=2&amp;nr=20218&amp;name=Cohaku\">Cohaku</a>,
+        <a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi Sakura</a>, <a href=\"?id=2&amp;nr=9462&amp;name=Hikaru+Shida\">Hikaru
+        Shida</a>, <a href=\"?id=2&amp;nr=5111&amp;name=Hiroyo+Matsumoto\">Hiroyo
+        Matsumoto</a>, <a href=\"?id=2&amp;nr=19811&amp;name=Mei+Suruga\">Mei Suruga</a>,
+        <a href=\"?id=2&amp;nr=23763&amp;name=Sumika+Yanagawa\">Sumika Yanagawa</a>,
+        <a href=\"?id=2&amp;nr=20534&amp;name=Unagi+Sayaka\">Unagi Sayaka</a> & <a
+        href=\"?id=2&amp;nr=5114&amp;name=Yuki+Miyazaki\">Yuki Miyazaki</a> (40:52)</span><div
+        class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=424259\">Lucha Fiesta Especial</a>
+        - TV-Show @ Ryogoku Kokugikan in Tokyo, Japan</div></td></tr><tr class=\"TRow1
+        TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">29</td><td
+        class=\"TCol TColSeparator\">26.04.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a> defeats <a href=\"?id=2&amp;nr=31375&amp;name=Kaho+Hiromi\">Kaho
+        Hiromi</a> (6:04)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=424190\">ChocoPro
+        #443</a> - Online Stream @ Ichigaya Chocolate Hiroba in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow2 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">30</td><td
+        class=\"TCol TColSeparator\">25.04.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=3180\"><img src=\"/site/main/img/ligen/normal/3180.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"DEADLOCK Pro-Wrestling\" title=\"DEADLOCK Pro-Wrestling\" /></a></td><td
+        class=\"TCol TColSeparator\">\n<span class=\"MatchCard\"><a href=\"?id=28&amp;nr=9870&amp;name=BestBros\">BestBros</a>
+        (<a href=\"?id=2&amp;nr=20364&amp;name=Baliyan+Akki\">Baliyan Akki</a> & <a
+        href=\"?id=2&amp;nr=19811&amp;name=Mei+Suruga\">Mei Suruga</a>), <a href=\"?id=2&amp;nr=12878&amp;name=Chris+Brookes\">Chris
+        Brookes</a> & <a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi Sakura</a>
+        defeat <a href=\"?id=2&amp;nr=18642&amp;name=Miyuki+Takase\">Miyuki Takase</a>,
+        <a href=\"?id=2&amp;nr=8562&amp;name=Ryo+Mizunami\">Ryo Mizunami</a> & <a
+        href=\"?id=28&amp;nr=8333&amp;name=Violence+Is+Forever\">Violence Is Forever</a>
+        (<a href=\"?id=2&amp;nr=19426&amp;name=Dominic+Garrini\">Dominic Garrini</a>
+        & <a href=\"?id=2&amp;nr=20672&amp;name=Kevin+Ku\">Kevin Ku</a>) (14:02)</span><div
+        class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=419741\">DPW Spirit Rising
+        - Tag 2</a> - Online Stream @ Shin-Kiba 1st RING in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow1 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">31</td><td
+        class=\"TCol TColSeparator\">24.04.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=3180\"><img src=\"/site/main/img/ligen/normal/3180.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"DEADLOCK Pro-Wrestling\" title=\"DEADLOCK Pro-Wrestling\" /></a></td><td
+        class=\"TCol TColSeparator\">\n<span class=\"MatchCard\"><a href=\"?id=28&amp;nr=9870&amp;name=BestBros\">BestBros</a>
+        (<a href=\"?id=2&amp;nr=20364&amp;name=Baliyan+Akki\">Baliyan Akki</a> & <a
+        href=\"?id=2&amp;nr=19811&amp;name=Mei+Suruga\">Mei Suruga</a>) & <a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a> defeat <a href=\"?id=2&amp;nr=21376&amp;name=Chie+Koishikawa\">Chie
+        Koishikawa</a>, <a href=\"?id=2&amp;nr=3792&amp;name=Hagane+Shinno\">Hagane
+        Shinno</a> & <a href=\"?id=2&amp;nr=26532&amp;name=Miya+Yotsuba\">Miya Yotsuba</a>
+        (12:28)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=419740\">DPW
+        Spirit Rising - Tag 1</a> - Online Stream @ Shinjuku FACE in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow2 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">32</td><td
+        class=\"TCol TColSeparator\">20.04.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a> & <a href=\"?id=2&amp;nr=21423&amp;name=Sayaka\">Sayaka</a> defeat
+        <a href=\"?id=2&amp;nr=30089&amp;name=Hiyori+Yawata\">Hiyori Yawata</a> &
+        <a href=\"?id=2&amp;nr=27942&amp;name=Nonoka+Seto\">Nonoka Seto</a> (11:24)</span><div
+        class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=423894\">ChocoPro #442</a>
+        - Online Stream @ Ichigaya Chocolate Hiroba in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow1 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">33</td><td
+        class=\"TCol TColSeparator\">13.04.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a>, <a href=\"?id=2&amp;nr=26532&amp;name=Miya+Yotsuba\">Miya Yotsuba</a>
+        & <a href=\"?id=2&amp;nr=30292&amp;name=Soy\">Soy</a> defeat <a href=\"?id=28&amp;nr=9870&amp;name=BestBros\">BestBros</a>
+        (<a href=\"?id=2&amp;nr=20364&amp;name=Baliyan+Akki\">Baliyan Akki</a> & <a
+        href=\"?id=2&amp;nr=19811&amp;name=Mei+Suruga\">Mei Suruga</a>) & <a href=\"?id=2&amp;nr=31375&amp;name=Kaho+Hiromi\">Kaho
+        Hiromi</a> (16:29)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=423472\">ChocoPro
+        #441</a> - Online Stream @ Ichigaya Chocolate Hiroba in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow2 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">34</td><td
+        class=\"TCol TColSeparator\">06.04.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a> defeats <a href=\"?id=2&amp;nr=30089&amp;name=Hiyori+Yawata\">Hiyori
+        Yawata</a> (7:16)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=423063\">ChocoPro
+        #440</a> - Online Stream @ Ichigaya Chocolate Hiroba in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow1 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">35</td><td
+        class=\"TCol TColSeparator\">05.04.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a> & <a href=\"?id=2&amp;nr=21423&amp;name=Sayaka\">Sayaka</a> defeat
+        <a href=\"?id=2&amp;nr=31375&amp;name=Kaho+Hiromi\">Kaho Hiromi</a> & <a href=\"?id=2&amp;nr=19811&amp;name=Mei+Suruga\">Mei
+        Suruga</a> (12:18)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=422949\">ChocoPro
+        #439</a> - Online Stream @ Ichigaya Chocolate Hiroba in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow2 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">36</td><td
+        class=\"TCol TColSeparator\">31.03.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=12878&amp;name=Chris+Brookes\">Chris
+        Brookes</a>, <a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi Sakura</a>
+        & <a href=\"?id=2&amp;nr=27616&amp;name=Munetatsu+Nakamura\">Munetatsu Nakamura</a>
+        defeat <a href=\"?id=28&amp;nr=1706&amp;name=The+Brahman+Brothers\">The Brahman
+        Brothers</a> (<a href=\"?id=2&amp;nr=4570&amp;name=Brahman+Kei\">Brahman Kei</a>
+        & <a href=\"?id=2&amp;nr=4569&amp;name=Brahman+Shu\">Brahman Shu</a>) & <a
+        href=\"?id=2&amp;nr=20364&amp;name=Fighting+Ganesha\">Fighting Ganesha</a>
+        (13:48)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=422936\">ChocoPro
+        #438 Warring Era</a> - Online Stream @ TOKYOSQUARE In Itabashi in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow1 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">37</td><td
+        class=\"TCol TColSeparator\">30.03.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=28&amp;nr=9870&amp;name=BestBros\">BestBros</a>
+        (<a href=\"?id=2&amp;nr=20364&amp;name=Baliyan+Akki\">Baliyan Akki</a> & <a
+        href=\"?id=2&amp;nr=19811&amp;name=Mei+Suruga\">Mei Suruga</a>) defeat <a
+        href=\"?id=2&amp;nr=21376&amp;name=Chie+Koishikawa\">Chie Koishikawa</a> &
+        <a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi Sakura</a> (12:24)</span><div
+        class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=422585\">ChocoPro #437</a>
+        - Online Stream @ Ichigaya Chocolate Hiroba in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow2 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">38</td><td
+        class=\"TCol TColSeparator\">22.03.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=21376&amp;name=Chie+Koishikawa\">Chie
+        Koishikawa</a> vs. <a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi Sakura</a>
+        - Time Limit Draw (15:00)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=421951\">ChocoPro
+        #436</a> - Online Stream @ Ichigaya Chocolate Hiroba in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow1\"><td class=\"TCol AlignCenter TextLowlight\">39</td><td class=\"TCol
+        TColSeparator\">18.01.2025</td><td class=\"TCol TColSeparator\"><a href=\"?id=8&amp;nr=3395\"><img
+        src=\"/site/main/img/ligen/normal/3395.gif\" class=\"ImagePromotionLogoMini
+        ImagePromotionLogo_mini\" width=\"36\" height=\"18\" alt=\"Labor Of Love\"
+        title=\"Labor Of Love\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a> defeats <a href=\"?id=2&amp;nr=27213&amp;name=Harleen+Lopez\">Harleen
+        Lopez</a></span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=413758\">LOL
+        Live At God's Auto Body - Tag 2</a> - Event @ God's Auto Body in Philadelphia,
+        Pennsylvania, USA</div></td></tr><tr class=\"TRow2\"><td class=\"TCol AlignCenter
+        TextLowlight\">40</td><td class=\"TCol TColSeparator\">17.01.2025</td><td
+        class=\"TCol TColSeparator\"><a href=\"?id=8&amp;nr=3395\"><img src=\"/site/main/img/ligen/normal/3395.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"Labor Of Love\" title=\"Labor Of Love\" /></a></td><td class=\"TCol
+        TColSeparator\">\n<span class=\"MatchType\">Three Way: </span><span class=\"MatchCard\"><a
+        href=\"?id=2&amp;nr=19236&amp;name=Allie+Katch\">Allie Katch</a> and <a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a> defeat <a href=\"?id=2&amp;nr=1818&amp;name=Hallowicked\">Hallowicked</a></span><div
+        class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=413105\">LOL Live At God's
+        Auto Body - Tag 1</a> - Event @ God's Auto Body in Philadelphia, Pennsylvania,
+        USA</div></td></tr><tr class=\"TRow1 TRowOnlineStream\"><td class=\"TCol AlignCenter
+        TextLowlight\">41</td><td class=\"TCol TColSeparator\">13.01.2025</td><td
+        class=\"TCol TColSeparator\"><a href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=28&amp;nr=9870&amp;name=BestBros\">BestBros</a>
+        (<a href=\"?id=2&amp;nr=20364&amp;name=Baliyan+Akki\">Baliyan Akki</a> & <a
+        href=\"?id=2&amp;nr=19811&amp;name=Mei+Suruga\">Mei Suruga</a>) vs. <a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a> & <a href=\"?id=2&amp;nr=4568&amp;name=Masahiro+Takanashi\">Masahiro
+        Takanashi</a> - Time Limit Draw (20:00)</span><div class=\"MatchEventLine\"><a
+        href=\"?id=1&amp;nr=417089\">ChocoPro #422</a> - Online Stream @ Ichigaya
+        Chocolate Hiroba in Tokyo, Japan</div></td></tr><tr class=\"TRow2 TRowOnlineStream\"><td
+        class=\"TCol AlignCenter TextLowlight\">42</td><td class=\"TCol TColSeparator\">12.01.2025</td><td
+        class=\"TCol TColSeparator\"><a href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a> & <a href=\"?id=2&amp;nr=4568&amp;name=Masahiro+Takanashi\">Masahiro
+        Takanashi</a> defeat <a href=\"?id=2&amp;nr=29562&amp;name=Erii+Kanae\">Erii
+        Kanae</a> & <a href=\"?id=2&amp;nr=31375&amp;name=Kaho+Hiromi\">Kaho Hiromi</a>
+        (7:10)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=417037\">ChocoPro
+        #421</a> - Online Stream @ Ichigaya Chocolate Hiroba in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow1 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">43</td><td
+        class=\"TCol TColSeparator\">07.01.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=20364&amp;name=Baliyan+Akki\">Baliyan
+        Akki</a>, <a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi Sakura</a>
+        & <a href=\"?id=2&amp;nr=19811&amp;name=Mei+Suruga\">Mei Suruga</a> defeat
+        <a href=\"?id=2&amp;nr=21376&amp;name=Chie+Koishikawa\">Chie Koishikawa</a>,
+        <a href=\"?id=2&amp;nr=26532&amp;name=Miya+Yotsuba\">Miya Yotsuba</a> & <a
+        href=\"?id=2&amp;nr=27616&amp;name=Munetatsu+Nakamura\">Munetatsu Nakamura</a>
+        (15:25)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=416607\">ChocoPro
+        #420</a> - Online Stream @ Ichigaya Chocolate Hiroba in Tokyo, Japan</div></td></tr><tr
+        class=\"TRow2 TRowOnlineStream\"><td class=\"TCol AlignCenter TextLowlight\">44</td><td
+        class=\"TCol TColSeparator\">02.01.2025</td><td class=\"TCol TColSeparator\"><a
+        href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi
+        Sakura</a> & <a href=\"?id=2&amp;nr=31992&amp;name=Matcha\">Matcha</a> defeat
+        <a href=\"?id=2&amp;nr=30089&amp;name=Hiyori+Yawata\">Hiyori Yawata</a> &
+        <a href=\"?id=2&amp;nr=30292&amp;name=Soy\">Soy</a> (7:59)</span><div class=\"MatchEventLine\"><a
+        href=\"?id=1&amp;nr=416156\">ChocoPro #419</a> - Online Stream @ Ichigaya
+        Chocolate Hiroba in Tokyo, Japan</div></td></tr><tr class=\"TRow1 TRowOnlineStream\"><td
+        class=\"TCol AlignCenter TextLowlight\">45</td><td class=\"TCol TColSeparator\">01.01.2025</td><td
+        class=\"TCol TColSeparator\"><a href=\"?id=8&amp;nr=2143\"><img src=\"/site/main/img/ligen/normal/2143__20241006-.gif\"
+        class=\"ImagePromotionLogoMini ImagePromotionLogo_mini\" width=\"36\" height=\"18\"
+        alt=\"ChocoPro\" title=\"ChocoPro\" /></a></td><td class=\"TCol TColSeparator\">\n<span
+        class=\"MatchCard\"><a href=\"?id=2&amp;nr=21376&amp;name=Chie+Koishikawa\">Chie
+        Koishikawa</a>, <a href=\"?id=2&amp;nr=29562&amp;name=Erii+Kanae\">Erii Kanae</a>
+        & <a href=\"?id=2&amp;nr=3792&amp;name=Hagane+Shinnou\">Hagane Shinnou</a>
+        defeat <a href=\"?id=2&amp;nr=4629&amp;name=Emi+Sakura\">Emi Sakura</a>, <a
+        href=\"?id=2&amp;nr=30089&amp;name=Hiyori+Yawata\">Hiyori Yawata</a> & <a
+        href=\"?id=2&amp;nr=4568&amp;name=Masahiro+Takanashi\">Masahiro Takanashi</a>
+        (8:43)</span><div class=\"MatchEventLine\"><a href=\"?id=1&amp;nr=416026\">ChocoPro
+        #418</a> - Online Stream @ Ichigaya Chocolate Hiroba in Tokyo, Japan</div></td></tr></table></div></div></div>\n
+        \                   \n                </div>\n                \n            </div>\n
+        \           <div class=\"LayoutCopyright\"><div class=\"Impressum\"><a href=\"https://www.cagematch.net\">www.CAGEMATCH.net</a>
+        - &copy; 2001-2026 <a href=\"mailto:webmaster@cagematch.net\">Philip Kreikenbohm</a>
+        - <a href=\"?id=402\">Site Notice (German)</a></div></div>\n        </div>\n
+        \       \n        <script src=\"/2k16/scripts/cagematch.js?20251226\"></script>\n
+        \   </body>\n</html>\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000, h3-29=":443"; ma=2592000
+      Cache-Control:
+      - max-age=3600, public
+      Connection:
+      - keep-alive
+      Content-Security-Policy:
+      - upgrade-insecure-requests;
+      Content-Type:
+      - text/html; charset=iso-8859-15
+      Date:
+      - Sat, 03 Jan 2026 22:03:16 GMT
+      Referrer-Policy:
+      - strict-origin
+      Server:
+      - Sucuri/Cloudproxy
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Accept-Encoding
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      - DENY
+      X-Sucuri-Cache:
+      - MISS
+      X-Sucuri-ID:
+      - '20012'
+      X-XSS-Protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+version: 1
