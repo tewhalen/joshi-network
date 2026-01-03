@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 from loguru import logger
 
 import joshirank.cagematch.cm_match as cm_match
-from joshirank.joshidb import is_joshi, wrestler_db
+from joshirank.joshidb import wrestler_db
 
 
 def to_tuple(dict_obj):
@@ -18,7 +18,7 @@ def extract_singles_matches(match_data: list[dict]) -> Generator[tuple]:
             if type(res["date"]) is not str:
                 logger.warning("Match with unknown date: {}", res)
                 continue
-            if is_joshi(res["side_a"][0]) and is_joshi(res["side_b"][0]):
+            if wrestler_db.is_female(res["side_a"][0]) and wrestler_db.is_female(res["side_b"][0]):
                 yield (
                     ("date", res["date"]),
                     ("side_a", (res["side_a"][0],)),
@@ -32,7 +32,7 @@ def all_matches() -> set:
     j_count = 0
     for wrestler in wrestler_db.all_wrestler_ids():
         wdata = wrestler_db.get_wrestler(wrestler)
-        if not is_joshi(wrestler):
+        if not wrestler_db.is_female(wrestler):
             continue
         j_count += 1
         for match in extract_singles_matches(wrestler_db.get_matches(wrestler)):

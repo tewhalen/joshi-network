@@ -22,13 +22,6 @@ from joshirank.cagematch.profile import CMProfile
 from joshirank.db_wrapper import DBWrapper
 
 
-@functools.lru_cache(maxsize=None)
-def is_joshi(wrestler_id: int) -> bool:
-    """Determine if a wrestler is female based on their profile data."""
-
-    return wrestler_db.is_female(wrestler_id)
-
-
 class WrestlerDb(DBWrapper):
     def __init__(self, path: pathlib.Path, readonly=True):
         self.path = path
