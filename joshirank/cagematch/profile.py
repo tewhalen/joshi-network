@@ -99,3 +99,11 @@ class CMProfile:
         promotion = self.profile_data.get("Promotion", "Freelancer")
 
         return promotion_abbreviations.get(promotion, promotion)
+
+    def career_start(self) -> str | None:
+        """Return the career start date if available.
+
+        Returns the value of 'Beginning of in-ring career' field from the profile,
+        which may be a full date (YYYY-MM-DD) or just a year (YYYY).
+        """
+        return self.profile_data.get("Beginning of in-ring career")

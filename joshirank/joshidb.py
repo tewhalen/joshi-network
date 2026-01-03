@@ -48,6 +48,7 @@ class WrestlerDb(DBWrapper):
             last_updated TIMESTAMP,
             location TEXT,
             cm_profile_json TEXT,
+            career_start DATE,
            
             PRIMARY KEY (wrestler_id)  
         )
@@ -65,6 +66,14 @@ class WrestlerDb(DBWrapper):
         cursor.execute(
             """CREATE INDEX IF NOT EXISTS idx_wrestler_location ON wrestlers (location)"""
         )
+        # Only create career_start index if column exists
+        try:
+            cursor.execute(
+                """CREATE INDEX IF NOT EXISTS idx_wrestler_career_start ON wrestlers (career_start)"""
+            )
+        except sqlite3.OperationalError:
+            # Column doesn't exist yet, will be added later
+            pass
         cursor.close()
         self.sqldb.commit()
 
@@ -81,11 +90,15 @@ class WrestlerDb(DBWrapper):
             match_count INTEGER,
             countries_worked TEXT,
             year INTEGER NOT NULL DEFAULT 2025,
+            last_updated TIMESTAMP,
             PRIMARY KEY (wrestler_id, year) 
              ) """
         )
         cursor.execute(
             """CREATE INDEX IF NOT EXISTS idx_matches_year ON matches (year)"""
+        )
+        cursor.execute(
+            """CREATE INDEX IF NOT EXISTS idx_matches_updated ON matches (last_updated)"""
         )
         cursor.close()
         self.sqldb.commit()
@@ -162,13 +175,14 @@ class WrestlerDb(DBWrapper):
         self._execute_and_commit(
             """
         UPDATE wrestlers
-        SET is_female=?, name=?, promotion=?
+        SET is_female=?, name=?, promotion=?, career_start=?
         WHERE wrestler_id=?
         """,
             (
                 cm_profile.is_female(),
                 cm_profile.name(),
                 cm_profile.promotion(),
+                cm_profile.career_start(),
                 wrestler_id,
             ),
         )
@@ -181,8 +195,8 @@ class WrestlerDb(DBWrapper):
         return self._execute_and_commit(
             """
         INSERT OR REPLACE INTO matches
-        (wrestler_id, cm_matches_json, year)
-        VALUES (?, ?, ?)
+        (wrestler_id, cm_matches_json, year, last_updated)
+        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
         """,
             (wrestler_id, cm_matches_json, year),
         )
@@ -372,6 +386,19 @@ class WrestlerDb(DBWrapper):
         for row in rows:
             years.add(int(row[0]))
         return years
+
+    def get_matches_timestamp(self, wrestler_id: int, year: int) -> float:
+        """Return the timestamp when matches were last updated for a wrestler/year.
+
+        Returns 0 if no matches exist.
+        """
+        row = self._select_and_fetchone(
+            """SELECT last_updated FROM matches WHERE wrestler_id=? AND year=?""",
+            (wrestler_id, year),
+        )
+        if row and row[0]:
+            return datetime.datetime.fromisoformat(row[0]).timestamp()
+        return 0.0
 
     def get_match_info(self, wrestler_id: int, year: int = 2025) -> dict:
         """Return match metadata for a wrestler."""
