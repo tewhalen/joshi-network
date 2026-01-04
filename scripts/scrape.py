@@ -167,7 +167,12 @@ def setup_logging():
     is_flag=True,
     help="Show work queue statistics without scraping",
 )
-def cli(tjpw_only, wrestler_ids, dry_run, stats_only):
+@click.option(
+    "--force",
+    is_flag=True,
+    help="Force refresh all data, ignoring staleness checks",
+)
+def cli(tjpw_only, wrestler_ids, dry_run, stats_only, force):
     """Scrape wrestler profiles and matches from CageMatch.net."""
     setup_logging()
 
@@ -177,6 +182,11 @@ def cli(tjpw_only, wrestler_ids, dry_run, stats_only):
             return
 
         # Instantiate appropriate queue builder based on flags
+        if force:
+            logger.warning(
+                "FORCE MODE: Ignoring staleness checks, will refresh all data"
+            )
+
         if tjpw_only:
             from joshirank.queries import all_tjpw_wrestlers
 
@@ -184,13 +194,17 @@ def cli(tjpw_only, wrestler_ids, dry_run, stats_only):
             logger.info(
                 "TJPW-only mode: limiting to {} wrestlers", len(wrestler_filter)
             )
-            queue_builder = FilteredQueueBuilder(wrestler_db, wrestler_filter)
+            queue_builder = FilteredQueueBuilder(
+                wrestler_db, wrestler_filter, force_refresh=force
+            )
         elif wrestler_ids:
             wrestler_filter = set(int(wid.strip()) for wid in wrestler_ids.split(","))
             logger.info("Filtering to {} specific wrestler IDs", len(wrestler_filter))
-            queue_builder = FilteredQueueBuilder(wrestler_db, wrestler_filter)
+            queue_builder = FilteredQueueBuilder(
+                wrestler_db, wrestler_filter, force_refresh=force
+            )
         else:
-            queue_builder = QueueBuilder(wrestler_db)
+            queue_builder = QueueBuilder(wrestler_db, force_refresh=force)
 
         scraper = ScrapingSession(wrestler_db, queue_builder, dry_run=dry_run)
 

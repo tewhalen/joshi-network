@@ -31,16 +31,23 @@ class QueueBuilder:
     - Current year gets NORMAL priority (minimal data exists)
     """
 
-    def __init__(self, wrestler_db: WrestlerDb, current_year: int = YEAR):
+    def __init__(
+        self,
+        wrestler_db: WrestlerDb,
+        current_year: int = YEAR,
+        force_refresh: bool = False,
+    ):
         """Initialize queue builder.
 
         Args:
             wrestler_db: Database instance to query
             current_year: Current year for staleness calculations
+            force_refresh: If True, ignore staleness checks and refresh everything
         """
         self.wrestler_db = wrestler_db
         self.scrape_info = WrestlerScrapeInfo(wrestler_db, current_year=current_year)
         self.current_year = current_year
+        self.force_refresh = force_refresh
 
     def get_target_wrestlers(self) -> set[int]:
         """Get the set of wrestlers to consider for scraping.
@@ -89,7 +96,7 @@ class QueueBuilder:
 
         # 2. HIGH: Stale female wrestler profiles
         for wid in self.get_target_wrestlers():
-            if self.scrape_info.wrestler_info_is_stale(wid):
+            if self.force_refresh or self.scrape_info.wrestler_info_is_stale(wid):
                 priority = get_profile_refresh_priority(is_female=True)
                 queue.enqueue(
                     WorkItem(
@@ -102,7 +109,7 @@ class QueueBuilder:
         # 3. NORMAL: Stale non-female profiles
         if self.should_scrape_non_female_profiles():
             for wid in self.wrestler_db.all_wrestler_ids():
-                if self.scrape_info.wrestler_info_is_stale(wid):
+                if self.force_refresh or self.scrape_info.wrestler_info_is_stale(wid):
                     if not self.wrestler_db.is_female(wid):
                         priority = get_profile_refresh_priority(is_female=False)
                         queue.enqueue(
@@ -120,11 +127,13 @@ class QueueBuilder:
             importance = self.scrape_info.calculate_importance(wid)
 
             # Add missing current year only for recently active wrestlers
-            if self.current_year not in available_years:
+            if self.current_year not in available_years or self.force_refresh:
                 priority = get_match_refresh_priority(
                     self.current_year, self.current_year, is_active, importance
                 )
-                if priority < 100:  # Skip if priority is too low (inactive wrestlers)
+                if (
+                    self.force_refresh or priority < 100
+                ):  # Skip if priority is too low (inactive wrestlers)
                     queue.enqueue(
                         WorkItem(
                             priority=priority,
@@ -153,7 +162,7 @@ class QueueBuilder:
                         )
                     )
                 # Check if existing current year data is stale (every 14 days)
-                elif self.scrape_info.matches_need_refresh(
+                elif self.force_refresh or self.scrape_info.matches_need_refresh(
                     wid, self.current_year, is_gender_diverse=True
                 ):
                     queue.enqueue(
@@ -172,7 +181,7 @@ class QueueBuilder:
             importance = self.scrape_info.calculate_importance(wid)
 
             # Add missing previous year for all wrestlers
-            if (self.current_year - 1) not in available_years:
+            if (self.current_year - 1) not in available_years or self.force_refresh:
                 priority = get_match_refresh_priority(
                     self.current_year - 1, self.current_year, is_active, importance
                 )
@@ -186,16 +195,36 @@ class QueueBuilder:
                 )
 
             # Check stale years (for years already in database)
-            stale_years = self.scrape_info.get_stale_match_years(wid)
-            for year, priority in stale_years:
-                queue.enqueue(
-                    WorkItem(
-                        priority=priority,
-                        wrestler_id=wid,
-                        operation="refresh_matches",
-                        year=year,
+            if self.force_refresh:
+                # Force refresh all available years
+                for year in available_years:
+                    if year not in (
+                        self.current_year,
+                        self.current_year - 1,
+                    ):  # Already handled above
+                        priority = get_match_refresh_priority(
+                            year, self.current_year, is_active, importance
+                        )
+                        queue.enqueue(
+                            WorkItem(
+                                priority=priority,
+                                wrestler_id=wid,
+                                operation="refresh_matches",
+                                year=year,
+                            )
+                        )
+            else:
+                # Only refresh stale years
+                stale_years = self.scrape_info.get_stale_match_years(wid)
+                for year, priority in stale_years:
+                    queue.enqueue(
+                        WorkItem(
+                            priority=priority,
+                            wrestler_id=wid,
+                            operation="refresh_matches",
+                            year=year,
+                        )
                     )
-                )
 
         logger.info("Built work queue with {} items", len(queue))
         return queue
@@ -215,6 +244,7 @@ class FilteredQueueBuilder(QueueBuilder):
         wrestler_db: WrestlerDb,
         wrestler_filter: set[int],
         current_year: int = YEAR,
+        force_refresh: bool = False,
     ):
         """Initialize filtered queue builder.
 
@@ -222,8 +252,9 @@ class FilteredQueueBuilder(QueueBuilder):
             wrestler_db: Database instance to query
             wrestler_filter: Set of wrestler IDs to limit scraping to
             current_year: Current year for staleness calculations
+            force_refresh: If True, ignore staleness checks and refresh everything
         """
-        super().__init__(wrestler_db, current_year)
+        super().__init__(wrestler_db, current_year, force_refresh)
         self.wrestler_filter = wrestler_filter
 
     def get_target_wrestlers(self) -> set[int]:
