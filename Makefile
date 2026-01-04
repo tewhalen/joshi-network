@@ -1,13 +1,13 @@
 
 
 output/2025_ranking.html: data/joshi_wrestlers.sqlite3
-	uv run python ./do_rank.py
+	uv run python ./scripts/do_rank.py
 
 output/joshi_net-sm.json: data/joshi_wrestlers.sqlite3
-	uv run python ./generate_network.py
+	uv run python ./scripts/generate_network.py
 
 output/promotions.html:  data/joshi_wrestlers.sqlite3
-	uv run python ./promotion_plot.py
+	uv run python ./scripts/promotion_plot.py
 
 all: output/2025_ranking.html output/joshi_net-sm.json output/promotions.html
 
