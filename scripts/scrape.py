@@ -195,38 +195,28 @@ class ScrapingSession:
 
         if self.dry_run:
             logger.info("DRY RUN MODE: Showing what would be scraped...")
-            while True:
-                item = queue.dequeue()
-                if not item:
-                    break
-                name = self.wrestler_db.get_name(item.wrestler_id)
-                year_str = f" ({item.year})" if item.year else ""
-                logger.info(
-                    "[Priority {}] {} | {} ({}){}",
-                    item.priority,
-                    item.operation,
-                    name,
-                    item.wrestler_id,
-                    year_str,
-                )
-                processed += 1
-            logger.success("DRY RUN: Would process {} items", processed)
-            return
 
-        while self.ops_manager.keep_going():
+        while self.dry_run or self.ops_manager.keep_going():
             item = queue.dequeue()
             if not item:
                 break
 
             try:
-                if item.priority < 30:
-                    logger.debug(
-                        "Priority {} | w{} | {}",
+                if self.dry_run:
+                    # Log what would be done
+                    name = self.wrestler_db.get_name(item.wrestler_id)
+                    year_str = f" ({item.year})" if item.year else ""
+                    logger.info(
+                        "[Priority {}] {} | {} ({}){}",
                         item.priority,
-                        item.wrestler_id,
                         item.operation,
+                        name,
+                        item.wrestler_id,
+                        year_str,
                     )
-                self.ops_manager.execute_work_item(item)
+                else:
+                    self.ops_manager.execute_work_item(item)
+
                 processed += 1
                 if processed % 10 == 0:
                     logger.info(
@@ -239,7 +229,10 @@ class ScrapingSession:
             except Exception as e:
                 logger.error("Failed wrestler {}: {}", item.wrestler_id, e)
 
-        logger.success("Processed {}/{} items", processed, total)
+        if self.dry_run:
+            logger.success("DRY RUN: Would process {} items", processed)
+        else:
+            logger.success("Processed {}/{} items", processed, total)
 
     def show_stats(self, queue: WorkQueue):
         """Display statistics about the work queue without processing it."""
