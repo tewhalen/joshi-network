@@ -297,6 +297,10 @@ def parse_match(match: BeautifulSoup) -> dict:
     # Add team info to sides where applicable
     for side in sides:
         wrestlers_tuple = side["wrestlers"]
+        # Ensure it's a tuple (might be a list if loaded from JSON)
+        if isinstance(wrestlers_tuple, list):
+            wrestlers_tuple = tuple(wrestlers_tuple)
+            side["wrestlers"] = wrestlers_tuple
         team_info = team_map.get(wrestlers_tuple, {})
         side.update(team_info)
 
@@ -305,7 +309,7 @@ def parse_match(match: BeautifulSoup) -> dict:
     for side in sides:
         wrestlers.update(side["wrestlers"])
 
-    wrestlers = sorted(wrestlers)
+    wrestlers = list(sorted(wrestlers))
 
     d = m_date(match)
     if d == "Unknown":
