@@ -90,4 +90,5 @@ considered_female = {
     32870,  # ren konatsu
     26191,  # sazzy boatright
     9232,  # seleziya sparx
+    12132,  # veda scott
 }

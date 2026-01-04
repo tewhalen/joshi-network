@@ -279,7 +279,7 @@ class WrestlerDb(DBWrapper):
             # if the wrestler is gender-diverse, set is_female if the
             # majority of colleagues are female
             if self.percentage_of_female_colleagues(wrestler_id) > 0.5:
-                logger.info("Considering {} as female based on colleagues", wrestler_id)
+                logger.info("Gender-diverse {} -> female", wrestler_id)
                 self._execute_and_commit(
                     """
                 UPDATE wrestlers
@@ -290,7 +290,7 @@ class WrestlerDb(DBWrapper):
                 )
             else:
                 logger.info(
-                    "Gender-diverse {} not set to female based on colleagues",
+                    "Gender-diverse {} -> not female",
                     wrestler_id,
                 )
 

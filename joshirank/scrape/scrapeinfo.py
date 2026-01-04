@@ -63,10 +63,14 @@ class WrestlerScrapeInfo:
             return f"{int(age_seconds / 86400)} days"
 
     def find_missing_wrestlers(self):
-        """Yield all wrestlers present in matches but missing from the database."""
+        """Yield all wrestlers present in matches but missing from the database.
+        
+        Only searches through female wrestlers' colleagues to avoid discovering
+        male wrestlers who only work with other male/gender-diverse wrestlers.
+        """
         appearance_counter = Counter()
         opponent_tracker = defaultdict(set)
-        for wrestler_id in self.wrestler_db.all_wrestler_ids():
+        for wrestler_id in self.wrestler_db.all_female_wrestlers():
             colleagues = self.wrestler_db.get_all_colleagues(wrestler_id)
             for wid in colleagues:
                 if not self.wrestler_db.wrestler_exists(wid):

@@ -78,7 +78,14 @@ class ScrapingSession:
             # Calculate priority based on appearances and connections
             # More appearances = higher priority (lower number)
             # Base: 1-30 range depending on appearances
-            priority = max(0, PRIORITY_NORMAL - len(opponents))
+            n_opponents = len(opponents)
+            if n_opponents >= 20:
+                # Very connected wrestler
+                priority = PRIORITY_URGENT
+            elif n_opponents >= 10:
+                priority = PRIORITY_HIGH
+            else:
+                priority = PRIORITY_NORMAL + 10 - n_opponents
 
             queue.enqueue(
                 WorkItem(
@@ -120,7 +127,7 @@ class ScrapingSession:
             # Skip retired/inactive wrestlers to avoid wasting scraping quota
             # During transition period, lower priority since there's minimal new data
             if YEAR not in available_years and is_active:
-                base = PRIORITY_NORMAL if in_transition else PRIORITY_HIGH
+                base = PRIORITY_LOW if in_transition else PRIORITY_HIGH
                 priority = self.adjust_priority_by_importance(base, wid)
                 queue.enqueue(
                     WorkItem(
@@ -137,7 +144,7 @@ class ScrapingSession:
         # During transition period, lower priority since there's minimal new data
         for wid in self.wrestler_db.gender_diverse_wrestlers():
             available_years = self.wrestler_db.match_years_available(wid)
-            base = PRIORITY_NORMAL if in_transition else PRIORITY_HIGH
+            base = PRIORITY_LOW if in_transition else PRIORITY_HIGH
             priority = self.adjust_priority_by_importance(base, wid)
             if YEAR not in available_years:
                 queue.enqueue(
@@ -207,6 +214,13 @@ class ScrapingSession:
                 break
 
             try:
+                if item.priority < 30:
+                    logger.debug(
+                        "Priority {} | w{} | {}",
+                        item.priority,
+                        item.wrestler_id,
+                        item.operation,
+                    )
                 if item.operation == "refresh_profile":
                     self.refresh_profile(item.wrestler_id)
                 elif item.operation == "refresh_matches":
@@ -267,7 +281,7 @@ class ScrapingSession:
             return
 
         name = self.wrestler_db.get_name(wrestler_id)
-        logger.info("Scraping {} matches for {} ({})", year, name, wrestler_id)
+        logger.info("Scraping {} | {} ({})", year, name, wrestler_id)
         matches, available_years = self.scraper.scrape_matches(wrestler_id, year)
 
         self.wrestler_db.save_matches_for_wrestler(wrestler_id, matches, year)
