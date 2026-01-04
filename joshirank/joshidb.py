@@ -89,6 +89,7 @@ class WrestlerDb(DBWrapper):
             opponents TEXT,
             match_count INTEGER,
             countries_worked TEXT,
+            promotions_worked TEXT,
             year INTEGER NOT NULL DEFAULT 2025,
             last_updated TIMESTAMP,
             PRIMARY KEY (wrestler_id, year) 
@@ -240,24 +241,31 @@ class WrestlerDb(DBWrapper):
                 matches = json.loads(row[0])
                 year = row[1]
                 if not matches:
-                    return
-                opponents, countries_worked = Counter(), Counter()
+                    continue
+                opponents, countries_worked, promotions_worked = (
+                    Counter(),
+                    Counter(),
+                    Counter(),
+                )
                 for match in matches:
                     for wid in match["wrestlers"]:
                         if wid != wrestler_id:
                             opponents[wid] += 1
                     if "country" in match:
                         countries_worked[match["country"]] += 1
+                    if "promotion" in match and match["promotion"] is not None:
+                        promotions_worked[match["promotion"]] += 1
                 self._execute_and_commit(
                     """
                 UPDATE matches
-                SET opponents=?, match_count=?, countries_worked=?
+                SET opponents=?, match_count=?, countries_worked=?, promotions_worked=?
                 WHERE wrestler_id=? AND year=?
                 """,
                     (
                         json.dumps([x[0] for x in opponents.most_common()]),
                         len(matches),
                         json.dumps(dict(countries_worked)),
+                        json.dumps(dict(promotions_worked)),
                         wrestler_id,
                         year,
                     ),
@@ -436,7 +444,7 @@ class WrestlerDb(DBWrapper):
     def get_match_info(self, wrestler_id: int, year: int = 2025) -> dict:
         """Return match metadata for a wrestler."""
         row = self._select_and_fetchone_dict(
-            """SELECT opponents, match_count, countries_worked 
+            """SELECT opponents, match_count, countries_worked, promotions_worked 
             FROM matches WHERE wrestler_id=? AND year=?""",
             (wrestler_id, year),
         )
@@ -447,12 +455,16 @@ class WrestlerDb(DBWrapper):
             row["countries_worked"] = (
                 json.loads(row["countries_worked"]) if row["countries_worked"] else {}
             )
+            row["promotions_worked"] = (
+                json.loads(row["promotions_worked"]) if row["promotions_worked"] else {}
+            )
             return row
         else:
             return {
                 "opponents": [],
                 "match_count": 0,
                 "countries_worked": {},
+                "promotions_worked": {},
             }
 
     def get_all_colleagues(self, wrestler_id: int) -> set[int]:

@@ -16,7 +16,7 @@ dependencies = [
     "sparklines>=0.7.0",
     "jinja2>=3.1.6",
     "lxml>=6.0.2",
-
+    "click>=8.3.1",
 ]
 
 [project.optional-dependencies]
