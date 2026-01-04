@@ -34,12 +34,21 @@ class CageMatchScraper:
         else:
             raise ValueError(f"Failed to load profile for wrestler {wrestler_id}")
 
-    def scrape_matches(self, wrestler_id: int, year: int, start=0) -> list[dict]:
-        """Get all the matches for that wrestler_id for the given year."""
+    def scrape_matches(
+        self, wrestler_id: int, year: int, start=0
+    ) -> tuple[list[dict], set[int]]:
+        """Get all the matches for that wrestler_id for the given year.
+
+        Returns:
+            tuple of (matches, available_years) where available_years is the set of
+            all years that have match data according to the year dropdown.
+        """
         matches_url = (
             f"https://www.cagematch.net/?id=2&nr={wrestler_id}&page=4&year={year}"
         )
         all_matches = []
+        available_years = set()
+
         while True:
             time.sleep(self.sleep_delay)
             if start:
@@ -51,13 +60,18 @@ class CageMatchScraper:
             if r:
                 matches = list(cm_match.extract_match_data_from_match_page(r.text))
                 all_matches.extend(matches)
+
+                # Extract available years from first page only
+                if start == 0:
+                    available_years = cm_match.extract_years_from_match_page(r.text)
+
                 if len(matches) == 100:
                     start += 100
                 else:
                     break
             else:
                 break
-        return all_matches
+        return all_matches, available_years
 
     def match_years(self, wrestler_id: int) -> set[int]:
         """Get all years that wrestler has matches in."""

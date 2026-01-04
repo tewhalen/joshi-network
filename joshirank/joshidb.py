@@ -201,6 +201,34 @@ class WrestlerDb(DBWrapper):
             (wrestler_id, cm_matches_json, year),
         )
 
+    def create_stale_match_stubs(self, wrestler_id: int, years: set[int]):
+        """Create stub match entries for years that don't exist yet.
+
+        These stubs are marked as stale (old timestamp) so they'll be picked up
+        by the staleness policy in future scraping sessions.
+        """
+        existing_years = self.match_years_available(wrestler_id)
+        new_years = years - existing_years
+
+        if not new_years:
+            return
+
+        # Use a timestamp from 2 years ago to ensure they're marked as stale
+        stale_timestamp = datetime.datetime.now(
+            datetime.timezone.utc
+        ) - datetime.timedelta(days=730)
+        stale_timestamp_str = stale_timestamp.isoformat()
+
+        for year in new_years:
+            self._execute_and_commit(
+                """
+            INSERT OR IGNORE INTO matches
+            (wrestler_id, cm_matches_json, year, last_updated)
+            VALUES (?, ?, ?, ?)
+            """,
+                (wrestler_id, json.dumps([]), year, stale_timestamp_str),
+            )
+
     def update_matches_from_matches(self, wrestler_id: int):
         """Using the stored json matches for the wrestler, update their metadata in the SQL db."""
         rows = self._select_and_fetchall(
@@ -313,7 +341,9 @@ class WrestlerDb(DBWrapper):
             # convert last_updated to epoch timestamp
             if "last_updated" in row and row["last_updated"]:
                 # SQLite CURRENT_TIMESTAMP is in UTC, parse as UTC and convert to epoch
-                dt = datetime.datetime.fromisoformat(row["last_updated"]).replace(tzinfo=datetime.timezone.utc)
+                dt = datetime.datetime.fromisoformat(row["last_updated"]).replace(
+                    tzinfo=datetime.timezone.utc
+                )
                 row["timestamp"] = dt.timestamp()
             else:
                 row["timestamp"] = 0
@@ -397,7 +427,9 @@ class WrestlerDb(DBWrapper):
         )
         if row and row[0]:
             # SQLite CURRENT_TIMESTAMP is in UTC, parse as UTC and convert to epoch
-            dt = datetime.datetime.fromisoformat(row[0]).replace(tzinfo=datetime.timezone.utc)
+            dt = datetime.datetime.fromisoformat(row[0]).replace(
+                tzinfo=datetime.timezone.utc
+            )
             return dt.timestamp()
         return 0.0
 

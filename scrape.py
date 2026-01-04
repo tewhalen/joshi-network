@@ -78,7 +78,7 @@ class ScrapingSession:
             # Calculate priority based on appearances and connections
             # More appearances = higher priority (lower number)
             # Base: 1-30 range depending on appearances
-            priority = max(0, PRIORITY_NORMAL - count - len(opponents))
+            priority = max(0, PRIORITY_NORMAL - len(opponents))
 
             queue.enqueue(
                 WorkItem(
@@ -252,6 +252,14 @@ class ScrapingSession:
             updated_name = self.wrestler_db.get_name(wrestler_id)
             logger.info("Learned '{}' for ID {}", updated_name, wrestler_id)
 
+            # For newly discovered female wrestlers, create a stub match entry
+            # to ensure their matches get queued in the next session
+            if self.wrestler_db.is_female(wrestler_id):
+                logger.info(
+                    "Creating stub match entry for new female wrestler", wrestler_id
+                )
+                self.wrestler_db.create_stale_match_stubs(wrestler_id, {YEAR - 1})
+
     def refresh_matches_for_year(self, wrestler_id: int, year: int):
         """Scrape and update matches for a specific year."""
         if wrestler_id == -1:
@@ -260,9 +268,20 @@ class ScrapingSession:
 
         name = self.wrestler_db.get_name(wrestler_id)
         logger.info("Scraping {} matches for {} ({})", year, name, wrestler_id)
-        matches = self.scraper.scrape_matches(wrestler_id, year)
+        matches, available_years = self.scraper.scrape_matches(wrestler_id, year)
 
         self.wrestler_db.save_matches_for_wrestler(wrestler_id, matches, year)
+
+        # Create stale stubs for any newly discovered years
+        if available_years:
+            logger.debug(
+                "Discovered {} available years for {}: {}",
+                len(available_years),
+                name,
+                sorted(available_years),
+            )
+            self.wrestler_db.create_stale_match_stubs(wrestler_id, available_years)
+
         self.wrestler_db.update_matches_from_matches(wrestler_id)
         self.wrestler_db.update_wrestler_from_matches(wrestler_id)
 
