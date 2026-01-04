@@ -67,10 +67,13 @@ class OperationsManager:
             # For newly discovered female wrestlers, create a stub match entry
             # to ensure their matches get queued in the next session
             if self.wrestler_db.is_female(wrestler_id):
+                guess_year = self._guess_likely_match_year(scraped_profile)
                 logger.info(
-                    "Creating stub match entry for new female wrestler", wrestler_id
+                    "Creating stub match entry for new female wrestler {} for year {}",
+                    wrestler_id,
+                    guess_year,
                 )
-                self.wrestler_db.create_stale_match_stubs(wrestler_id, {YEAR - 1})
+                self.wrestler_db.create_stale_match_stubs(wrestler_id, {guess_year})
 
     def refresh_matches_for_year(self, wrestler_id: int, year: int):
         """Scrape and update matches for a specific year.
@@ -99,27 +102,78 @@ class OperationsManager:
             )
             self.wrestler_db.create_stale_match_stubs(wrestler_id, available_years)
 
+        # Update derived metadata from match data
         self.wrestler_db.update_matches_from_matches(wrestler_id)
         self.wrestler_db.update_wrestler_from_matches(wrestler_id)
+
+    def refresh_promotion(self, promotion_id: int):
+        """Scrape and update promotion data.
+
+        Args:
+            promotion_id: ID of promotion to scrape
+        """
+        logger.info("Scraping promotion {}", promotion_id)
+        try:
+            scraped_promotion = self.scraper.scrape_promotion(promotion_id)
+            self.wrestler_db.save_promotion(promotion_id, scraped_promotion.to_dict())
+            logger.success(
+                "Saved promotion {}: {}", promotion_id, scraped_promotion.name()
+            )
+        except Exception as e:
+            logger.error("Failed to scrape promotion {}: {}", promotion_id, e)
+
+    def _guess_likely_match_year(self, profile) -> int:
+        """Guess which year is most likely to have matches for a newly discovered wrestler.
+
+        Uses career start date to start scraping from the beginning:
+        - If career start year is available: use that year (to find earliest matches)
+        - If no career start data: use previous year (safest bet for active wrestlers)
+
+        Args:
+            profile: CMProfile object with career_start() method
+
+        Returns:
+            Year (int) most likely to have match data
+        """
+        career_start = profile.career_start()
+
+        if career_start:
+            # Extract year from career_start (could be YYYY-MM-DD or just YYYY)
+            try:
+                if len(career_start) == 4:  # Just year "YYYY"
+                    start_year = int(career_start)
+                else:  # Full date "YYYY-MM-DD"
+                    start_year = int(career_start.split("-")[0])
+
+                logger.debug("Career started in {}, using that year", start_year)
+                return start_year
+            except (ValueError, AttributeError) as e:
+                logger.debug("Could not parse career start '{}': {}", career_start, e)
+
+        # Fallback: previous year is safest bet for active wrestlers
+        logger.debug("No career start data, defaulting to previous year")
+        return YEAR - 1
 
     def execute_work_item(self, item: WorkItem):
         """Execute a work item by dispatching to the appropriate operation.
 
         Args:
-            item: WorkItem with operation, wrestler_id, and optional year
+            item: WorkItem with operation, object_id, and optional year
 
         Raises:
             ValueError: If operation type is unknown
         """
         if item.operation == "refresh_profile":
-            self.refresh_profile(item.wrestler_id)
+            self.refresh_profile(item.object_id)
         elif item.operation == "refresh_matches":
             if item.year is None:
                 logger.error(
                     "refresh_matches operation requires year for wrestler {}",
-                    item.wrestler_id,
+                    item.object_id,
                 )
                 return
-            self.refresh_matches_for_year(item.wrestler_id, item.year)
+            self.refresh_matches_for_year(item.object_id, item.year)
+        elif item.operation == "refresh_promotion":
+            self.refresh_promotion(item.object_id)
         else:
             raise ValueError(f"Unknown work item operation: {item.operation}")

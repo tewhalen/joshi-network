@@ -1,6 +1,7 @@
 """Queue builder for constructing work queues based on database staleness analysis."""
 
 import time
+from abc import abstractmethod
 
 from loguru import logger
 
@@ -57,6 +58,93 @@ class QueueBuilder:
         """
         return set(self.wrestler_db.all_female_wrestlers())
 
+    @abstractmethod
+    def build(self) -> WorkQueue:
+        """Build and return a work queue based on database state."""
+        pass
+
+    def stale_profile_tasks(self, wid):
+        if self.force_refresh or self.scrape_info.wrestler_info_is_stale(wid):
+            priority = get_profile_refresh_priority(is_female=True)
+
+            yield WorkItem(
+                priority=priority,
+                object_id=wid,
+                operation="refresh_profile",
+            )
+
+    def stale_match_tasks(self, wid):
+        """For a given wrestler, generate match-scraping tasks
+        for missing or stale match-years.
+
+        In general, any sucessful match-year scrape will separately
+        create any midding stub stale match-years in the database for
+        valid match-years.
+
+        So, we only need to ensure that active wrestlers have a task created
+        for the current year, since otherwise it won't be created until the previous
+        year refreshes (and that's on a slower refresh cycle.)
+
+        Other than that, we should rely upon created stale stubs to trigger
+        match-year refreshes on a normal schedule.
+        """
+
+        available_years = self.wrestler_db.match_years_available(wid)
+        is_active = self.scrape_info.is_recently_active(wid)
+        importance = self.scrape_info.calculate_importance(wid)
+
+        # Add missing current year only for recently active wrestlers
+        # Force Refresh won't do this for non-active wrestlers.
+        if is_active and (
+            self.current_year not in available_years or self.force_refresh
+        ):
+            priority = get_match_refresh_priority(
+                self.current_year, self.current_year, is_active, importance
+            )
+            if (
+                self.force_refresh or priority < 100
+            ):  # Skip if priority is too low (inactive wrestlers)
+                yield WorkItem(
+                    priority=priority,
+                    object_id=wid,
+                    operation="refresh_matches",
+                    year=self.current_year,
+                )
+
+        # Check stale years (for years already in database)
+        if not self.force_refresh:
+            stale_years = self.scrape_info.get_stale_match_years(wid)
+            for year, priority in stale_years:
+                yield WorkItem(
+                    priority=priority,
+                    object_id=wid,
+                    operation="refresh_matches",
+                    year=year,
+                )
+        else:
+            # Force refresh all available years
+            for year in available_years:
+                priority = get_match_refresh_priority(
+                    year, self.current_year, is_active, importance
+                )
+                yield WorkItem(
+                    priority=priority,
+                    object_id=wid,
+                    operation="refresh_matches",
+                    year=year,
+                )
+
+
+class FullQueueBuilder(QueueBuilder):
+    """Full queue builder that scrapes all available data.
+
+    This builder:
+    - Discovers missing wrestlers by analyzing the network
+    - Scrapes non-female and gender-diverse wrestler profiles
+    - Collects promotion metadata for frequently referenced promotions
+    - Implements comprehensive database maintenance
+    """
+
     def should_discover_missing(self) -> bool:
         """Whether to discover missing wrestlers from the network.
 
@@ -78,6 +166,13 @@ class QueueBuilder:
         """
         return True
 
+    def should_scrape_promotions(self) -> bool:
+        """Whether to scrape promotion metadata.
+
+        Returns True for full scraping, False when filtering.
+        """
+        return True
+
     def build(self) -> WorkQueue:
         """Build and return a work queue based on database state."""
         queue = WorkQueue()
@@ -89,61 +184,46 @@ class QueueBuilder:
                 queue.enqueue(
                     WorkItem(
                         priority=priority,
-                        wrestler_id=wid,
+                        object_id=wid,
                         operation="refresh_profile",
                     )
                 )
 
-        # 2. HIGH: Stale female wrestler profiles
+        # 2. Stale target wrestler profiles
         for wid in self.get_target_wrestlers():
-            if self.force_refresh or self.scrape_info.wrestler_info_is_stale(wid):
-                priority = get_profile_refresh_priority(is_female=True)
-                queue.enqueue(
-                    WorkItem(
-                        priority=priority,
-                        wrestler_id=wid,
-                        operation="refresh_profile",
-                    )
-                )
+            for item in self.stale_profile_tasks(wid):
+                queue.enqueue(item)
 
-        # 3. NORMAL: Stale non-female profiles
+        # 3. All stale non-female profiles
         if self.should_scrape_non_female_profiles():
             for wid in self.wrestler_db.all_wrestler_ids():
-                if self.force_refresh or self.scrape_info.wrestler_info_is_stale(wid):
-                    if not self.wrestler_db.is_female(wid):
-                        priority = get_profile_refresh_priority(is_female=False)
-                        queue.enqueue(
-                            WorkItem(
-                                priority=priority,
-                                wrestler_id=wid,
-                                operation="refresh_profile",
-                            )
-                        )
+                if not self.wrestler_db.is_female(wid):
+                    for task in self.stale_profile_tasks(wid):
+                        queue.enqueue(task)
 
         # 4. Match refreshes for female wrestlers (year-based priorities)
         for wid in self.get_target_wrestlers():
-            available_years = self.wrestler_db.match_years_available(wid)
-            is_active = self.scrape_info.is_recently_active(wid)
-            importance = self.scrape_info.calculate_importance(wid)
+            for match_item in self.stale_match_tasks(wid):
+                queue.enqueue(match_item)
 
-            # Add missing current year only for recently active wrestlers
-            if self.current_year not in available_years or self.force_refresh:
-                priority = get_match_refresh_priority(
-                    self.current_year, self.current_year, is_active, importance
-                )
-                if (
-                    self.force_refresh or priority < 100
-                ):  # Skip if priority is too low (inactive wrestlers)
+        # 5. LOW: Promotion data for frequently referenced promotions
+        if self.should_scrape_promotions():
+            promotion_counter = self._collect_promotion_ids()
+            for promotion_id, frequency in promotion_counter.most_common():
+                if self.force_refresh or self._promotion_is_stale(promotion_id):
+                    # Priority based on frequency of promotion in match data
+                    # Most common promotions get higher priority (lower number)
+                    # Scale: 0 (most common) to 95 (rare)
+                    priority = max(0, min(95, 95 - (frequency // 100)))
                     queue.enqueue(
                         WorkItem(
                             priority=priority,
-                            wrestler_id=wid,
-                            operation="refresh_matches",
-                            year=self.current_year,
+                            object_id=promotion_id,
+                            operation="refresh_promotion",
                         )
                     )
 
-        # 5. Gender-diverse wrestlers: always check current year matches
+        # 6. Gender-diverse wrestlers: always check current year matches
         if self.should_scrape_gender_diverse():
             for wid in self.wrestler_db.gender_diverse_wrestlers():
                 available_years = self.wrestler_db.match_years_available(wid)
@@ -156,7 +236,7 @@ class QueueBuilder:
                     queue.enqueue(
                         WorkItem(
                             priority=priority,
-                            wrestler_id=wid,
+                            object_id=wid,
                             operation="refresh_matches",
                             year=self.current_year,
                         )
@@ -168,66 +248,42 @@ class QueueBuilder:
                     queue.enqueue(
                         WorkItem(
                             priority=priority,
-                            wrestler_id=wid,
+                            object_id=wid,
                             operation="refresh_matches",
                             year=self.current_year,
                         )
                     )
 
-        # 6. Continue with rest of female wrestler match refreshes
-        for wid in self.get_target_wrestlers():
-            available_years = self.wrestler_db.match_years_available(wid)
-            is_active = self.scrape_info.is_recently_active(wid)
-            importance = self.scrape_info.calculate_importance(wid)
-
-            # Add missing previous year for all wrestlers
-            if (self.current_year - 1) not in available_years or self.force_refresh:
-                priority = get_match_refresh_priority(
-                    self.current_year - 1, self.current_year, is_active, importance
-                )
-                queue.enqueue(
-                    WorkItem(
-                        priority=priority,
-                        wrestler_id=wid,
-                        operation="refresh_matches",
-                        year=self.current_year - 1,
-                    )
-                )
-
-            # Check stale years (for years already in database)
-            if self.force_refresh:
-                # Force refresh all available years
-                for year in available_years:
-                    if year not in (
-                        self.current_year,
-                        self.current_year - 1,
-                    ):  # Already handled above
-                        priority = get_match_refresh_priority(
-                            year, self.current_year, is_active, importance
-                        )
-                        queue.enqueue(
-                            WorkItem(
-                                priority=priority,
-                                wrestler_id=wid,
-                                operation="refresh_matches",
-                                year=year,
-                            )
-                        )
-            else:
-                # Only refresh stale years
-                stale_years = self.scrape_info.get_stale_match_years(wid)
-                for year, priority in stale_years:
-                    queue.enqueue(
-                        WorkItem(
-                            priority=priority,
-                            wrestler_id=wid,
-                            operation="refresh_matches",
-                            year=year,
-                        )
-                    )
-
         logger.info("Built work queue with {} items", len(queue))
         return queue
+
+    def _collect_promotion_ids(self) -> dict:
+        """Collect all promotion IDs from match data with frequency counts."""
+        from collections import Counter
+
+        promotion_counter = Counter()
+
+        # Only look at female wrestlers' matches for promotion discovery
+        for wrestler_id in self.get_target_wrestlers():
+            for year in self.wrestler_db.match_years_available(wrestler_id):
+                match_info = self.wrestler_db.get_match_info(wrestler_id, year)
+                promotions_worked = match_info.get("promotions_worked", {})
+
+                for promotion_id, count in promotions_worked.items():
+                    try:
+                        promotion_counter[int(promotion_id)] += count
+                    except (ValueError, TypeError):
+                        continue
+
+        return promotion_counter
+
+    def _promotion_is_stale(self, promotion_id: int) -> bool:
+        """Check if a promotion needs updating."""
+        if not self.wrestler_db.promotion_exists(promotion_id):
+            return True
+
+        timestamp = self.wrestler_db.get_promotion_timestamp(promotion_id)
+        return self.scrape_info.staleness_policy.promotion_is_stale(timestamp)
 
 
 class FilteredQueueBuilder(QueueBuilder):
@@ -262,14 +318,19 @@ class FilteredQueueBuilder(QueueBuilder):
         all_female = set(self.wrestler_db.all_female_wrestlers())
         return all_female.intersection(self.wrestler_filter)
 
-    def should_discover_missing(self) -> bool:
-        """Don't discover missing wrestlers when filtering."""
-        return False
+    def build(self) -> WorkQueue:
+        """Build and return a work queue based on database state."""
+        queue = WorkQueue()
 
-    def should_scrape_non_female_profiles(self) -> bool:
-        """Don't scrape non-female profiles when filtering."""
-        return False
+        # 1. Stale target profiles
+        for wid in self.get_target_wrestlers():
+            for item in self.stale_profile_tasks(wid):
+                queue.enqueue(item)
 
-    def should_scrape_gender_diverse(self) -> bool:
-        """Don't scrape gender-diverse wrestlers when filtering."""
-        return False
+        # 2. Stale match-years for target wrestlers (year-based priorities)
+        for wid in self.get_target_wrestlers():
+            for item in self.stale_match_tasks(wid):
+                queue.enqueue(item)
+
+        logger.info("Built work queue with {} items", len(queue))
+        return queue

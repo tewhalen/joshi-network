@@ -68,6 +68,17 @@ class StalenessPolicy:
             threshold = self.DAYS_180 if is_active else self.DAYS_365
             return age > threshold
 
+    def promotion_is_stale(self, timestamp: float) -> bool:
+        """Check if promotion data needs updating.
+
+        Promotions are updated very infrequently (365 days).
+        """
+        if timestamp == 0:
+            return True
+
+        age = time.time() - timestamp
+        return age > self.DAYS_365
+
     def match_priority(self, year: int, is_female: bool, is_active: bool = True) -> int:
         """Calculate priority for match updates based on year and activity.
 

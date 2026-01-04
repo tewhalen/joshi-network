@@ -125,12 +125,20 @@ class WrestlerScrapeInfo:
 
         Used to determine if we should check current year matches.
         Inactive wrestlers (no matches in recent years) are skipped for current year.
-        """
-        available_years = self.wrestler_db.match_years_available(wrestler_id)
 
-        # Check if they have matches in previous 2 years
-        recent_years = {self.current_year - 1, self.current_year - 2}
-        return bool(available_years & recent_years)
+        Ignores stub records (empty match lists) to avoid treating wrestlers as active
+        when only placeholder data exists.
+        """
+        # Check if they have actual matches (not just stubs) in previous 2 years
+        recent_years = [self.current_year - 1, self.current_year - 2]
+
+        for year in recent_years:
+            match_info = self.wrestler_db.get_match_info(wrestler_id, year)
+            match_count = match_info.get("match_count", 0)
+            if match_count > 0:
+                return True
+
+        return False
 
     def matches_need_refresh(
         self, wrestler_id: int, year: int, is_gender_diverse: bool = False

@@ -13,7 +13,7 @@ from datetime import datetime
 
 from tabulate import tabulate
 
-from joshirank.joshidb import get_name, wrestler_db
+from joshirank.joshidb import get_name, get_promotion_name, wrestler_db
 
 
 def format_timestamp(timestamp: float) -> str:
@@ -174,8 +174,10 @@ def display_wrestler_stats(wrestler_id: int):
         print("\n🏢 PROMOTIONS WORKED")
         print("-" * 80)
         promo_data = []
-        for promotion, count in stats["promotions_worked"][:10]:
-            promo_data.append([promotion, count])
+        for promotion_id, count in stats["promotions_worked"][:10]:
+            # Try to get promotion name, fall back to ID if not available
+            promo_name = get_promotion_name(int(promotion_id))
+            promo_data.append([promo_name, count])
         print(tabulate(promo_data, headers=["Promotion", "Matches"], tablefmt="simple"))
         if len(stats["promotions_worked"]) > 10:
             print(f"... and {len(stats['promotions_worked']) - 10} more promotions")

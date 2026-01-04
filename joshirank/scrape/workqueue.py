@@ -6,7 +6,9 @@ from typing import Optional
 @dataclass(order=True)
 class WorkItem:
     priority: int = field(compare=True)
-    wrestler_id: int = field(compare=False)
+    object_id: int = field(
+        compare=False
+    )  # Wrestler ID or Promotion ID depending on operation
     operation: str = field(compare=False)
     year: Optional[int] = field(default=None, compare=False)
     force: bool = field(default=False, compare=False)
@@ -22,13 +24,14 @@ class WorkQueue:
     def enqueue(self, item: WorkItem):
         """Add item if not already queued.
 
-        Automatically filters out sentinel value wrestler_id = -1.
+        Automatically filters out sentinel value object_id = -1.
         """
         # Skip sentinel value -1 (used for missing wrestlers in match data)
-        if item.wrestler_id == -1:
+        if item.object_id == -1:
             return
 
-        key = (item.wrestler_id, item.operation, item.year)
+        key = (item.object_id, item.operation, item.year)
+
         if key not in self._seen:
             heapq.heappush(self._queue, item)
             self._seen.add(key)

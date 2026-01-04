@@ -5,6 +5,7 @@ from loguru import logger
 
 import joshirank.cagematch.cm_match as cm_match
 import joshirank.cagematch.profile as profile
+from joshirank.cagematch.promotion import CMPromotion
 
 
 class CageMatchScraper:
@@ -33,6 +34,16 @@ class CageMatchScraper:
             return profile.CMProfile.from_html(wrestler_id, r.text)
         else:
             raise ValueError(f"Failed to load profile for wrestler {wrestler_id}")
+
+    def scrape_promotion(self, promotion_id: int) -> CMPromotion:
+        url = f"https://www.cagematch.net/?id=8&nr={promotion_id}"
+        time.sleep(self.sleep_delay)
+        r = self.session.get(url)
+        self.requests_made += 1
+        if r:
+            return CMPromotion.from_html(promotion_id, r.text)
+        else:
+            raise ValueError(f"Failed to load promotion {promotion_id}")
 
     def scrape_matches(
         self, wrestler_id: int, year: int, start=0

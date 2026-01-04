@@ -12,7 +12,11 @@ from loguru import logger
 
 from joshirank.joshidb import WrestlerDb, reopen_rw
 from joshirank.scrape.operations import OperationsManager
-from joshirank.scrape.queue_builder import FilteredQueueBuilder, QueueBuilder
+from joshirank.scrape.queue_builder import (
+    FilteredQueueBuilder,
+    FullQueueBuilder,
+    QueueBuilder,
+)
 from joshirank.scrape.workqueue import WorkQueue
 
 YEAR = time.localtime().tm_year
@@ -97,16 +101,26 @@ class ScrapingSession:
             try:
                 if self.dry_run:
                     # Log what would be done
-                    name = self.wrestler_db.get_name(item.wrestler_id)
-                    year_str = f" ({item.year})" if item.year else ""
-                    logger.info(
-                        "[Priority {}] {} | {} ({}){}",
-                        item.priority,
-                        item.operation,
-                        name,
-                        item.wrestler_id,
-                        year_str,
-                    )
+                    if item.operation == "refresh_promotion":
+                        promo_name = self.wrestler_db.get_promotion_name(item.object_id)
+                        logger.info(
+                            "[Priority {}] {} | {} ({})",
+                            item.priority,
+                            item.operation,
+                            promo_name,
+                            item.object_id,
+                        )
+                    else:
+                        name = self.wrestler_db.get_name(item.object_id)
+                        year_str = f" ({item.year})" if item.year else ""
+                        logger.info(
+                            "[Priority {}] {} | {} ({}){}",
+                            item.priority,
+                            item.operation,
+                            name,
+                            item.object_id,
+                            year_str,
+                        )
                 else:
                     self.ops_manager.execute_work_item(item)
 
@@ -120,7 +134,7 @@ class ScrapingSession:
                     )
 
             except Exception as e:
-                logger.error("Failed wrestler {}: {}", item.wrestler_id, e)
+                logger.error("Failed processing {}: {}", item.object_id, e)
 
         if self.dry_run:
             logger.success("DRY RUN: Would process {} items", processed)
@@ -140,7 +154,7 @@ class ScrapingSession:
         operations = Counter()
         priorities = Counter()
         years = Counter()
-        wrestlers = set()
+        objects = set()  # Could be wrestlers or promotions
 
         # Peek at all items without dequeueing
         temp_items = []
@@ -154,7 +168,7 @@ class ScrapingSession:
             priorities[priority_bucket] += 1
             if item.year:
                 years[item.year] += 1
-            wrestlers.add(item.wrestler_id)
+            objects.add(item.object_id)
 
         # Re-queue items
         for item in temp_items:
@@ -172,7 +186,7 @@ class ScrapingSession:
         for year, count in sorted(years.items(), reverse=True):
             logger.info("  {}: {} items", year, count)
 
-        logger.info("\nUnique wrestlers: {}", len(wrestlers))
+        logger.info("\nUnique objects (wrestlers/promotions): {}", len(objects))
         logger.info("=" * 50)
 
     def main(self):
@@ -271,7 +285,7 @@ def cli(tjpw_only, wrestler_ids, dry_run, stats_only, force, no_backup):
                 wrestler_db, wrestler_filter, force_refresh=force
             )
         else:
-            queue_builder = QueueBuilder(wrestler_db, force_refresh=force)
+            queue_builder = FullQueueBuilder(wrestler_db, force_refresh=force)
 
         scraper = ScrapingSession(wrestler_db, queue_builder, dry_run=dry_run)
 

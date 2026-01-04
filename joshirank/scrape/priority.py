@@ -47,16 +47,31 @@ def calculate_missing_wrestler_priority(n_opponents: int) -> int:
         n_opponents: Number of unique opponents/connections
 
     Returns:
-        Priority value (1-40 range)
+        Priority value (1-99 range)
+
+    Priority tiers:
+    - 20+ opponents: URGENT (1) - very connected, likely active wrestler
+    - 10-19 opponents: HIGH (10) - well connected
+    - 5-9 opponents: NORMAL (30-34) - moderately connected
+    - 3-4 opponents: LOW (60-62) - minimally connected
+    - 1-2 opponents: VERY LOW (90-92) - likely one-off appearance
     """
     if n_opponents >= 20:
-        # Very connected wrestler
+        # Very connected wrestler - likely active/important
         return PRIORITY_URGENT
     elif n_opponents >= 10:
+        # Well connected - should check
         return PRIORITY_HIGH
+    elif n_opponents >= 5:
+        # Moderately connected - normal priority
+        return PRIORITY_NORMAL + (9 - n_opponents)  # 30-34
+    elif n_opponents >= 3:
+        # Minimally connected - low priority
+        return 60 + (4 - n_opponents)  # 60-62
     else:
-        # Less connected - lower priority, scaled by connections
-        return PRIORITY_NORMAL + 10 - n_opponents
+        # Very few connections (1-2 opponents) - very low priority
+        # These are likely one-off appearances or guest wrestlers
+        return 90 + (2 - n_opponents)  # 90-92
 
 
 def get_profile_refresh_priority(is_female: bool) -> int:
@@ -101,7 +116,7 @@ def get_match_refresh_priority(
         if not is_active:
             # Skip inactive wrestlers for current year
             return 999  # Very low priority (effectively skip)
-        base = PRIORITY_LOW if in_transition else PRIORITY_HIGH
+        base = 90 if in_transition else PRIORITY_HIGH
         return adjust_priority_by_importance(base, importance)
 
     elif year == current_year - 1:

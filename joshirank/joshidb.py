@@ -78,6 +78,7 @@ class WrestlerDb(DBWrapper):
         self.sqldb.commit()
 
         self._create_matches_table()
+        self._create_promotions_table()
 
     def _create_matches_table(self):
         """Create the matches table if it does not exist."""
@@ -100,6 +101,28 @@ class WrestlerDb(DBWrapper):
         )
         cursor.execute(
             """CREATE INDEX IF NOT EXISTS idx_matches_updated ON matches (last_updated)"""
+        )
+        cursor.close()
+        self.sqldb.commit()
+
+    def _create_promotions_table(self):
+        """Create the promotions table if it does not exist."""
+        cursor = self.sqldb.cursor()
+        cursor.execute(
+            """CREATE TABLE IF NOT EXISTS promotions (
+            promotion_id INTEGER PRIMARY KEY,
+            name TEXT,
+            founded TEXT,
+            country TEXT,
+            cm_promotion_json TEXT,
+            last_updated TIMESTAMP
+            )"""
+        )
+        cursor.execute(
+            """CREATE INDEX IF NOT EXISTS idx_promotion_name ON promotions (name)"""
+        )
+        cursor.execute(
+            """CREATE INDEX IF NOT EXISTS idx_promotion_updated ON promotions (last_updated)"""
         )
         cursor.close()
         self.sqldb.commit()
@@ -493,6 +516,101 @@ class WrestlerDb(DBWrapper):
             if self._is_gender_diverse(wrestler_id):
                 yield wrestler_id
 
+    def save_promotion(self, promotion_id: int, promotion_data: dict):
+        """Save promotion data to the database.
+        
+        Args:
+            promotion_id: CageMatch promotion ID
+            promotion_data: Dict with promotion info from parse_promotion_page()
+        """
+        try:
+            cm_promotion_json = json.dumps(promotion_data)
+        except:
+            logger.error(
+                "Could not serialize promotion data for promotion ID {}: {}",
+                promotion_id,
+                promotion_data,
+            )
+            raise
+        
+        name = promotion_data.get("Name", "")
+        founded = promotion_data.get("Founded", "")
+        country = promotion_data.get("Country", "")
+        
+        self._execute_and_commit(
+            """
+        INSERT OR REPLACE INTO promotions
+        (promotion_id, name, founded, country, cm_promotion_json, last_updated)
+        VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        """,
+            (promotion_id, name, founded, country, cm_promotion_json),
+        )
+
+    def get_promotion(self, promotion_id: int) -> dict | None:
+        """Get promotion data by ID.
+        
+        Returns:
+            Dict with promotion info, or None if not found
+        """
+        row = self._select_and_fetchone_dict(
+            """SELECT * FROM promotions WHERE promotion_id=?""",
+            (promotion_id,),
+        )
+        if row:
+            # Parse timestamp if present
+            if "last_updated" in row and row["last_updated"]:
+                dt = datetime.datetime.fromisoformat(row["last_updated"]).replace(
+                    tzinfo=datetime.timezone.utc
+                )
+                row["timestamp"] = dt.timestamp()
+            return row
+        return None
+
+    def get_promotion_name(self, promotion_id: int) -> str:
+        """Get the name of a promotion by ID.
+        
+        Returns:
+            Promotion name, or str(promotion_id) if not found
+        """
+        row = self._select_and_fetchone(
+            """SELECT name FROM promotions WHERE promotion_id=?""",
+            (promotion_id,),
+        )
+        if row and row[0]:
+            return row[0]
+        return str(promotion_id)
+
+    def promotion_exists(self, promotion_id: int) -> bool:
+        """Check if a promotion exists in the database."""
+        row = self._select_and_fetchone(
+            """SELECT 1 FROM promotions WHERE promotion_id=?""",
+            (promotion_id,),
+        )
+        return row is not None
+
+    def all_promotion_ids(self) -> list[int]:
+        """Return a list of all promotion IDs in the database."""
+        rows = self._select_and_fetchall(
+            """SELECT promotion_id FROM promotions""", ()
+        )
+        return [row[0] for row in rows]
+
+    def get_promotion_timestamp(self, promotion_id: int) -> float:
+        """Get the last update timestamp for a promotion.
+        
+        Returns 0 if promotion not found.
+        """
+        row = self._select_and_fetchone(
+            """SELECT last_updated FROM promotions WHERE promotion_id=?""",
+            (promotion_id,),
+        )
+        if row and row[0]:
+            dt = datetime.datetime.fromisoformat(row[0]).replace(
+                tzinfo=datetime.timezone.utc
+            )
+            return dt.timestamp()
+        return 0.0
+
 
 # Default read-only database instance for convenience
 _default_db_path = pathlib.Path("data/joshi_wrestlers.y")
@@ -528,6 +646,19 @@ def reopen_rw():
 @functools.lru_cache(maxsize=None)
 def get_name(wrestler_id: int) -> str:
     return wrestler_db.get_name(wrestler_id)
+
+
+@functools.lru_cache(maxsize=None)
+def get_promotion_name(promotion_id: int) -> str:
+    """Get promotion name by ID, with caching.
+    
+    Args:
+        promotion_id: CageMatch promotion ID
+    
+    Returns:
+        Promotion name, or str(promotion_id) if not found
+    """
+    return wrestler_db.get_promotion_name(promotion_id)
 
 
 def get_promotion_with_location(wrestler_id: int) -> str:
