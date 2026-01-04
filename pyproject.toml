@@ -1,6 +1,6 @@
 [project]
 name = "joshi-network"
-version = "0.1.0"
+version = "0.2.0"
 description = "Japanese women's wrestling data scraping and ranking system"
 authors = [{name = "ted whalen", email = "tewhalen@gmail.com"}]
 readme = "README.md"

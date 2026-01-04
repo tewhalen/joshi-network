@@ -1,7 +1,11 @@
 """Script to scrape wrestler profiles and matches from CageMatch.net."""
 
+import shutil
+import sqlite3
 import sys
 import time
+from datetime import datetime
+from pathlib import Path
 
 import click
 from loguru import logger
@@ -12,6 +16,52 @@ from joshirank.scrape.queue_builder import FilteredQueueBuilder, QueueBuilder
 from joshirank.scrape.workqueue import WorkQueue
 
 YEAR = time.localtime().tm_year
+
+
+def backup_database(source_path: Path, backup_dir: Path) -> Path:
+    """Safely backup the SQLite database using SQLite's backup API.
+
+    Args:
+        source_path: Path to the source database file
+        backup_dir: Directory to store the backup
+
+    Returns:
+        Path to the created backup file
+    """
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_path = backup_dir / f"joshi_wrestlers_{timestamp}.sqlite3"
+
+    logger.info("Creating database backup: {}", backup_path.name)
+
+    # Use SQLite's backup API for safe, atomic backup
+    source_conn = sqlite3.connect(source_path)
+    backup_conn = sqlite3.connect(backup_path)
+
+    with backup_conn:
+        source_conn.backup(backup_conn)
+
+    source_conn.close()
+    backup_conn.close()
+
+    # Verify backup integrity
+    verify_conn = sqlite3.connect(backup_path)
+    try:
+        cursor = verify_conn.cursor()
+        cursor.execute("PRAGMA integrity_check")
+        result = cursor.fetchone()
+        if result[0] != "ok":
+            logger.error("Backup integrity check failed!")
+            backup_path.unlink()  # Delete corrupted backup
+            raise RuntimeError("Database backup failed integrity check")
+        verify_conn.close()
+    except Exception as e:
+        verify_conn.close()
+        raise
+
+    logger.success("Database backup created successfully")
+    return backup_path
 
 
 class ScrapingSession:
@@ -172,9 +222,26 @@ def setup_logging():
     is_flag=True,
     help="Force refresh all data, ignoring staleness checks",
 )
-def cli(tjpw_only, wrestler_ids, dry_run, stats_only, force):
+@click.option(
+    "--no-backup",
+    is_flag=True,
+    help="Skip database backup (not recommended)",
+)
+def cli(tjpw_only, wrestler_ids, dry_run, stats_only, force, no_backup):
     """Scrape wrestler profiles and matches from CageMatch.net."""
     setup_logging()
+
+    # Create backup before opening database for writing (unless dry-run or stats-only)
+    if not dry_run and not stats_only and not no_backup:
+        db_path = Path("data/joshi_wrestlers.sqlite3")
+        backup_dir = Path("data/backups")
+        try:
+            backup_database(db_path, backup_dir)
+        except Exception as e:
+            logger.error("Failed to create backup: {}", e)
+            logger.warning(
+                "Proceeding without backup (use --no-backup to skip this warning)"
+            )
 
     with reopen_rw() as wrestler_db:
         if tjpw_only and wrestler_ids:
