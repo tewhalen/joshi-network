@@ -360,9 +360,8 @@ class WrestlerDb(DBWrapper):
         )
         if row and row[0]:
             return row[0]
-
         else:
-            raise KeyError(f"Wrestler ID {wrestler_id} not found in database.")
+            return "Unknown"
 
     def get_matches(self, wrestler_id: int, year: int = 2025) -> list[dict]:
         # first try to get from sqlite
@@ -423,12 +422,17 @@ class WrestlerDb(DBWrapper):
             }
 
     def get_all_colleagues(self, wrestler_id: int) -> set[int]:
-        """Given a wrestler ID, return a set of all wrestler IDs that appeared in a match with them."""
+        """Given a wrestler ID, return a set of all wrestler IDs that appeared in a match with them across all years."""
+        rows = self._select_and_fetchall(
+            """SELECT opponents FROM matches WHERE wrestler_id=?""", (wrestler_id,)
+        )
+
         colleagues = set()
-        for match in self.get_matches(wrestler_id):
-            for wid in match["wrestlers"]:
-                if wid != wrestler_id:
-                    colleagues.add(wid)
+        for row in rows:
+            if row[0]:  # if opponents is not None
+                opponents = json.loads(row[0])
+                colleagues.update(opponents)
+
         return colleagues
 
     def _is_gender_diverse(self, wrestler_id: int) -> bool:

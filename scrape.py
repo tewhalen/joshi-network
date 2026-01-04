@@ -30,29 +30,6 @@ class ScrapingSession:
         self.scrape_info = WrestlerScrapeInfo(wrestler_db, current_year=YEAR)
         self.wrestler_db = wrestler_db
 
-    def calculate_importance(self, wrestler_id: int) -> float:
-        """Calculate wrestler importance based on recent activity.
-
-        Returns a score from 0 (least important) to 1 (most important).
-        Based on matches and unique opponents in the past 2 years.
-        """
-        total_matches = 0
-        unique_opponents = set()
-
-        # Check last 2 years of data
-        for year in [YEAR - 1, YEAR - 2]:
-            match_info = self.wrestler_db.get_match_info(wrestler_id, year)
-            total_matches += match_info.get("match_count", 0)
-            unique_opponents.update(match_info.get("opponents", []))
-
-        # Normalize scores (cap at reasonable maxima)
-        match_score = min(total_matches / 100.0, 1.0)  # 100+ matches = max
-        opponent_score = min(len(unique_opponents) / 50.0, 1.0)  # 50+ opponents = max
-
-        # Combine scores (weight matches slightly more than opponent diversity)
-        importance = (match_score * 0.6) + (opponent_score * 0.4)
-        return importance
-
     def adjust_priority_by_importance(
         self, base_priority: int, wrestler_id: int
     ) -> int:
@@ -61,7 +38,7 @@ class ScrapingSession:
         More important wrestlers get better (lower) priority.
         Adjustment range: -5 to 0 (subtract up to 5 from base priority).
         """
-        importance = self.calculate_importance(wrestler_id)
+        importance = self.scrape_info.calculate_importance(wrestler_id)
         adjustment = int(importance * 5)  # 0-5 point boost
         return max(1, base_priority - adjustment)  # Ensure priority stays >= 1
 
@@ -96,10 +73,23 @@ class ScrapingSession:
             )
 
         # 1. URGENT: Profiles of Missing wrestlers (referenced but not in DB)
-        for wid, _count, _opponents in self.scrape_info.find_missing_wrestlers():
+        # Priority based on appearance count and number of unique opponents
+        for wid, count, opponents in self.scrape_info.find_missing_wrestlers():
+            # Calculate priority based on appearances and connections
+            # More appearances = higher priority (lower number)
+            # Base: 1-30 range depending on appearances
+            if count >= 20:
+                priority = PRIORITY_URGENT  # 20+ appearances: highest priority
+            elif count >= 10:
+                priority = PRIORITY_URGENT + 5  # 10-19 appearances
+            elif count >= 5:
+                priority = PRIORITY_HIGH  # 5-9 appearances
+            else:
+                priority = PRIORITY_NORMAL  # 1-4 appearances: low priority
+
             queue.enqueue(
                 WorkItem(
-                    priority=PRIORITY_URGENT,
+                    priority=priority,
                     wrestler_id=wid,
                     operation="refresh_profile",
                 )
@@ -255,28 +245,28 @@ class ScrapingSession:
         if wrestler_id == -1:
             logger.warning("Skipping refresh for sentinel wrestler_id -1")
             return
-        logger.info(
-            "Scraping profile for {} ({})",
-            self.wrestler_db.get_name(wrestler_id),
-            wrestler_id,
-        )
+
+        name = self.wrestler_db.get_name(wrestler_id)
+
+        logger.info("Scraping profile for {} ({})", name, wrestler_id)
         scraped_profile = self.scraper.scrape_profile(wrestler_id)
         self.wrestler_db.save_profile_for_wrestler(
             wrestler_id, scraped_profile.profile_data
         )
         self.wrestler_db.update_wrestler_from_profile(wrestler_id)
+        if name == "Unknown":
+            # Update name if it was previously unknown
+            updated_name = self.wrestler_db.get_name(wrestler_id)
+            logger.info("Learned '{}' for ID {}", updated_name, wrestler_id)
 
     def refresh_matches_for_year(self, wrestler_id: int, year: int):
         """Scrape and update matches for a specific year."""
         if wrestler_id == -1:
             logger.warning("Skipping match refresh for sentinel wrestler_id -1")
             return
-        logger.info(
-            "Scraping {} matches for {} ({})",
-            year,
-            self.wrestler_db.get_name(wrestler_id),
-            wrestler_id,
-        )
+
+        name = self.wrestler_db.get_name(wrestler_id)
+        logger.info("Scraping {} matches for {} ({})", year, name, wrestler_id)
         matches = self.scraper.scrape_matches(wrestler_id, year)
 
         self.wrestler_db.save_matches_for_wrestler(wrestler_id, matches, year)

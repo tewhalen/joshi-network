@@ -166,3 +166,26 @@ class WrestlerScrapeInfo:
         # Sort by priority (lower number = higher priority)
         stale_years.sort(key=lambda x: x[1])
         return stale_years
+
+    def calculate_importance(self, wrestler_id: int) -> float:
+        """Calculate wrestler importance based on recent activity.
+
+        Returns a score from 0 (least important) to 1 (most important).
+        Based on matches and unique opponents in the past 2 years.
+        """
+        total_matches = 0
+        unique_opponents = set()
+
+        # Check last 2 years of data
+        for year in [self.current_year - 1, self.current_year - 2]:
+            match_info = self.wrestler_db.get_match_info(wrestler_id, year)
+            total_matches += match_info.get("match_count", 0)
+            unique_opponents.update(match_info.get("opponents", []))
+
+        # Normalize scores (cap at reasonable maxima)
+        match_score = min(total_matches / 100.0, 1.0)  # 100+ matches = max
+        opponent_score = min(len(unique_opponents) / 50.0, 1.0)  # 50+ opponents = max
+
+        # Combine scores (weight matches slightly more than opponent diversity)
+        importance = (match_score * 0.6) + (opponent_score * 0.4)
+        return importance
