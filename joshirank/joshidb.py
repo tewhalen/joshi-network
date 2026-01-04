@@ -312,9 +312,9 @@ class WrestlerDb(DBWrapper):
         if row:
             # convert last_updated to epoch timestamp
             if "last_updated" in row and row["last_updated"]:
-                row["timestamp"] = datetime.datetime.fromisoformat(
-                    row["last_updated"]
-                ).timestamp()
+                # SQLite CURRENT_TIMESTAMP is in UTC, parse as UTC and convert to epoch
+                dt = datetime.datetime.fromisoformat(row["last_updated"]).replace(tzinfo=datetime.timezone.utc)
+                row["timestamp"] = dt.timestamp()
             else:
                 row["timestamp"] = 0
             return row
@@ -396,7 +396,9 @@ class WrestlerDb(DBWrapper):
             (wrestler_id, year),
         )
         if row and row[0]:
-            return datetime.datetime.fromisoformat(row[0]).timestamp()
+            # SQLite CURRENT_TIMESTAMP is in UTC, parse as UTC and convert to epoch
+            dt = datetime.datetime.fromisoformat(row[0]).replace(tzinfo=datetime.timezone.utc)
+            return dt.timestamp()
         return 0.0
 
     def get_match_info(self, wrestler_id: int, year: int = 2025) -> dict:

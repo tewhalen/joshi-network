@@ -78,14 +78,7 @@ class ScrapingSession:
             # Calculate priority based on appearances and connections
             # More appearances = higher priority (lower number)
             # Base: 1-30 range depending on appearances
-            if count >= 20:
-                priority = PRIORITY_URGENT  # 20+ appearances: highest priority
-            elif count >= 10:
-                priority = PRIORITY_URGENT + 5  # 10-19 appearances
-            elif count >= 5:
-                priority = PRIORITY_HIGH  # 5-9 appearances
-            else:
-                priority = PRIORITY_NORMAL  # 1-4 appearances: low priority
+            priority = max(0, PRIORITY_NORMAL - count - len(opponents))
 
             queue.enqueue(
                 WorkItem(
