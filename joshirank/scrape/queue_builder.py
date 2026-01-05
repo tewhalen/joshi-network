@@ -328,9 +328,10 @@ class FilteredQueueBuilder(QueueBuilder):
 
     def get_target_wrestlers(self) -> set[int]:
         """Return only female wrestlers in the filter set."""
-        all_female = set(self.wrestler_db.all_female_wrestlers())
-        return all_female.intersection(self.wrestler_filter)
-
+        #all_female = set(self.wrestler_db.all_female_wrestlers())
+        #return all_female.intersection(self.wrestler_filter)
+        return self.wrestler_filter
+        
     def build(self) -> WorkQueue:
         """Build and return a work queue based on database state."""
         queue = WorkQueue()

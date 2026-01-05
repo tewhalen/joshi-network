@@ -8,7 +8,7 @@ from joshirank.cagematch.scraper import CageMatchScraper
 from joshirank.joshidb import WrestlerDb
 from joshirank.scrape.workqueue import WorkItem
 
-YEAR = time.localtime().tm_year
+THIS_YEAR = time.localtime().tm_year
 
 
 class OperationsManager:
@@ -67,13 +67,18 @@ class OperationsManager:
             # For newly discovered female wrestlers, create a stub match entry
             # to ensure their matches get queued in the next session
             if self.wrestler_db.is_female(wrestler_id):
-                guess_year = self._guess_likely_match_year(scraped_profile)
-                logger.success(
-                    "Creating stub match entry for new female wrestler {} for year {}",
-                    wrestler_id,
-                    guess_year,
+                start_year, end_year = self._guess_likely_match_year_range(
+                    scraped_profile
                 )
-                self.wrestler_db.create_stale_match_stubs(wrestler_id, {guess_year})
+                logger.success(
+                    "Creating stub match entry for new female wrestler {} for years {}-{}",
+                    wrestler_id,
+                    start_year,
+                    end_year,
+                )
+                # create the range between start_year and end_year inclusive
+                years_range = set(range(start_year, end_year + 1))
+                self.wrestler_db.create_stale_match_stubs(wrestler_id, years_range)
 
     def refresh_matches_for_year(self, wrestler_id: int, year: int):
         """Scrape and update matches for a specific year.
@@ -157,12 +162,12 @@ class OperationsManager:
         except Exception as e:
             logger.error("Failed to scrape promotion {}: {}", promotion_id, e)
 
-    def _guess_likely_match_year(self, profile) -> int:
-        """Guess which year is most likely to have matches for a newly discovered wrestler.
+    def _guess_likely_match_year_range(self, profile) -> tuple[int, int]:
+        """Guess a range of years most likely to have matches for a newly discovered wrestler.
 
         Uses career start date to start scraping from the beginning:
         - If career start year is available: use that year (to find earliest matches)
-        - If no career start data: use previous year (safest bet for active wrestlers)
+        - If no career start data: use 1970 (safest bet for active wrestlers)
 
         Args:
             profile: CMProfile object with career_start() method
@@ -171,6 +176,19 @@ class OperationsManager:
             Year (int) most likely to have match data
         """
         career_start = profile.career_start()
+        career_end = profile.career_end()
+
+        if career_end:
+            try:
+                if len(career_end) == 4:  # Just year "YYYY"
+                    end_year = int(career_end)
+                else:  # Full date "YYYY-MM-DD"
+                    end_year = int(career_end.split("-")[0])
+            except (ValueError, AttributeError) as e:
+                logger.debug("Could not parse career end '{}': {}", career_end, e)
+                end_year = THIS_YEAR - 1
+        else:
+            end_year = THIS_YEAR - 1
 
         if career_start:
             # Extract year from career_start (could be YYYY-MM-DD or just YYYY)
@@ -181,13 +199,17 @@ class OperationsManager:
                     start_year = int(career_start.split("-")[0])
 
                 logger.debug("Career started in {}, using that year", start_year)
-                return start_year
+
             except (ValueError, AttributeError) as e:
                 logger.debug("Could not parse career start '{}': {}", career_start, e)
-
+                start_year = end_year
+        else:
+            # Fallback: previous year is safest bet for active wrestlers
+            logger.debug("No career start data, defaulting to end year")
+            start_year = end_year
         # Fallback: previous year is safest bet for active wrestlers
         logger.debug("No career start data, defaulting to previous year")
-        return YEAR - 1
+        return (start_year, end_year)
 
     def execute_work_item(self, item: WorkItem):
         """Execute a work item by dispatching to the appropriate operation.

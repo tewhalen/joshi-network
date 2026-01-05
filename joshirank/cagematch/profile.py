@@ -107,3 +107,11 @@ class CMProfile:
         which may be a full date (YYYY-MM-DD) or just a year (YYYY).
         """
         return self.profile_data.get("Beginning of in-ring career")
+
+    def career_end(self) -> str | None:
+        """Return the career end date if available.
+
+        Returns the value of 'End of in-ring career' field from the profile,
+        which may be a full date (YYYY-MM-DD) or just a year (YYYY).
+        """
+        return self.profile_data.get("End of in-ring career")
