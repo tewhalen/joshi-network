@@ -278,14 +278,16 @@ class Ranker:
 
 
 @click.command()
-@click.option(
-    "--year",
+@click.argument(
+    "year",
     type=int,
     default=datetime.datetime.now().year - 1,
-    help="Year to generate rankings for (default: previous year)",
 )
 def main(year):
-    """Generate Glicko2 rankings from match data."""
+    """Generate Glicko2 rankings from match data.
+
+    YEAR: Year to generate rankings for (default: previous year)
+    """
     click.echo(f"Generating rankings for year {year}...")
     r = Ranker(year)
     r.main()

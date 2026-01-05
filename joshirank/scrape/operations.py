@@ -127,7 +127,7 @@ class OperationsManager:
             return
 
         name = self.wrestler_db.get_name(wrestler_id)
-        logger.info("Scraping all matches for {} ({})", name, wrestler_id)
+        logger.info("Scraping all  | {} ({})", name, wrestler_id)
         matches = self.scraper.scrape_all_matches(wrestler_id)
 
         # matches is a list of match dicts which need to be grouped by year
@@ -144,8 +144,18 @@ class OperationsManager:
                 )
                 continue  # Skip matches with unknown year
             matches_by_year.setdefault(year, []).append(match)
+
+        # Save all years with matches
         for year, matches in matches_by_year.items():
             self.wrestler_db.save_matches_for_wrestler(wrestler_id, matches, year=year)
+
+        # Update timestamps for existing stub years that had no matches
+        # This confirms they've been checked and prevents them showing as stale
+        existing_years = self.wrestler_db.match_years_available(wrestler_id)
+        for year in existing_years:
+            if year not in matches_by_year:
+                # This year exists in DB but had no matches - update timestamp to mark as checked
+                self.wrestler_db.save_matches_for_wrestler(wrestler_id, [], year=year)
 
         # Update derived metadata from match data
         self.wrestler_db.update_matches_from_matches(wrestler_id)

@@ -246,14 +246,8 @@ def get_gender_cache_stats() -> dict:
     }
 
 
-def all_tjpw_wrestlers(wrestler_db: WrestlerDb) -> set[int]:
-    """Return a set of all wrestlers who have ever wrestled for TJPW.
-
-    Uses the promotions_worked field for efficient querying.
-    """
-    # TJPW promotion ID on CageMatch is 1467
-    TJPW_ID = 1467
-    tjpw_wrestlers = set()
+def ever_worked_promotion(wrestler_db: WrestlerDb, promotion_id: int) -> set[int]:
+    promotion_wrestlers = set()
 
     for wid in wrestler_db.all_female_wrestlers():
         # Check all available years for this wrestler using promotions_worked
@@ -261,21 +255,32 @@ def all_tjpw_wrestlers(wrestler_db: WrestlerDb) -> set[int]:
             match_info = wrestler_db.get_match_info(wid, year)
             promotions = match_info.get("promotions_worked", {})
             # promotions_worked maps promotion_id (as string or int) to count
-            if str(TJPW_ID) in promotions or TJPW_ID in promotions:
-                tjpw_wrestlers.add(wid)
-                # having found a set of matches we know included TJPW
+            if str(promotion_id) in promotions or promotion_id in promotions:
+                promotion_wrestlers.add(wid)
+                # having found a set of matches we know included the promotion
                 # we should check all the matches in that year to find all
-                # the wrestlers in those TJPW matches
-                # because those wrestlers may not have TJPW in their promotions_worked
+                # the wrestlers in those promotion matches
+                # because those wrestlers may not have the promotion in their promotions_worked
                 matches = wrestler_db.get_matches(wid, year)
                 for match in matches:
-                    if match.get("promotion") == TJPW_ID:
+                    if match.get("promotion") == promotion_id:
                         for competitor in match.get("wrestlers", []):
-                            tjpw_wrestlers.add(competitor)
+                            promotion_wrestlers.add(competitor)
 
     # filter out any non-female wrestlers (in case of data errors)
-    tjpw_wrestlers = {wid for wid in tjpw_wrestlers if wrestler_db.is_female(wid)}
-    return tjpw_wrestlers
+    # promotion_wrestlers = {
+    #    wid for wid in promotion_wrestlers if wrestler_db.is_female(wid)
+    # }
+    return promotion_wrestlers
+
+
+def all_tjpw_wrestlers(wrestler_db: WrestlerDb) -> set[int]:
+    """Return a set of all wrestlers who have ever wrestled for TJPW.
+
+    Uses the promotions_worked field for efficient querying.
+    """
+    # TJPW promotion ID on CageMatch is 1467
+    return ever_worked_promotion(wrestler_db, 1467)
 
 
 def estimate_intergender_probability(match: dict, wrestler_db) -> float:

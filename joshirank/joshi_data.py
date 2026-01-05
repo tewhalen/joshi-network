@@ -49,6 +49,10 @@ joshi_promotions = {
     "GAEA Japan",
     "Girl's Pro-Wrestling Unit Color's",
     "REINA",
+    "OSAKA Women's Pro-Wrestling",
+    "New All Japan Women's Pro Wrestling",
+    "Sareee-ISM",
+    "Japan Woman Pro-Wrestling",
 }
 
 international_women_promotions = {
@@ -57,6 +61,9 @@ international_women_promotions = {
     "SHIMMER Women Athletes",
     "SPARK Joshi Puroresu Of America",
     "Uprising Women Athletes",
+    "Women's Superstars United",
+    "Kitsune Women's Wrestling",
+    "Gorgeous Ladies Of Wrestling",
 }
 
 promotion_map = {

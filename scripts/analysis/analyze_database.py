@@ -209,7 +209,7 @@ def coverage_statistics():
 
 
 def historical_coverage_statistics():
-    """Report statistics about historical data coverage and gaps."""
+    """Report statistics about historical data coverage."""
     print("\n" + "=" * 70)
     print("HISTORICAL COVERAGE ANALYSIS")
     print("=" * 70)
@@ -246,10 +246,128 @@ def historical_coverage_statistics():
         for decade in sorted(decades.keys()):
             print(f"    {decade}s: {decades[decade]:4d} wrestlers")
 
-    # Analyze wrestlers with historical data
-    wrestlers_with_history = []
-    data_quality_issues = []
+    # Analyze incomplete scraping - wrestlers with stub years not yet filled
+    print(f"\n{'=' * 70}")
+    print("INCOMPLETE SCRAPING ANALYSIS")
+    print(f"{'=' * 70}")
 
+    import time
+
+    YEAR_IN_SECONDS = 365 * 86400
+    single_stub_wrestlers = []
+    multi_stub_wrestlers = []
+
+    for wid in wrestler_db.all_female_wrestlers():
+        info = wrestler_db.get_wrestler(wid)
+        career_start = info.get("career_start")
+        years = wrestler_db.match_years_available(wid)
+
+        if not years:
+            continue
+
+        # Get career length
+        career_start_year = None
+        if career_start:
+            year_str = str(career_start)[:4]
+            if year_str.isdigit():
+                career_start_year = int(year_str)
+
+        # Check each year for stub status (0 matches AND stale = stub)
+        stub_years = []
+        populated_years = []
+        for year in years:
+            match_info = wrestler_db.get_match_info(wid, year)
+            match_count = match_info.get("match_count", 0)
+            timestamp = wrestler_db.get_matches_timestamp(wid, year)
+
+            # A year is a stub if it has no matches AND data is over a year old
+            age = time.time() - timestamp if timestamp > 0 else float("inf")
+            is_stale = age > YEAR_IN_SECONDS
+
+            if match_count == 0 and is_stale:
+                stub_years.append(year)
+            elif match_count > 0:
+                populated_years.append(year)
+
+        # Case 1: Only one populated year but has a long career
+        if len(populated_years) == 1 and career_start_year:
+            career_length = 2026 - career_start_year
+            if career_length >= 3:  # At least 3 year career
+                total_matches = sum(
+                    wrestler_db.get_match_info(wid, year).get("match_count", 0)
+                    for year in populated_years
+                )
+                single_stub_wrestlers.append(
+                    {
+                        "id": wid,
+                        "name": wrestler_db.get_name(wid),
+                        "career_start_year": career_start_year,
+                        "career_length": career_length,
+                        "populated_year": populated_years[0],
+                        "total_matches": total_matches,
+                        "stub_count": len(stub_years),
+                    }
+                )
+
+        # Case 2: Multiple stub years (need to be scraped)
+        if len(stub_years) >= 3:  # At least 3 stubs
+            total_matches = sum(
+                wrestler_db.get_match_info(wid, year).get("match_count", 0)
+                for year in populated_years
+            )
+            multi_stub_wrestlers.append(
+                {
+                    "id": wid,
+                    "name": wrestler_db.get_name(wid),
+                    "career_start_year": career_start_year,
+                    "stub_count": len(stub_years),
+                    "stub_years": sorted(stub_years),
+                    "populated_count": len(populated_years),
+                    "total_matches": total_matches,
+                }
+            )
+
+    # Sort and display single stub wrestlers (longest careers first)
+    single_stub_wrestlers.sort(key=lambda x: x["career_length"], reverse=True)
+
+    print(
+        f"\nWrestlers with single populated year but long careers: {len(single_stub_wrestlers)}"
+    )
+    print("(These need initial scraping to discover all active years)")
+    if single_stub_wrestlers:
+        print(f"\nTop 20 wrestlers needing discovery scraping:")
+        for i, w in enumerate(single_stub_wrestlers[:20], 1):
+            print(
+                f"  {i:2d}. {w['name']:30} Career: {w['career_start_year']}-present ({w['career_length']:2d} years), "
+                f"{w['total_matches']:3d} matches in {w['populated_year']}, {w['stub_count']} stubs"
+            )
+
+    # Sort and display multi stub wrestlers (most stubs first)
+    multi_stub_wrestlers.sort(key=lambda x: x["stub_count"], reverse=True)
+
+    print(f"\nWrestlers with multiple stub years: {len(multi_stub_wrestlers)}")
+    print("(These have discovered years but need data to be filled in)")
+    if multi_stub_wrestlers:
+        print(f"\nTop 20 wrestlers with most stub years needing data:")
+        for i, w in enumerate(multi_stub_wrestlers[:20], 1):
+            recent_stubs = [y for y in w["stub_years"] if y >= 2020]
+            stub_info = (
+                f"{len(recent_stubs)} recent (2020+)"
+                if recent_stubs
+                else f"all pre-2020"
+            )
+            career_info = (
+                f"debut: {w['career_start_year']}"
+                if w["career_start_year"]
+                else "unknown debut"
+            )
+            print(
+                f"  {i:2d}. {w['name']:30} {w['stub_count']:2d} stubs ({stub_info}), "
+                f"{w['populated_count']:2d} populated, {career_info}"
+            )
+
+    # Check for data quality issues (matches before career start)
+    data_quality_issues = []
     for wid in wrestler_db.all_female_wrestlers():
         years = wrestler_db.match_years_available(wid)
         if not years:
@@ -265,7 +383,6 @@ def historical_coverage_statistics():
                 career_start_year = int(year_str)
 
         min_year = min(years)
-        max_year = max(years)
 
         # Check for data quality issues (matches before career start)
         if career_start_year and min_year < career_start_year:
@@ -279,126 +396,16 @@ def historical_coverage_statistics():
                 }
             )
 
-        # Only consider wrestlers with data before 2024
-        if min_year < 2024:
-            # Use career_start_year if available, otherwise use first match year
-            expected_start = career_start_year if career_start_year else min_year
-
-            # Don't expect data before career start
-            if expected_start > min_year:
-                expected_start = min_year
-
-            expected_years = set(range(expected_start, max_year + 1))
-            missing_years = expected_years - years
-
-            wrestlers_with_history.append(
-                {
-                    "id": wid,
-                    "name": wrestler_db.get_name(wid),
-                    "career_start_year": career_start_year,
-                    "min_year": min_year,
-                    "max_year": max_year,
-                    "expected_start": expected_start,
-                    "years_present": len(years),
-                    "years_missing": len(missing_years),
-                    "missing_years": sorted(missing_years),
-                    "gap_percentage": 100 * len(missing_years) / len(expected_years)
-                    if expected_years
-                    else 0,
-                }
-            )
-
-    print(f"\nWrestlers with historical data (pre-2024): {len(wrestlers_with_history)}")
-
-    # Wrestlers with biggest gaps
-    wrestlers_with_gaps = [w for w in wrestlers_with_history if w["years_missing"] > 0]
-    wrestlers_with_gaps.sort(key=lambda x: x["years_missing"], reverse=True)
-
-    print(
-        f"\nWrestlers with coverage gaps: {len(wrestlers_with_gaps)} ({100 * len(wrestlers_with_gaps) / len(wrestlers_with_history):.1f}%)"
-    )
-
-    if wrestlers_with_gaps:
-        print(f"\nTop 20 wrestlers with most missing years:")
-        for i, w in enumerate(wrestlers_with_gaps[:20], 1):
-            year_range = f"{w['expected_start']}-{w['max_year']}"
-            career_info = (
-                f" (debut: {w['career_start_year']})" if w["career_start_year"] else ""
-            )
-            gap_years = ", ".join(str(y) for y in w["missing_years"][:5])
-            if len(w["missing_years"]) > 5:
-                gap_years += f" ... ({len(w['missing_years'])} total)"
-            print(
-                f"  {i:2d}. {w['name']:30} {year_range:10}{career_info} missing {w['years_missing']:2d} years ({w['gap_percentage']:4.1f}%)"
-            )
-            print(f"      Gap years: {gap_years}")
-
-    # Year-by-year historical coverage (pre-2024)
-    historical_years = defaultdict(lambda: {"total": 0, "with_data": 0})
-
-    for w in wrestlers_with_history:
-        # Use expected_start to only count years we expect to have data
-        for year in range(w["expected_start"], w["max_year"] + 1):
-            if year < 2024:
-                historical_years[year]["total"] += 1
-                if year not in w["missing_years"]:
-                    historical_years[year]["with_data"] += 1
-
-    print(f"\nHistorical coverage completeness (wrestlers active in each year):")
-    for year in sorted(historical_years.keys(), reverse=True):
-        data = historical_years[year]
-        coverage = 100 * data["with_data"] / data["total"] if data["total"] > 0 else 0
-        missing = data["total"] - data["with_data"]
+    if data_quality_issues:
+        data_quality_issues.sort(key=lambda x: x["years_early"], reverse=True)
         print(
-            f"  {year}: {data['with_data']:3d}/{data['total']:3d} wrestlers ({coverage:5.1f}% complete, {missing:3d} missing)"
+            f"\n⚠️  Data quality issues (matches before career start): {len(data_quality_issues)}"
         )
-
-    # Wrestlers with perfect historical coverage
-    perfect_coverage = [
-        w
-        for w in wrestlers_with_history
-        if w["years_missing"] == 0 and w["max_year"] - w["expected_start"] >= 5
-    ]
-    perfect_coverage.sort(
-        key=lambda x: x["max_year"] - x["expected_start"], reverse=True
-    )
-
-    if perfect_coverage:
-        print(f"\nWrestlers with complete historical coverage (6+ year careers):")
-        for i, w in enumerate(perfect_coverage[:15], 1):
-            year_range = f"{w['expected_start']}-{w['max_year']}"
-            years_covered = w["max_year"] - w["expected_start"] + 1
-            career_info = (
-                f" (debut: {w['career_start_year']})"
-                if w["career_start_year"]
-                and w["career_start_year"] != w["expected_start"]
-                else ""
-            )
+        print(f"Top 10 wrestlers with matches before their listed career start:")
+        for i, issue in enumerate(data_quality_issues[:10], 1):
             print(
-                f"  {i:2d}. {w['name']:30} {year_range:10} ({years_covered:2d} years){career_info}"
+                f"  {i:2d}. {issue['name']:30} Career start: {issue['career_start_year']}, First match: {issue['first_match_year']} ({issue['years_early']} years early)"
             )
-
-    # Identify most needed historical scraping
-    print(f"\nMost valuable historical scraping targets (active wrestlers with gaps):")
-    active_with_gaps = []
-    for w in wrestlers_with_gaps:
-        # Check if wrestler is still active (has 2024 or 2025 data)
-        years = wrestler_db.match_years_available(w["id"])
-        if 2024 in years or 2025 in years:
-            active_with_gaps.append(w)
-
-    active_with_gaps.sort(key=lambda x: x["years_missing"], reverse=True)
-
-    print(f"Active wrestlers with historical gaps: {len(active_with_gaps)}")
-    for i, w in enumerate(active_with_gaps[:15], 1):
-        year_range = f"{w['min_year']}-{w['max_year']}"
-        recent_gaps = [y for y in w["missing_years"] if y >= 2020]
-        gap_info = (
-            f"{len(recent_gaps)} post-2020 gaps"
-            if recent_gaps
-            else f"{w['years_missing']} total gaps"
-        )
-        print(f"  {i:2d}. {w['name']:30} {year_range:10} {gap_info}")
 
 
 def missing_wrestlers_report():
