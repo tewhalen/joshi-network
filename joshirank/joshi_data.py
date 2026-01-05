@@ -2,23 +2,34 @@
 """Datafile containing info about the Joshi scene on cagematch.net"""
 
 joshi_promotions = {
+    # Full database names (these match get_promotion_name() output)
     "ChocoPro",
     "Ice Ribbon",
-    "Stardom",
-    "TJPW",
+    "World Wonder Ring Stardom",
+    "Tokyo Joshi Pro-Wrestling",
     "SEAdLINNNG",
-    "Sendai Girls",
+    "Sendai Girls' Pro Wrestling",
     "OZ Academy",
-    "Marvelous",
-    "Diana",
-    "Wave",
-    #  "Pro Wrestling FREEDOMS",
+    "Marvelous That's Women Pro Wrestling",
+    "World Woman Pro-Wrestling Diana",
+    "Pro Wrestling WAVE",
     "Actwres girl'Z",
-    "Colors",
-    "Prominence",
-    "Marigold",
+    "Dream Star Fighting Marigold",
     "PURE-J",
     "JTO",
+    "Ladies Legend Pro Wrestling-X",
+    # Additional Joshi/women-focused promotions with 100% female usage
+    "Ryukyu Dragon Pro Wrestling",
+    # Legacy short names (kept for compatibility but may not match database)
+    "Stardom",  # matches "World Wonder Ring Stardom"
+    "TJPW",  # matches "Tokyo Joshi Pro-Wrestling"
+    "Sendai Girls",  # matches "Sendai Girls' Pro Wrestling"
+    "Diana",  # matches "World Woman Pro-Wrestling Diana"
+    "Wave",  # matches "Pro Wrestling WAVE"
+    "Marigold",  # matches "Dream Star Fighting Marigold"
+    "Marvelous",  # matches "Marvelous That's Women Pro Wrestling"
+    "Colors",
+    "Prominence",
     "Asuka Pro Wrestling",
     "Ganbare",
     "Evolution",
@@ -26,13 +37,13 @@ joshi_promotions = {
     "PPP Tokyo",
     "Kishu Bundara Pro Wrestling",
     "Itabasi Pro Wrestling",
-    "Prominence",
     "Hot Shushu",
     "Michinoku",
     "Best Body Japan",
     "UpTown",
 }
 
+international_women_promotions = {"SHINE Wrestling", "Women Of Wrestling"}
 
 promotion_map = {
     "21342": "666",

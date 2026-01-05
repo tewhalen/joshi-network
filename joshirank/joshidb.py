@@ -309,7 +309,7 @@ class WrestlerDb(DBWrapper):
         if self._is_gender_diverse(wrestler_id):
             # Check if this wrestler is manually marked as female
             from joshirank.joshi_data import considered_female
-            
+
             if wrestler_id in considered_female:
                 # Skip colleague-based reclassification for manually marked wrestlers
                 logger.debug(
@@ -317,7 +317,7 @@ class WrestlerDb(DBWrapper):
                     wrestler_id,
                 )
                 return
-            
+
             # if the wrestler is gender-diverse, set is_female if the
             # majority of colleagues are female
             if self.percentage_of_female_colleagues(wrestler_id) > 0.5:
@@ -525,20 +525,12 @@ class WrestlerDb(DBWrapper):
 
     def get_all_inverse_colleagues(self, wrestler_id: int) -> set[int]:
         """Given a wrestler ID, return a set of all wrestler IDs that
-        had this wrestler as an opponent across all years."""
-        rows = self._select_and_fetchall(
-            """SELECT wrestler_id, opponents FROM matches""", ()
-        )
+        had this wrestler as an opponent across all years.
 
-        colleagues = set()
-        for row in rows:
-            wid = row[0]
-            if row[1]:  # if opponents is not None
-                opponents = json.loads(row[1])
-                if wrestler_id in opponents:
-                    colleagues.add(wid)
-
-        return colleagues
+        WARNING: This does a full table scan and is expensive (~200ms).
+        Results are cached at the module level.
+        """
+        return set(_get_inverse_colleagues_cached(self, wrestler_id))
 
     def _is_gender_diverse(self, wrestler_id: int) -> bool:
         """Return True if the wrestler is considered gender-diverse."""
@@ -705,6 +697,25 @@ def get_promotion_with_location(wrestler_id: int) -> str:
         else:
             promotion = "Freelancer"
     return promotion
+
+
+@functools.lru_cache(maxsize=1000)
+def _get_inverse_colleagues_cached(db: WrestlerDb, wrestler_id: int) -> frozenset[int]:
+    """Cached implementation of get_all_inverse_colleagues.
+
+    Returns frozenset (hashable) for caching. The public method converts back to set.
+    """
+    rows = db._select_and_fetchall("""SELECT wrestler_id, opponents FROM matches""", ())
+
+    colleagues = set()
+    for row in rows:
+        wid = row[0]
+        if row[1]:  # if opponents is not None
+            opponents = json.loads(row[1])
+            if wrestler_id in opponents:
+                colleagues.add(wid)
+
+    return frozenset(colleagues)
 
 
 if __name__ == "__main__":

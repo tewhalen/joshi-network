@@ -40,38 +40,104 @@ def adjust_priority_by_importance(base_priority: int, importance: float) -> int:
     return max(1, base_priority - adjustment)  # Ensure priority stays >= 1
 
 
-def calculate_missing_wrestler_priority(n_opponents: int) -> int:
-    """Calculate priority for a missing wrestler based on their network size.
+def calculate_missing_wrestler_priority(
+    n_opponents: int,
+    wrestler_id: int = None,
+    wrestler_db=None,
+    opponent_ids: set[int] = None,
+) -> int:
+    """Calculate priority for a missing wrestler based on network size and gender prediction.
+
+    Uses statistical gender prediction (guess_gender_of_wrestler) to prioritize
+    likely female wrestlers over likely male wrestlers. This ensures scraping
+    resources are focused on Joshi wrestlers first.
 
     Args:
         n_opponents: Number of unique opponents/connections
+        wrestler_id: ID of the missing wrestler (for gender prediction)
+        wrestler_db: Database instance (for gender prediction)
+        opponent_ids: Set of opponent wrestler IDs (used for fallback)
 
     Returns:
         Priority value (1-99 range)
 
-    Priority tiers:
-    - 20+ opponents: URGENT (1) - very connected, likely active wrestler
-    - 10-19 opponents: HIGH (10) - well connected
-    - 5-9 opponents: NORMAL (30-34) - moderately connected
-    - 3-4 opponents: LOW (60-62) - minimally connected
-    - 1-2 opponents: VERY LOW (90-92) - likely one-off appearance
+    Priority logic with gender prediction:
+    - Confidence >= 0.95 (very confident female): URGENT priority
+      - 20+ opponents: 1-3
+      - 10+ opponents: 5-8
+      - 5+ opponents: 10-15
+    - Confidence >= 0.75 (likely female): HIGH priority
+      - 20+ opponents: 10-12
+      - 10+ opponents: 15-18
+      - 5+ opponents: 20-25
+    - Confidence 0.5-0.75 (uncertain): NORMAL priority
+      - Base on opponent count: 30-60
+    - Confidence < 0.3 (likely male): LOW priority
+      - Heavily deprioritized: 70-95
     """
+    # Base priority from opponent count (classic tier system)
     if n_opponents >= 20:
-        # Very connected wrestler - likely active/important
-        return PRIORITY_URGENT
+        base_priority = PRIORITY_URGENT
     elif n_opponents >= 10:
-        # Well connected - should check
-        return PRIORITY_HIGH
+        base_priority = PRIORITY_HIGH
     elif n_opponents >= 5:
-        # Moderately connected - normal priority
-        return PRIORITY_NORMAL + (9 - n_opponents)  # 30-34
+        base_priority = PRIORITY_NORMAL + (9 - n_opponents)  # 30-34
     elif n_opponents >= 3:
-        # Minimally connected - low priority
-        return 60 + (4 - n_opponents)  # 60-62
+        base_priority = 60 + (4 - n_opponents)  # 60-62
     else:
-        # Very few connections (1-2 opponents) - very low priority
-        # These are likely one-off appearances or guest wrestlers
-        return 90 + (2 - n_opponents)  # 90-92
+        base_priority = 90 + (2 - n_opponents)  # 90-92
+
+    # If we have database access, use sophisticated gender prediction
+    if wrestler_id and wrestler_db:
+        try:
+            from joshirank.queries import guess_gender_of_wrestler
+
+            # Get cached or calculated confidence score
+            confidence = guess_gender_of_wrestler(wrestler_db, wrestler_id)
+
+            # Apply gender-based priority adjustments
+            if confidence >= 0.95:
+                # Very confident female (100% precision thresholds)
+                # Strongest boost - these are almost certainly Joshi wrestlers
+                if n_opponents >= 20:
+                    return 1 + min(int((1.0 - confidence) * 20), 2)  # 1-3
+                elif n_opponents >= 10:
+                    return 5 + min(int((1.0 - confidence) * 30), 3)  # 5-8
+                else:
+                    return 10 + min(int((1.0 - confidence) * 50), 5)  # 10-15
+
+            elif confidence >= 0.75:
+                # Likely female (high confidence)
+                # Moderate boost
+                if n_opponents >= 20:
+                    return 10 + int((0.95 - confidence) * 10)  # 10-12
+                elif n_opponents >= 10:
+                    return 15 + int((0.95 - confidence) * 15)  # 15-18
+                else:
+                    return 20 + int((0.95 - confidence) * 25)  # 20-25
+
+            elif confidence >= 0.5:
+                # Uncertain or slightly female-leaning
+                # Use base priority with minor adjustment
+                return base_priority
+
+            elif confidence >= 0.3:
+                # Likely male
+                # Deprioritize moderately (fixed floor of 70)
+                return max(70, min(95, base_priority + 20))
+
+            else:
+                # Very likely male (confidence < 0.3)
+                # Heavily deprioritize (fixed floor of 80)
+                return max(80, min(98, base_priority + 40))
+
+        except Exception as e:
+            # If gender prediction fails, fall back to base priority
+            # This ensures scraping continues even if prediction breaks
+            pass
+
+    # No match data or prediction unavailable - use base priority
+    return base_priority
 
 
 def get_profile_refresh_priority(is_female: bool) -> int:

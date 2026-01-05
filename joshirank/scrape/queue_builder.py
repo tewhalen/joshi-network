@@ -147,6 +147,34 @@ class QueueBuilder:
                     year=year,
                 )
 
+    def _collect_promotion_ids(self) -> dict:
+        """Collect all promotion IDs from match data with frequency counts."""
+        from collections import Counter
+
+        promotion_counter = Counter()
+
+        # Only look at female wrestlers' matches for promotion discovery
+        for wrestler_id in self.get_target_wrestlers():
+            for year in self.wrestler_db.match_years_available(wrestler_id):
+                match_info = self.wrestler_db.get_match_info(wrestler_id, year)
+                promotions_worked = match_info.get("promotions_worked", {})
+
+                for promotion_id, count in promotions_worked.items():
+                    try:
+                        promotion_counter[int(promotion_id)] += count
+                    except (ValueError, TypeError):
+                        continue
+
+        return promotion_counter
+
+    def _promotion_is_stale(self, promotion_id: int) -> bool:
+        """Check if a promotion needs updating."""
+        if not self.wrestler_db.promotion_exists(promotion_id):
+            return True
+
+        timestamp = self.wrestler_db.get_promotion_timestamp(promotion_id)
+        return self.scrape_info.staleness_policy.promotion_is_stale(timestamp)
+
 
 class FullQueueBuilder(QueueBuilder):
     """Full queue builder that scrapes all available data.
@@ -193,7 +221,12 @@ class FullQueueBuilder(QueueBuilder):
         # 1. URGENT: Profiles of Missing wrestlers (referenced but not in DB)
         if self.should_discover_missing():
             for wid, count, opponents in self.scrape_info.find_missing_wrestlers():
-                priority = calculate_missing_wrestler_priority(len(opponents))
+                priority = calculate_missing_wrestler_priority(
+                    len(opponents),
+                    wrestler_id=wid,
+                    wrestler_db=self.wrestler_db,
+                    opponent_ids=opponents,
+                )
                 queue.enqueue(
                     WorkItem(
                         priority=priority,
@@ -270,34 +303,6 @@ class FullQueueBuilder(QueueBuilder):
         logger.info("Built work queue with {} items", len(queue))
         return queue
 
-    def _collect_promotion_ids(self) -> dict:
-        """Collect all promotion IDs from match data with frequency counts."""
-        from collections import Counter
-
-        promotion_counter = Counter()
-
-        # Only look at female wrestlers' matches for promotion discovery
-        for wrestler_id in self.get_target_wrestlers():
-            for year in self.wrestler_db.match_years_available(wrestler_id):
-                match_info = self.wrestler_db.get_match_info(wrestler_id, year)
-                promotions_worked = match_info.get("promotions_worked", {})
-
-                for promotion_id, count in promotions_worked.items():
-                    try:
-                        promotion_counter[int(promotion_id)] += count
-                    except (ValueError, TypeError):
-                        continue
-
-        return promotion_counter
-
-    def _promotion_is_stale(self, promotion_id: int) -> bool:
-        """Check if a promotion needs updating."""
-        if not self.wrestler_db.promotion_exists(promotion_id):
-            return True
-
-        timestamp = self.wrestler_db.get_promotion_timestamp(promotion_id)
-        return self.scrape_info.staleness_policy.promotion_is_stale(timestamp)
-
 
 class FilteredQueueBuilder(QueueBuilder):
     """Queue builder that limits scraping to a specific set of wrestlers.
@@ -360,6 +365,23 @@ class FilteredQueueBuilder(QueueBuilder):
                             operation="refresh_profile",
                         )
                     )
+
+        # 4. LOW: Promotion data for frequently referenced promotions
+
+        promotion_counter = self._collect_promotion_ids()
+        for promotion_id, frequency in promotion_counter.most_common():
+            if self.force_refresh or self._promotion_is_stale(promotion_id):
+                # Priority based on frequency of promotion in match data
+                # Most common promotions get higher priority (lower number)
+                # Scale: 0 (most common) to 95 (rare)
+                priority = max(0, min(95, 95 - (frequency // 100)))
+                queue.enqueue(
+                    WorkItem(
+                        priority=priority,
+                        object_id=promotion_id,
+                        operation="refresh_promotion",
+                    )
+                )
 
         logger.info("Built work queue with {} items", len(queue))
         return queue
