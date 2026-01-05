@@ -23,6 +23,9 @@ country_map = {
     "Grapplemax Studio in Singapur": "Singapore",
     "Vereinigte Arabische Emirate": "United Arab Emirates",
     "Japamn": "Japan",  # ygbfkm
+    "Saudi-Arabien": "Saudi Arabia",
+    "Youth Square in Hong Kong": "Hong Kong",
+    "Singapur": "Singapore",
 }
 
 

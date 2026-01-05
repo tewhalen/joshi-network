@@ -44,5 +44,5 @@ def all_matches(year: int) -> set:
             all_matches.add(match)
 
     print(f"Total singles matches: {len(all_matches)}")
-    print(f"Total joshi wrestlers: {j_count}")
+    print(f"Total female wrestlers: {j_count}")
     return all_matches

@@ -41,9 +41,23 @@ joshi_promotions = {
     "Michinoku",
     "Best Body Japan",
     "UpTown",
+    "Major Girl's Fighting AtoZ",
+    "NEO Women's Pro Wrestling",
+    "Japanese Women Pro-Wrestling Project",
+    "JD Star Women's Pro Wrestling",
+    "All Japan Women's Pro-Wrestling",
+    "GAEA Japan",
+    "Girl's Pro-Wrestling Unit Color's",
+    "REINA",
 }
 
-international_women_promotions = {"SHINE Wrestling", "Women Of Wrestling"}
+international_women_promotions = {
+    "SHINE Wrestling",
+    "Women Of Wrestling",
+    "SHIMMER Women Athletes",
+    "SPARK Joshi Puroresu Of America",
+    "Uprising Women Athletes",
+}
 
 promotion_map = {
     "21342": "666",
