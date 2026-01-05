@@ -64,6 +64,8 @@ international_women_promotions = {
     "Women's Superstars United",
     "Kitsune Women's Wrestling",
     "Gorgeous Ladies Of Wrestling",
+    "Lucha Libre Femenil",
+    "Magnificent Ladies Wrestling",
 }
 
 promotion_map = {
