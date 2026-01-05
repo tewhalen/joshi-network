@@ -23,10 +23,10 @@ class OperationsManager:
         """
         self.wrestler_db = wrestler_db
         self.scraper = CageMatchScraper()
-        
+
         if slow:
             self.scraper.sleep_delay = 7.0
-            self.scraper.max_requests_per_session = float('inf')  # No limit
+            self.scraper.max_requests_per_session = float("inf")  # No limit
 
     def keep_going(self) -> bool:
         """Check if we should continue scraping (rate limit check).

@@ -307,6 +307,17 @@ class WrestlerDb(DBWrapper):
         )
 
         if self._is_gender_diverse(wrestler_id):
+            # Check if this wrestler is manually marked as female
+            from joshirank.joshi_data import considered_female
+            
+            if wrestler_id in considered_female:
+                # Skip colleague-based reclassification for manually marked wrestlers
+                logger.debug(
+                    "Gender-diverse {} manually marked as female, skipping colleague check",
+                    wrestler_id,
+                )
+                return
+            
             # if the wrestler is gender-diverse, set is_female if the
             # majority of colleagues are female
             if self.percentage_of_female_colleagues(wrestler_id) > 0.5:
@@ -323,6 +334,14 @@ class WrestlerDb(DBWrapper):
                 logger.info(
                     "Gender-diverse {} -> not female",
                     wrestler_id,
+                )
+                self._execute_and_commit(
+                    """
+                UPDATE wrestlers
+                SET is_female=0
+                WHERE wrestler_id=?
+                """,
+                    (wrestler_id,),
                 )
 
     def percentage_of_female_colleagues(self, wrestler_id: int) -> float:
