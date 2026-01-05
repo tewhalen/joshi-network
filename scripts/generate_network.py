@@ -1,6 +1,7 @@
 import datetime
 import json
 import math
+import pathlib
 from collections import Counter
 
 import click
@@ -121,19 +122,30 @@ def build_graph(from_wrestlers: set, year: int, threshold=8):
 def main(year: int):
     """Generate network graph JSON files."""
     print(f"Generating network graph for year {year}...")
+
+    # Create year subdirectory
+    output_dir = pathlib.Path(f"output/{year}")
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     output = build_graph(all_female_wrestlers(), year)
-    fn = "output/joshi_net-sm.json"
+    fn = output_dir / "network.json"
     print(
         f"Writing {len(output['nodes'])} wrestlers with {len(output['links'])} links to '{fn}'"
     )
     json.dump(output, open(fn, "w"), indent=2)
 
+    # Also write to old location for backwards compatibility
+    json.dump(output, open("output/joshi_net-sm.json", "w"), indent=2)
+
     output = build_graph(all_joshi_japanese_wrestlers(), year, threshold=2)
-    fn = "output/joshi_net-jpn.json"
+    fn_jpn = output_dir / "network-jpn.json"
     print(
-        f"Writing {len(output['nodes'])} wrestlers with {len(output['links'])} links to '{fn}'"
+        f"Writing {len(output['nodes'])} wrestlers with {len(output['links'])} links to '{fn_jpn}'"
     )
-    json.dump(output, open(fn, "w"), indent=2)
+    json.dump(output, open(fn_jpn, "w"), indent=2)
+
+    # Also write to old location for backwards compatibility
+    json.dump(output, open("output/joshi_net-jpn.json", "w"), indent=2)
 
 
 if __name__ == "__main__":

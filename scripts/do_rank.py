@@ -1,4 +1,5 @@
 import datetime
+import pathlib
 from collections import Counter, defaultdict
 
 import click
@@ -326,6 +327,16 @@ class Ranker:
         rendered_html = template.render(
             the_table=rendered_table, year=self.year, sort_column=0, sort_order="asc"
         )
+
+        # Create year subdirectory
+        output_dir = pathlib.Path(f"output/{self.year}")
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Write to year subdirectory
+        with open(output_dir / "ranking.html", "w") as f:
+            f.write(rendered_html)
+
+        # Also write to old location for backwards compatibility
         with open(f"output/{self.year}_ranking.html", "w") as f:
             f.write(rendered_html)
 

@@ -1,6 +1,8 @@
+import pathlib
 import statistics
 from collections import Counter, defaultdict
 
+import click
 import jinja2
 import matplotlib as mpl
 import matplotlib.patches as patches
@@ -61,13 +63,13 @@ def match_count_report(year: int = 2025):
     return accumulator
 
 
-def html_table_results(results):
+def html_table_results(results, year: int):
     # copy the results but remove hist_data
 
     results = [x.copy() for x in results]
     for i, r in enumerate(results):
         del r["hist_data"]
-        r["histogram"] = "<img src='h/{}_histogram_match_counts.png'/>".format(i)
+        r["histogram"] = "<img src='h/histogram_{}.png'/>".format(i)
     return tabulate(results, headers="keys", tablefmt="unsafehtml")
 
 
@@ -76,7 +78,7 @@ def save_results(results, year: int = 2025):
     template_loader = jinja2.FileSystemLoader(searchpath="templates")
     template_env = jinja2.Environment(loader=template_loader)
     template = template_env.get_template("promotions.html")
-    rendered_table = html_table_results(results)
+    rendered_table = html_table_results(results, year)
     rendered_table = rendered_table.replace(
         "<table>", '<table id="ranking-table" class="display">'
     )
@@ -84,11 +86,26 @@ def save_results(results, year: int = 2025):
     output_text = template.render(
         the_table=rendered_table, year=year, sort_column=4, sort_order="desc"
     )
-    with open(f"output/promotions.html", "w") as f:
+
+    # Create year subdirectory
+    output_dir = pathlib.Path(f"output/{year}")
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    with open(output_dir / "promotions.html", "w") as f:
+        f.write(output_text)
+
+    # Also write to old location for backwards compatibility
+    with open("output/promotions.html", "w") as f:
         f.write(output_text)
 
 
-def plot_results(results):
+def plot_results(results, year: int):
+    # Create year subdirectory and histogram subdirectory
+    output_dir = pathlib.Path(f"output/{year}")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    histogram_dir = output_dir / "h"
+    histogram_dir.mkdir(parents=True, exist_ok=True)
+
     for row, d in enumerate(results):
         fig = plt.figure(figsize=(6, 0.5))
         # Option A: black background (make bars light so they show up)
@@ -133,19 +150,21 @@ def plot_results(results):
         plt.gca().set_xticks([])
         plt.gca().set_yticks([])
         plt.savefig(
-            f"output/h/{row}_histogram_match_counts.png",
+            histogram_dir / f"histogram_{row}.png",
             bbox_inches="tight",
             transparent=True,
         )
         plt.close()
 
 
-def main():
+@click.command()
+@click.argument("year", type=int, default=2025)
+def main(year: int):
     """Generate promotion statistics and plots."""
-    results = match_count_report()
+    results = match_count_report(year=year)
 
-    save_results(results)
-    plot_results(results)
+    save_results(results, year=year)
+    plot_results(results, year=year)
 
 
 if __name__ == "__main__":

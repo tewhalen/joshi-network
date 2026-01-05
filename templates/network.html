@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joshi Network - {{ year }} {{ title_suffix|default("Network Graph") }}</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        .nav-bar {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 20px;
+            border-radius: 8px;
+            color: white;
+        }
+
+        .nav-bar a {
+            color: #ff69b4;
+            text-decoration: none;
+            margin-right: 15px;
+        }
+
+        .nav-bar a:hover {
+            text-decoration: underline;
+        }
+
+        .controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+        }
+
+        button {
+            background: #ff69b4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="nav-bar">
+        <a href="index.html">← {{ year }}</a>
+        {% if alt_network_url %}
+        <a href="{{ alt_network_url }}">{{ alt_network_label }}</a>
+        {% endif %}
+        <a href="../index.html">All Years</a>
+    </div>
+
+    <div class="controls">
+        <button id="rotationToggle">Pause Rotation</button>
+    </div>
+
+    <div id="3d-graph"></div>
+
+    <script type="module">
+        import * as THREE from 'https://esm.sh/three@0.154.0';
+        window.THREE = THREE;
+        import ForceGraph3D from 'https://esm.sh/3d-force-graph';
+        import SpriteText from 'https://esm.sh/three-spritetext';
+
+        const Graph = new ForceGraph3D(document.getElementById('3d-graph'))
+            .jsonUrl('{{ data_file|default("network.json") }}')
+            .nodeAutoColorBy('group')
+            .nodeLabel('promotion')
+            .nodeThreeObject(node => {
+                const group = new THREE.Group();
+
+                // Create sphere based on match count (log scale)
+                const size = Math.max(3, node.matches * 2);
+                const sphereGeometry = new THREE.SphereGeometry(size, 16, 16);
+                const sphereMaterial = new THREE.MeshBasicMaterial({ color: node.color });
+                const sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
+                group.add(sphereMesh);
+
+                // Add text label
+                const sprite = new SpriteText(node.name);
+                sprite.material.depthWrite = false;
+                sprite.color = node.color;
+                sprite.textHeight = 8;
+                sprite.position.y = size + 5;
+                group.add(sprite);
+
+                return group;
+            })
+        // .linkWidth('value')
+        // .linkOpacity(0.4);
+
+        // Spread nodes a little wider
+        Graph.d3Force('charge').strength(-120);
+        // Auto-rotate
+        let rotationEnabled = true;
+        let angle = 0;
+        setInterval(() => {
+            if (rotationEnabled) {
+                angle += Math.PI / 300;
+                Graph.cameraPosition({
+                    x: 1200 * Math.sin(angle),
+                    z: 1200 * Math.cos(angle),
+                });
+            }
+        }, 10);
+
+        // Toggle rotation
+        document.getElementById('rotationToggle').addEventListener('click', () => {
+            rotationEnabled = !rotationEnabled;
+            document.getElementById('rotationToggle').textContent =
+                rotationEnabled ? 'Pause Rotation' : 'Resume Rotation';
+        });
+    </script>
+</body>
+
+</html>

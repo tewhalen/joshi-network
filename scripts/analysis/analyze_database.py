@@ -366,47 +366,6 @@ def historical_coverage_statistics():
                 f"{w['populated_count']:2d} populated, {career_info}"
             )
 
-    # Check for data quality issues (matches before career start)
-    data_quality_issues = []
-    for wid in wrestler_db.all_female_wrestlers():
-        years = wrestler_db.match_years_available(wid)
-        if not years:
-            continue
-
-        info = wrestler_db.get_wrestler(wid)
-        career_start = info.get("career_start")
-        career_start_year = None
-
-        if career_start:
-            year_str = str(career_start)[:4]
-            if year_str.isdigit():
-                career_start_year = int(year_str)
-
-        min_year = min(years)
-
-        # Check for data quality issues (matches before career start)
-        if career_start_year and min_year < career_start_year:
-            data_quality_issues.append(
-                {
-                    "id": wid,
-                    "name": wrestler_db.get_name(wid),
-                    "career_start_year": career_start_year,
-                    "first_match_year": min_year,
-                    "years_early": career_start_year - min_year,
-                }
-            )
-
-    if data_quality_issues:
-        data_quality_issues.sort(key=lambda x: x["years_early"], reverse=True)
-        print(
-            f"\n⚠️  Data quality issues (matches before career start): {len(data_quality_issues)}"
-        )
-        print(f"Top 10 wrestlers with matches before their listed career start:")
-        for i, issue in enumerate(data_quality_issues[:10], 1):
-            print(
-                f"  {i:2d}. {issue['name']:30} Career start: {issue['career_start_year']}, First match: {issue['first_match_year']} ({issue['years_early']} years early)"
-            )
-
 
 def missing_wrestlers_report():
     """Report on wrestlers referenced in matches but not in the database."""
