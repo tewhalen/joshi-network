@@ -213,3 +213,11 @@ class WrestlerScrapeInfo:
         # Combine scores (weight matches slightly more than opponent diversity)
         importance = (match_score * 0.6) + (opponent_score * 0.4)
         return importance
+
+    def find_missing_wrestlers_for_wrestler(self, wrestler_id: int):
+        """Yield missing wrestler IDs found in matches for a specific wrestler."""
+        colleagues = self.wrestler_db.get_all_colleagues(wrestler_id)
+
+        for wid in colleagues:
+            if not self.wrestler_db.wrestler_exists(wid):
+                yield wid

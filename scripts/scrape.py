@@ -4,7 +4,7 @@ import shutil
 import sqlite3
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import click
@@ -20,6 +20,71 @@ from joshirank.scrape.queue_builder import (
 from joshirank.scrape.workqueue import WorkQueue
 
 YEAR = time.localtime().tm_year
+
+
+def rotate_backups(backup_dir: Path):
+    """Rotate backups to keep only recent ones.
+
+    Retention policy:
+    - Today: Keep up to 3 most recent backups
+    - Yesterday: Keep 1 most recent backup
+    - 2 days ago: Keep 1 most recent backup
+    - Older: Delete all
+
+    Args:
+        backup_dir: Directory containing backup files
+    """
+    if not backup_dir.exists():
+        return
+
+    # Get all backup files sorted by modification time (newest first)
+    backup_files = sorted(
+        backup_dir.glob("joshi_wrestlers_*.sqlite3"),
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
+    )
+
+    if not backup_files:
+        return
+
+    now = datetime.now()
+    today = now.date()
+    yesterday = today - timedelta(days=1)
+    two_days_ago = today - timedelta(days=2)
+
+    # Group backups by date
+    backups_by_date = {}
+    for backup_file in backup_files:
+        file_time = datetime.fromtimestamp(backup_file.stat().st_mtime)
+        file_date = file_time.date()
+        backups_by_date.setdefault(file_date, []).append(backup_file)
+
+    files_to_delete = []
+
+    # Process each date
+    for file_date, files in backups_by_date.items():
+        if file_date == today:
+            # Keep up to 3 most recent from today
+            if len(files) > 3:
+                files_to_delete.extend(files[3:])
+        elif file_date == yesterday:
+            # Keep 1 most recent from yesterday
+            if len(files) > 1:
+                files_to_delete.extend(files[1:])
+        elif file_date == two_days_ago:
+            # Keep 1 most recent from 2 days ago
+            if len(files) > 1:
+                files_to_delete.extend(files[1:])
+        else:
+            # Delete all older backups
+            files_to_delete.extend(files)
+
+    # Delete old backups
+    if files_to_delete:
+        logger.info("Rotating backups: removing {} old backup(s)", len(files_to_delete))
+        for backup_file in files_to_delete:
+            logger.debug("Deleting old backup: {}", backup_file.name)
+            backup_file.unlink()
 
 
 def backup_database(source_path: Path, backup_dir: Path) -> Path:
@@ -65,6 +130,10 @@ def backup_database(source_path: Path, backup_dir: Path) -> Path:
         raise
 
     logger.success("Database backup created successfully")
+
+    # Rotate old backups
+    rotate_backups(backup_dir)
+
     return backup_path
 
 

@@ -328,10 +328,10 @@ class FilteredQueueBuilder(QueueBuilder):
 
     def get_target_wrestlers(self) -> set[int]:
         """Return only female wrestlers in the filter set."""
-        #all_female = set(self.wrestler_db.all_female_wrestlers())
-        #return all_female.intersection(self.wrestler_filter)
+        # all_female = set(self.wrestler_db.all_female_wrestlers())
+        # return all_female.intersection(self.wrestler_filter)
         return self.wrestler_filter
-        
+
     def build(self) -> WorkQueue:
         """Build and return a work queue based on database state."""
         queue = WorkQueue()
@@ -345,6 +345,21 @@ class FilteredQueueBuilder(QueueBuilder):
         for wid in self.get_target_wrestlers():
             for item in self.stale_match_tasks(wid):
                 queue.enqueue(item)
+
+        # 3. Opponents of target wrestlers who are missing profiles
+        for wid in self.get_target_wrestlers():
+            for missing_wid in self.scrape_info.find_missing_wrestlers_for_wrestler(
+                wid
+            ):
+                if missing_wid in self.wrestler_filter:
+                    priority = calculate_missing_wrestler_priority(10)
+                    queue.enqueue(
+                        WorkItem(
+                            priority=priority,
+                            object_id=missing_wid,
+                            operation="refresh_profile",
+                        )
+                    )
 
         logger.info("Built work queue with {} items", len(queue))
         return queue
