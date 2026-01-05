@@ -212,7 +212,7 @@ class WrestlerDb(DBWrapper):
         )
 
     def save_matches_for_wrestler(
-        self, wrestler_id: int, matches: list[dict], year: int = 2025
+        self, wrestler_id: int, matches: list[dict], year: int
     ):
         """Save the match data for a wrestler in the sql table as JSON."""
         cm_matches_json = json.dumps(matches)
@@ -518,7 +518,7 @@ class WrestlerDb(DBWrapper):
 
     def save_promotion(self, promotion_id: int, promotion_data: dict):
         """Save promotion data to the database.
-        
+
         Args:
             promotion_id: CageMatch promotion ID
             promotion_data: Dict with promotion info from parse_promotion_page()
@@ -532,11 +532,11 @@ class WrestlerDb(DBWrapper):
                 promotion_data,
             )
             raise
-        
+
         name = promotion_data.get("Name", "")
         founded = promotion_data.get("Founded", "")
         country = promotion_data.get("Country", "")
-        
+
         self._execute_and_commit(
             """
         INSERT OR REPLACE INTO promotions
@@ -548,7 +548,7 @@ class WrestlerDb(DBWrapper):
 
     def get_promotion(self, promotion_id: int) -> dict | None:
         """Get promotion data by ID.
-        
+
         Returns:
             Dict with promotion info, or None if not found
         """
@@ -568,7 +568,7 @@ class WrestlerDb(DBWrapper):
 
     def get_promotion_name(self, promotion_id: int) -> str:
         """Get the name of a promotion by ID.
-        
+
         Returns:
             Promotion name, or str(promotion_id) if not found
         """
@@ -590,14 +590,12 @@ class WrestlerDb(DBWrapper):
 
     def all_promotion_ids(self) -> list[int]:
         """Return a list of all promotion IDs in the database."""
-        rows = self._select_and_fetchall(
-            """SELECT promotion_id FROM promotions""", ()
-        )
+        rows = self._select_and_fetchall("""SELECT promotion_id FROM promotions""", ())
         return [row[0] for row in rows]
 
     def get_promotion_timestamp(self, promotion_id: int) -> float:
         """Get the last update timestamp for a promotion.
-        
+
         Returns 0 if promotion not found.
         """
         row = self._select_and_fetchone(
@@ -651,10 +649,10 @@ def get_name(wrestler_id: int) -> str:
 @functools.lru_cache(maxsize=None)
 def get_promotion_name(promotion_id: int) -> str:
     """Get promotion name by ID, with caching.
-    
+
     Args:
         promotion_id: CageMatch promotion ID
-    
+
     Returns:
         Promotion name, or str(promotion_id) if not found
     """

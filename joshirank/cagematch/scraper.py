@@ -84,6 +84,31 @@ class CageMatchScraper:
                 break
         return all_matches, available_years
 
+    def scrape_all_matches(self, wrestler_id: int, start=0) -> list[dict]:
+        """Get all matches for the wrestler across all years."""
+        all_matches_url = f"https://www.cagematch.net/?id=2&nr={wrestler_id}&page=4"
+        all_matches = []
+
+        while True:
+            time.sleep(self.sleep_delay)
+            if start:
+                url = all_matches_url + f"&s={start}"
+            else:
+                url = all_matches_url
+            r = self.session.get(url)
+            self.requests_made += 1
+            if r:
+                matches = list(cm_match.extract_match_data_from_match_page(r.text))
+                all_matches.extend(matches)
+
+                if len(matches) == 100:
+                    start += 100
+                else:
+                    break
+            else:
+                break
+        return all_matches
+
     def match_years(self, wrestler_id: int) -> set[int]:
         """Get all years that wrestler has matches in."""
         matches_url = f"https://www.cagematch.net/?id=2&nr={wrestler_id}&page=4"

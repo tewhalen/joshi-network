@@ -87,46 +87,59 @@ class QueueBuilder:
 
         Other than that, we should rely upon created stale stubs to trigger
         match-year refreshes on a normal schedule.
+
+        Efficiency heuristic: Use refresh_all_matches when many years are stale.
+        Threshold: 3+ stale years -> use refresh_all_matches (1 request)
+        Otherwise: use year-by-year refresh (1 request per year)
         """
 
         available_years = self.wrestler_db.match_years_available(wid)
         is_active = self.scrape_info.is_recently_active(wid)
         importance = self.scrape_info.calculate_importance(wid)
 
-        # Add missing current year only for recently active wrestlers
-        # Force Refresh won't do this for non-active wrestlers.
-        if is_active and (
-            self.current_year not in available_years or self.force_refresh
-        ):
-            priority = get_match_refresh_priority(
-                self.current_year, self.current_year, is_active, importance
-            )
-            if (
-                self.force_refresh or priority < 100
-            ):  # Skip if priority is too low (inactive wrestlers)
-                yield WorkItem(
-                    priority=priority,
-                    object_id=wid,
-                    operation="refresh_matches",
-                    year=self.current_year,
-                )
+        # Collect all years that need refreshing
+        years_to_refresh = []
 
-        # Check stale years (for years already in database)
         if not self.force_refresh:
-            stale_years = self.scrape_info.get_stale_match_years(wid)
-            for year, priority in stale_years:
-                yield WorkItem(
-                    priority=priority,
-                    object_id=wid,
-                    operation="refresh_matches",
-                    year=year,
+            # Normal mode: add missing current year for active wrestlers
+            if is_active and self.current_year not in available_years:
+                priority = get_match_refresh_priority(
+                    self.current_year, self.current_year, is_active, importance
                 )
+                if priority < 100:
+                    years_to_refresh.append((self.current_year, priority))
+
+            # Check stale years (for years already in database)
+            stale_years = self.scrape_info.get_stale_match_years(wid)
+            years_to_refresh.extend(stale_years)
         else:
-            # Force refresh all available years
+            # Force mode: refresh all available years
             for year in available_years:
                 priority = get_match_refresh_priority(
                     year, self.current_year, is_active, importance
                 )
+                years_to_refresh.append((year, priority))
+
+            # Add current year if not already in available_years (for active wrestlers)
+            if is_active and self.current_year not in available_years:
+                priority = get_match_refresh_priority(
+                    self.current_year, self.current_year, is_active, importance
+                )
+                years_to_refresh.append((self.current_year, priority))
+
+        # Decide: refresh_all_matches vs year-by-year
+        # Use refresh_all_matches if 3+ years need refreshing (more efficient)
+        if len(years_to_refresh) >= 3:
+            # Use the highest priority (lowest number) from the years
+            best_priority = min((p for y, p in years_to_refresh), default=50)
+            yield WorkItem(
+                priority=best_priority,
+                object_id=wid,
+                operation="refresh_all_matches",
+            )
+        else:
+            # Refresh year-by-year (more targeted)
+            for year, priority in years_to_refresh:
                 yield WorkItem(
                     priority=priority,
                     object_id=wid,

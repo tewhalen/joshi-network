@@ -38,7 +38,7 @@ class OperationsManager:
         for wid in missing_wrestlers:
             self.wrestler_db.save_profile_for_wrestler(wid, {"Missing Profile": True})
             self.wrestler_db.update_wrestler_from_profile(wid)
-            self.wrestler_db.save_matches_for_wrestler(wid, [])
+            self.wrestler_db.save_matches_for_wrestler(wid, [], 2025)
 
     def refresh_profile(self, wrestler_id: int):
         """Scrape and update wrestler profile.
@@ -68,7 +68,7 @@ class OperationsManager:
             # to ensure their matches get queued in the next session
             if self.wrestler_db.is_female(wrestler_id):
                 guess_year = self._guess_likely_match_year(scraped_profile)
-                logger.info(
+                logger.success(
                     "Creating stub match entry for new female wrestler {} for year {}",
                     wrestler_id,
                     guess_year,
@@ -101,6 +101,41 @@ class OperationsManager:
                 sorted(available_years),
             )
             self.wrestler_db.create_stale_match_stubs(wrestler_id, available_years)
+
+        # Update derived metadata from match data
+        self.wrestler_db.update_matches_from_matches(wrestler_id)
+        self.wrestler_db.update_wrestler_from_matches(wrestler_id)
+
+    def refresh_all_matches(self, wrestler_id: int):
+        """Scrape and update all matches for a wrestler.
+
+        Args:
+            wrestler_id: ID of wrestler to scrape
+        """
+        if wrestler_id == -1:
+            logger.warning("Skipping full match refresh for sentinel wrestler_id -1")
+            return
+
+        name = self.wrestler_db.get_name(wrestler_id)
+        logger.info("Scraping all matches for {} ({})", name, wrestler_id)
+        matches = self.scraper.scrape_all_matches(wrestler_id)
+
+        # matches is a list of match dicts which need to be grouped by year
+        matches_by_year = {}
+        for match in matches:
+            year = match.get("date", "Unknown")[:4]
+            if year.isdigit():
+                year = int(year)
+            else:
+                logger.warning(
+                    "Skipping match with unknown year for wrestler {}: {}",
+                    wrestler_id,
+                    match,
+                )
+                continue  # Skip matches with unknown year
+            matches_by_year.setdefault(year, []).append(match)
+        for year, matches in matches_by_year.items():
+            self.wrestler_db.save_matches_for_wrestler(wrestler_id, matches, year=year)
 
         # Update derived metadata from match data
         self.wrestler_db.update_matches_from_matches(wrestler_id)
@@ -173,6 +208,8 @@ class OperationsManager:
                 )
                 return
             self.refresh_matches_for_year(item.object_id, item.year)
+        elif item.operation == "refresh_all_matches":
+            self.refresh_all_matches(item.object_id)
         elif item.operation == "refresh_promotion":
             self.refresh_promotion(item.object_id)
         else:
