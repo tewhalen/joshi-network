@@ -5,6 +5,7 @@ from abc import abstractmethod
 
 from loguru import logger
 
+from joshirank.analysis.gender import gender_diverse_wrestlers
 from joshirank.joshidb import WrestlerDb
 from joshirank.scrape.priority import (
     calculate_missing_wrestler_priority,
@@ -271,7 +272,7 @@ class FullQueueBuilder(QueueBuilder):
 
         # 6. Gender-diverse wrestlers: always check current year matches
         if self.should_scrape_gender_diverse():
-            for wid in self.wrestler_db.gender_diverse_wrestlers():
+            for wid in gender_diverse_wrestlers():
                 available_years = self.wrestler_db.match_years_available(wid)
                 importance = self.scrape_info.calculate_importance(wid)
                 priority = get_gender_diverse_match_priority(

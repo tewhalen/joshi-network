@@ -6,7 +6,7 @@ from collections import Counter, defaultdict
 from datetime import datetime
 
 from joshirank.joshidb import wrestler_db
-
+from joshirank.analysis.gender import gender_diverse_wrestlers()
 
 def format_age(timestamp: float) -> str:
     """Format timestamp age in human-readable format."""
@@ -32,7 +32,7 @@ def wrestler_statistics():
 
     all_ids = wrestler_db.all_wrestler_ids()
     female_ids = list(wrestler_db.all_female_wrestlers())
-    gender_diverse_ids = list(wrestler_db.gender_diverse_wrestlers())
+    gender_diverse_ids = list(gender_diverse_wrestlers())
 
     print(f"\nTotal wrestlers: {len(all_ids)}")
     print(

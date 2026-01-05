@@ -7,12 +7,13 @@ import time
 
 import pytest
 
-from joshirank.queries import (
+from joshirank.analysis.gender import (
+    guess_gender_of_wrestler,
+)
+from joshirank.analysis.gender_cache import (
     GenderCache,
-    _gender_cache,
     clear_gender_cache,
     get_gender_cache_stats,
-    guess_gender_of_wrestler,
 )
 
 
@@ -223,12 +224,11 @@ class TestGuessGenderWithCache:
         """Test that cache miss triggers calculation and caches result."""
         # Create a mock wrestler_db with minimal data
         # Use a temp cache for this test
-        from joshirank import queries
-        from joshirank.joshidb import wrestler_db
+        from joshirank.analysis import gender_cache
 
-        original_cache = queries._gender_cache
+        original_cache = gender_cache._gender_cache
         test_cache = GenderCache(temp_cache_file)
-        monkeypatch.setattr(queries, "_gender_cache", test_cache)
+        monkeypatch.setattr(gender_cache, "_gender_cache", test_cache)
 
         try:
             # Pick a wrestler ID that exists
@@ -238,13 +238,13 @@ class TestGuessGenderWithCache:
             test_cache.clear()
 
             # First call should calculate
-            result1 = guess_gender_of_wrestler(wrestler_db, wrestler_id)
+            result1 = guess_gender_of_wrestler(wrestler_id)
 
             # Result should be cached
             assert test_cache.get(wrestler_id) is not None
 
             # Second call should use cache
-            result2 = guess_gender_of_wrestler(wrestler_db, wrestler_id)
+            result2 = guess_gender_of_wrestler(wrestler_id)
 
             # Results should match
             assert result1 == result2
@@ -252,16 +252,15 @@ class TestGuessGenderWithCache:
         finally:
             # Restore original cache
             test_cache.close()
-            monkeypatch.setattr(queries, "_gender_cache", original_cache)
+            monkeypatch.setattr(gender_cache, "_gender_cache", original_cache)
 
     def test_cache_hit_returns_immediately(self, temp_cache_file, monkeypatch):
         """Test that cache hit doesn't recalculate."""
-        from joshirank import queries
-        from joshirank.joshidb import wrestler_db
+        from joshirank.analysis import gender_cache
 
-        original_cache = queries._gender_cache
+        original_cache = gender_cache._gender_cache
         test_cache = GenderCache(temp_cache_file)
-        monkeypatch.setattr(queries, "_gender_cache", test_cache)
+        monkeypatch.setattr(gender_cache, "_gender_cache", test_cache)
 
         try:
             wrestler_id = 9462
@@ -270,28 +269,27 @@ class TestGuessGenderWithCache:
             test_cache.set(wrestler_id, 0.99)
 
             # Call should return cached value immediately
-            result = guess_gender_of_wrestler(wrestler_db, wrestler_id)
+            result = guess_gender_of_wrestler(wrestler_id)
 
             assert result == 0.99
 
         finally:
             test_cache.close()
-            monkeypatch.setattr(queries, "_gender_cache", original_cache)
+            monkeypatch.setattr(gender_cache, "_gender_cache", original_cache)
 
     def test_no_opponents_returns_neutral(self, temp_cache_file, monkeypatch):
         """Test that wrestler with no opponents gets neutral score."""
-        from joshirank import queries
-        from joshirank.joshidb import wrestler_db
+        from joshirank.analysis import gender_cache
 
-        original_cache = queries._gender_cache
+        original_cache = gender_cache._gender_cache
         test_cache = GenderCache(temp_cache_file)
-        monkeypatch.setattr(queries, "_gender_cache", test_cache)
+        monkeypatch.setattr(gender_cache, "_gender_cache", test_cache)
 
         try:
             # Use a wrestler ID unlikely to exist in inverse colleagues
             wrestler_id = 99999999
 
-            result = guess_gender_of_wrestler(wrestler_db, wrestler_id)
+            result = guess_gender_of_wrestler(wrestler_id)
 
             # Should return neutral score
             assert result == 0.5
@@ -301,7 +299,7 @@ class TestGuessGenderWithCache:
 
         finally:
             test_cache.close()
-            monkeypatch.setattr(queries, "_gender_cache", original_cache)
+            monkeypatch.setattr(gender_cache, "_gender_cache", original_cache)
 
 
 class TestUtilityFunctions:
@@ -309,11 +307,11 @@ class TestUtilityFunctions:
 
     def test_clear_gender_cache(self, temp_cache_file, monkeypatch):
         """Test that clear_gender_cache empties the cache."""
-        from joshirank import queries
+        from joshirank.analysis import gender_cache
 
-        original_cache = queries._gender_cache
+        original_cache = gender_cache._gender_cache
         test_cache = GenderCache(temp_cache_file)
-        monkeypatch.setattr(queries, "_gender_cache", test_cache)
+        monkeypatch.setattr(gender_cache, "_gender_cache", test_cache)
 
         try:
             # Add some entries
@@ -328,15 +326,15 @@ class TestUtilityFunctions:
 
         finally:
             test_cache.close()
-            monkeypatch.setattr(queries, "_gender_cache", original_cache)
+            monkeypatch.setattr(gender_cache, "_gender_cache", original_cache)
 
     def test_get_gender_cache_stats(self, temp_cache_file, monkeypatch):
         """Test that get_gender_cache_stats returns correct info."""
-        from joshirank import queries
+        from joshirank.analysis import gender_cache
 
-        original_cache = queries._gender_cache
+        original_cache = gender_cache._gender_cache
         test_cache = GenderCache(temp_cache_file)
-        monkeypatch.setattr(queries, "_gender_cache", test_cache)
+        monkeypatch.setattr(gender_cache, "_gender_cache", test_cache)
 
         try:
             # Add some entries
@@ -352,17 +350,17 @@ class TestUtilityFunctions:
 
         finally:
             test_cache.close()
-            monkeypatch.setattr(queries, "_gender_cache", original_cache)
+            monkeypatch.setattr(gender_cache, "_gender_cache", original_cache)
 
     def test_get_gender_cache_stats_no_file(self, temp_cache_file, monkeypatch):
         """Test stats when cache file doesn't exist."""
-        from joshirank import queries
+        from joshirank.analysis import gender_cache
 
-        original_cache = queries._gender_cache
+        original_cache = gender_cache._gender_cache
         # Use a non-existent path
         nonexistent_path = temp_cache_file.parent / "nonexistent.db"
         test_cache = GenderCache(nonexistent_path)
-        monkeypatch.setattr(queries, "_gender_cache", test_cache)
+        monkeypatch.setattr(gender_cache, "_gender_cache", test_cache)
 
         try:
             # Add entry but don't call save() explicitly (SQLite creates file on init)
@@ -376,7 +374,7 @@ class TestUtilityFunctions:
 
         finally:
             test_cache.close()
-            monkeypatch.setattr(queries, "_gender_cache", original_cache)
+            monkeypatch.setattr(gender_cache, "_gender_cache", original_cache)
 
 
 class TestCachePersistence:

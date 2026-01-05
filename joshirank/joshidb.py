@@ -341,6 +341,7 @@ class WrestlerDb(DBWrapper):
 
     def update_wrestler_from_matches(self, wrestler_id: int):
         """Using the stored match info for the wrestler, update their metadata in the SQL db."""
+        from joshirank.analysis.gender import update_gender_diverse_classification
 
         self._execute_and_commit(
             """
@@ -351,51 +352,8 @@ class WrestlerDb(DBWrapper):
             (self.guess_location_from_matches(wrestler_id), wrestler_id),
         )
 
-        if self._is_gender_diverse(wrestler_id):
-            # Check if this wrestler is manually marked as female
-            from joshirank.joshi_data import considered_female
-
-            if wrestler_id in considered_female:
-                # Skip colleague-based reclassification for manually marked wrestlers
-                logger.debug(
-                    "Gender-diverse {} manually marked as female, skipping colleague check",
-                    wrestler_id,
-                )
-                return
-
-            # if the wrestler is gender-diverse, set is_female if the
-            # majority of colleagues are female
-            if self.percentage_of_female_colleagues(wrestler_id) > 0.5:
-                logger.info("Gender-diverse {} -> female", wrestler_id)
-                self._execute_and_commit(
-                    """
-                UPDATE wrestlers
-                SET is_female=1
-                WHERE wrestler_id=?
-                """,
-                    (wrestler_id,),
-                )
-            else:
-                logger.info(
-                    "Gender-diverse {} -> not female",
-                    wrestler_id,
-                )
-                self._execute_and_commit(
-                    """
-                UPDATE wrestlers
-                SET is_female=0
-                WHERE wrestler_id=?
-                """,
-                    (wrestler_id,),
-                )
-
-    def percentage_of_female_colleagues(self, wrestler_id: int) -> float:
-        """return the percentage of colleagues known to be female"""
-        colleagues = self.get_all_colleagues(wrestler_id)
-        if not colleagues:
-            return 0.0
-        female_count = sum(1 for c in colleagues if self.is_female(c))
-        return female_count / len(colleagues)
+        # Update gender classification for gender-diverse wrestlers
+        update_gender_diverse_classification(wrestler_id, db=self)
 
     def guess_location_from_matches(self, wrestler_id: int):
         """Guess the wrestler's location based on countries worked in matches."""
@@ -629,18 +587,6 @@ class WrestlerDb(DBWrapper):
             (wrestler_id,),
         )
         return {row[0] for row in rows}
-
-    def _is_gender_diverse(self, wrestler_id: int) -> bool:
-        """Return True if the wrestler is considered gender-diverse."""
-        profile = self.get_cm_profile_for_wrestler(wrestler_id)
-        g = profile.get("Gender")
-        return g == "diverse"
-
-    def gender_diverse_wrestlers(self):
-        """Yield wrestler ids considered gender-diverse."""
-        for wrestler_id in self.all_wrestler_ids():
-            if self._is_gender_diverse(wrestler_id):
-                yield wrestler_id
 
     def save_promotion(self, promotion_id: int, promotion_data: dict):
         """Save promotion data to the database.

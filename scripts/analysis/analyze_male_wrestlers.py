@@ -4,6 +4,7 @@
 from collections import Counter, defaultdict
 from datetime import datetime
 
+from joshirank.analysis.gender import gender_diverse_wrestlers
 from joshirank.joshidb import wrestler_db
 
 
@@ -26,7 +27,7 @@ def male_wrestler_statistics():
     )
 
     # Gender diverse among males
-    gender_diverse_ids = set(wrestler_db.gender_diverse_wrestlers())
+    gender_diverse_ids = set(gender_diverse_wrestlers())
     gender_diverse_male = gender_diverse_ids - female_ids
 
     if gender_diverse_male:
