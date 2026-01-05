@@ -29,7 +29,7 @@ def extract_singles_matches(match_data: list[dict]) -> Generator[tuple]:
                 )
 
 
-def all_matches() -> set:
+def all_matches(year: int) -> set:
     all_matches = set()
     j_count = 0
     for wrestler in wrestler_db.all_wrestler_ids():
@@ -37,7 +37,9 @@ def all_matches() -> set:
         if not wrestler_db.is_female(wrestler):
             continue
         j_count += 1
-        for match in extract_singles_matches(wrestler_db.get_matches(wrestler)):
+        for match in extract_singles_matches(
+            wrestler_db.get_matches(wrestler, year=year)
+        ):
             # print(match)
             all_matches.add(match)
 

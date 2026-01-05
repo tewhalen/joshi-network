@@ -16,7 +16,7 @@ def match_count_report(year: int = 2025):
     promotions = defaultdict(list)
     for wid, wrestler_info in wrestler_db.all_female_wrestlers():
         name = get_name(int(wid))
-        matches = wrestler_db.get_matches(int(wid))
+        matches = wrestler_db.get_matches(int(wid), year=year)
         match_count = len(matches)
         promotion = get_promotion_with_location(int(wid))
         promotions[promotion].append((name, match_count))

@@ -20,7 +20,7 @@ def match_count_report(year: int = 2025):
     promotions = defaultdict(list)
     for wid in wrestler_db.all_female_wrestlers():
         name = get_name(int(wid))
-        matches = wrestler_db.get_matches(int(wid))
+        matches = wrestler_db.get_matches(int(wid), year=year)
         match_count = len(matches)
         if not match_count:
             continue  # don't count zeros
@@ -140,8 +140,13 @@ def plot_results(results):
         plt.close()
 
 
-if __name__ == "__main__":
+def main():
+    """Generate promotion statistics and plots."""
     results = match_count_report()
 
     save_results(results)
     plot_results(results)
+
+
+if __name__ == "__main__":
+    main()

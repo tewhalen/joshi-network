@@ -1,6 +1,7 @@
 import datetime
 from collections import defaultdict
 
+import click
 import jinja2
 from tabulate import tabulate
 
@@ -33,7 +34,7 @@ class Wrestler(Player):
 class Ranker:
     wrestler_objects: dict[str, Wrestler]
 
-    def __init__(self, year: int = 2025):
+    def __init__(self, year: int):
         self.year = year
         self.wrestler_objects = {}
         self.rank_history = {}
@@ -52,7 +53,7 @@ class Ranker:
     def matches_by_week(self) -> dict[tuple[int, int], list[dict]]:
         """Returns a dict of (year, week) -> list of matches"""
         matches_by_week = defaultdict(list)
-        for match in all_matches():
+        for match in all_matches(self.year):
             match_dict = dict(match)
             match_date = match_dict["date"]
             if match_date == "Unknown":
@@ -270,13 +271,27 @@ class Ranker:
             "<table>", '<table id="ranking-table" class="display">'
         )
         rendered_html = template.render(
-            the_table=rendered_table, year=2025, sort_column=0, sort_order="asc"
+            the_table=rendered_table, year=self.year, sort_column=0, sort_order="asc"
         )
         with open(f"output/{self.year}_ranking.html", "w") as f:
             f.write(rendered_html)
 
 
-if __name__ == "__main__":
-    r = Ranker(2025)
+@click.command()
+@click.option(
+    "--year",
+    type=int,
+    default=datetime.datetime.now().year - 1,
+    help="Year to generate rankings for (default: previous year)",
+)
+def main(year):
+    """Generate Glicko2 rankings from match data."""
+    click.echo(f"Generating rankings for year {year}...")
+    r = Ranker(year)
     r.main()
     r.save_rankings_to_html()
+    click.echo(f"Rankings saved to output/{year}_ranking.html")
+
+
+if __name__ == "__main__":
+    main()

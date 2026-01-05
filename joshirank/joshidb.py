@@ -424,7 +424,7 @@ class WrestlerDb(DBWrapper):
         else:
             return "Unknown"
 
-    def get_matches(self, wrestler_id: int, year: int = 2025) -> list[dict]:
+    def get_matches(self, wrestler_id: int, year: int) -> list[dict]:
         # first try to get from sqlite
         row = self._select_and_fetchone(
             """SELECT cm_matches_json FROM matches WHERE wrestler_id=? AND year=?""",

@@ -1,6 +1,9 @@
+import datetime
 import json
 import math
 from collections import Counter
+
+import click
 
 from joshirank.identifier import Identifier
 from joshirank.joshi_data import joshi_promotions
@@ -45,13 +48,13 @@ def all_joshi_japanese_wrestlers():
     return joshi_wrestlers
 
 
-def build_graph(from_wrestlers: set, threshold=8, year=2025):
+def build_graph(from_wrestlers: set, year: int, threshold=8):
     promotion_id = Identifier()
     wrestlers = set()
     interactions = Counter()
     match_counts = Counter()
     for w_id in from_wrestlers:
-        matches = wrestler_db.get_matches(w_id)
+        matches = wrestler_db.get_matches(w_id, year)
 
         for match in matches:
             if year and not match["date"].startswith(str(year)):
@@ -109,17 +112,29 @@ def build_graph(from_wrestlers: set, threshold=8, year=2025):
     return d
 
 
-if __name__ == "__main__":
-    output = build_graph(all_female_wrestlers())
+@click.command()
+@click.argument(
+    "year",
+    type=int,
+    default=datetime.datetime.now().year - 1,
+)
+def main(year: int):
+    """Generate network graph JSON files."""
+    print(f"Generating network graph for year {year}...")
+    output = build_graph(all_female_wrestlers(), year)
     fn = "output/joshi_net-sm.json"
     print(
         f"Writing {len(output['nodes'])} wrestlers with {len(output['links'])} links to '{fn}'"
     )
     json.dump(output, open(fn, "w"), indent=2)
 
-    output = build_graph(all_joshi_japanese_wrestlers(), threshold=2)
+    output = build_graph(all_joshi_japanese_wrestlers(), year, threshold=2)
     fn = "output/joshi_net-jpn.json"
     print(
         f"Writing {len(output['nodes'])} wrestlers with {len(output['links'])} links to '{fn}'"
     )
     json.dump(output, open(fn, "w"), indent=2)
+
+
+if __name__ == "__main__":
+    main()
