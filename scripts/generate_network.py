@@ -6,9 +6,10 @@ from collections import Counter
 
 import click
 
+from joshirank.analysis.promotion import get_promotion_with_location
 from joshirank.identifier import Identifier
 from joshirank.joshi_data import joshi_promotions
-from joshirank.joshidb import get_name, get_promotion_with_location, wrestler_db
+from joshirank.joshidb import get_name, wrestler_db
 
 
 def all_female_wrestlers():

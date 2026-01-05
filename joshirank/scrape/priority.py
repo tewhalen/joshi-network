@@ -5,6 +5,8 @@ Priority scale: 0-100, where lower numbers = higher priority.
 
 import time
 
+from joshirank.analysis.gender import guess_gender_of_wrestler
+
 # Priority constants (0-100 scale, lower = higher priority)
 PRIORITY_URGENT = 1  # Missing wrestler profiles
 PRIORITY_HIGH = 10  # Current year matches, stale female profiles
@@ -88,12 +90,10 @@ def calculate_missing_wrestler_priority(
         base_priority = 90 + (2 - n_opponents)  # 90-92
 
     # If we have database access, use sophisticated gender prediction
-    if wrestler_id and wrestler_db:
+    if wrestler_id:
         try:
-            from joshirank.queries import guess_gender_of_wrestler
-
             # Get cached or calculated confidence score
-            confidence = guess_gender_of_wrestler(wrestler_db, wrestler_id)
+            confidence = guess_gender_of_wrestler(wrestler_id)
 
             # Apply gender-based priority adjustments
             # For wrestlers with very few opponents, keep priority below NORMAL

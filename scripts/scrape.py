@@ -10,7 +10,7 @@ from pathlib import Path
 import click
 from loguru import logger
 
-from joshirank.joshidb import WrestlerDb, reopen_rw
+from joshirank.joshidb import WrestlerDb, wrestler_db
 from joshirank.scrape.operations import OperationsManager
 from joshirank.scrape.queue_builder import (
     FilteredQueueBuilder,
@@ -195,7 +195,9 @@ class ScrapingSession:
                             year_str,
                         )
                 else:
-                    self.ops_manager.execute_work_item(item)
+                    # make the db writable and execute the item
+                    with self.wrestler_db.writable():
+                        self.ops_manager.execute_work_item(item)
 
                 processed += 1
                 if processed % 10 == 0:
@@ -266,7 +268,7 @@ class ScrapingSession:
         """Main scraping session logic using work queue."""
 
         logger.success("Starting scraping session with work queue...")
-        self.ops_manager.seed_database()
+
         work_queue = self.build_work_queue()
         self.process_queue(work_queue)
 
@@ -335,49 +337,46 @@ def cli(tjpw_only, wrestler_ids, dry_run, stats_only, force, no_backup, slow):
                 "Proceeding without backup (use --no-backup to skip this warning)"
             )
 
-    with reopen_rw() as wrestler_db:
-        if tjpw_only and wrestler_ids:
-            logger.error("Cannot use both --tjpw-only and --wrestler-ids")
-            return
+    # open database for writing and initialize it
+    with wrestler_db.writable():
+        wrestler_db.initialize_sql_db()
 
-        # Instantiate appropriate queue builder based on flags
-        if force:
-            logger.warning(
-                "FORCE MODE: Ignoring staleness checks, will refresh all data"
-            )
+    if tjpw_only and wrestler_ids:
+        logger.error("Cannot use both --tjpw-only and --wrestler-ids")
+        return
 
-        if tjpw_only:
-            from joshirank.queries import all_tjpw_wrestlers
+    # Instantiate appropriate queue builder based on flags
+    if force:
+        logger.warning("FORCE MODE: Ignoring staleness checks, will refresh all data")
 
-            wrestler_filter = all_tjpw_wrestlers(wrestler_db)
-            logger.info(
-                "TJPW-only mode: limiting to {} wrestlers", len(wrestler_filter)
-            )
-            queue_builder = FilteredQueueBuilder(
-                wrestler_db, wrestler_filter, force_refresh=force
-            )
-        elif wrestler_ids:
-            wrestler_filter = set(int(wid.strip()) for wid in wrestler_ids.split(","))
-            logger.info("Filtering to {} specific wrestler IDs", len(wrestler_filter))
-            queue_builder = FilteredQueueBuilder(
-                wrestler_db, wrestler_filter, force_refresh=force
-            )
-        else:
-            queue_builder = FullQueueBuilder(wrestler_db, force_refresh=force)
+    if tjpw_only:
+        from joshirank.analysis.promotion import all_tjpw_wrestlers
 
-        if slow:
-            logger.warning("SLOW MODE: 7s between requests, no session limit")
-
-        scraper = ScrapingSession(
-            wrestler_db, queue_builder, dry_run=dry_run, slow=slow
+        wrestler_filter = all_tjpw_wrestlers()
+        logger.info("TJPW-only mode: limiting to {} wrestlers", len(wrestler_filter))
+        queue_builder = FilteredQueueBuilder(
+            wrestler_db, wrestler_filter, force_refresh=force
         )
+    elif wrestler_ids:
+        wrestler_filter = set(int(wid.strip()) for wid in wrestler_ids.split(","))
+        logger.info("Filtering to {} specific wrestler IDs", len(wrestler_filter))
+        queue_builder = FilteredQueueBuilder(
+            wrestler_db, wrestler_filter, force_refresh=force
+        )
+    else:
+        queue_builder = FullQueueBuilder(wrestler_db, force_refresh=force)
 
-        if stats_only:
-            logger.info("Stats-only mode: building work queue...")
-            work_queue = scraper.build_work_queue()
-            scraper.show_stats(work_queue)
-        else:
-            scraper.main()
+    if slow:
+        logger.warning("SLOW MODE: 7s between requests, no session limit")
+
+    scraper = ScrapingSession(wrestler_db, queue_builder, dry_run=dry_run, slow=slow)
+
+    if stats_only:
+        logger.info("Stats-only mode: building work queue...")
+        work_queue = scraper.build_work_queue()
+        scraper.show_stats(work_queue)
+    else:
+        scraper.main()
 
 
 if __name__ == "__main__":

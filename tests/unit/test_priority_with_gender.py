@@ -12,13 +12,12 @@ class TestMissingWrestlerPriorityWithGender:
         """Test that high-confidence female wrestlers get urgent priority."""
 
         # Mock guess_gender_of_wrestler to return high female confidence
-        def mock_guess(db, wrestler_id):
+        def mock_guess(wrestler_id):
             return 0.95  # Very confident female
 
-        from joshirank import queries
         from joshirank.scrape import priority
 
-        monkeypatch.setattr(queries, "guess_gender_of_wrestler", mock_guess)
+        monkeypatch.setattr(priority, "guess_gender_of_wrestler", mock_guess)
 
         # Mock database
         class MockDb:
@@ -35,13 +34,12 @@ class TestMissingWrestlerPriorityWithGender:
     def test_high_confidence_male_gets_low_priority(self, monkeypatch):
         """Test that high-confidence male wrestlers get low priority."""
 
-        def mock_guess(db, wrestler_id):
+        def mock_guess(wrestler_id):
             return 0.1  # Very likely male
 
-        from joshirank import queries
         from joshirank.scrape import priority
 
-        monkeypatch.setattr(queries, "guess_gender_of_wrestler", mock_guess)
+        monkeypatch.setattr(priority, "guess_gender_of_wrestler", mock_guess)
 
         class MockDb:
             pass
@@ -57,13 +55,12 @@ class TestMissingWrestlerPriorityWithGender:
     def test_medium_confidence_uses_base_priority(self, monkeypatch):
         """Test that medium confidence uses base opponent-count priority."""
 
-        def mock_guess(db, wrestler_id):
+        def mock_guess(wrestler_id):
             return 0.55  # Uncertain
 
-        from joshirank import queries
         from joshirank.scrape import priority
 
-        monkeypatch.setattr(queries, "guess_gender_of_wrestler", mock_guess)
+        monkeypatch.setattr(priority, "guess_gender_of_wrestler", mock_guess)
 
         class MockDb:
             pass
@@ -88,13 +85,12 @@ class TestMissingWrestlerPriorityWithGender:
     def test_fallback_when_prediction_fails(self, monkeypatch):
         """Test that it falls back gracefully when prediction fails."""
 
-        def mock_guess_error(db, wrestler_id):
+        def mock_guess_error(wrestler_id):
             raise Exception("Prediction failed")
 
-        from joshirank import queries
         from joshirank.scrape import priority
 
-        monkeypatch.setattr(queries, "guess_gender_of_wrestler", mock_guess_error)
+        monkeypatch.setattr(priority, "guess_gender_of_wrestler", mock_guess_error)
 
         class MockDb:
             pass
@@ -110,13 +106,12 @@ class TestMissingWrestlerPriorityWithGender:
     def test_scaling_with_opponent_count(self, monkeypatch):
         """Test that priority scales correctly with opponent count."""
 
-        def mock_guess(db, wrestler_id):
+        def mock_guess(wrestler_id):
             return 0.95  # High confidence female
 
-        from joshirank import queries
         from joshirank.scrape import priority
 
-        monkeypatch.setattr(queries, "guess_gender_of_wrestler", mock_guess)
+        monkeypatch.setattr(priority, "guess_gender_of_wrestler", mock_guess)
 
         class MockDb:
             pass
@@ -140,13 +135,12 @@ class TestMissingWrestlerPriorityWithGender:
     def test_likely_female_gets_moderate_boost(self, monkeypatch):
         """Test that likely-female wrestlers get moderate priority boost."""
 
-        def mock_guess(db, wrestler_id):
+        def mock_guess(wrestler_id):
             return 0.80  # Likely female
 
-        from joshirank import queries
         from joshirank.scrape import priority
 
-        monkeypatch.setattr(queries, "guess_gender_of_wrestler", mock_guess)
+        monkeypatch.setattr(priority, "guess_gender_of_wrestler", mock_guess)
 
         class MockDb:
             pass
@@ -162,7 +156,6 @@ class TestMissingWrestlerPriorityWithGender:
 
     def test_priority_respects_confidence_levels(self, monkeypatch):
         """Test that different confidence levels produce appropriate priorities."""
-        from joshirank import queries
         from joshirank.scrape import priority
 
         class MockDb:
@@ -179,10 +172,10 @@ class TestMissingWrestlerPriorityWithGender:
 
         for confidence, (min_prio, max_prio) in confidence_levels.items():
 
-            def mock_guess(db, wid):
+            def mock_guess(wid):
                 return confidence
 
-            monkeypatch.setattr(queries, "guess_gender_of_wrestler", mock_guess)
+            monkeypatch.setattr(priority, "guess_gender_of_wrestler", mock_guess)
 
             result = calculate_missing_wrestler_priority(
                 n_opponents=20, wrestler_id=12345, wrestler_db=db

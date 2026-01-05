@@ -14,8 +14,8 @@ import time
 from collections import Counter, defaultdict
 from itertools import combinations
 
+from joshirank.analysis.promotion import all_tjpw_wrestlers
 from joshirank.joshidb import get_name, wrestler_db
-from joshirank.queries import all_tjpw_wrestlers
 
 THIS_YEAR = time.localtime().tm_year
 
@@ -26,7 +26,7 @@ def get_active_tjpw_wrestlers(min_matches=10, year_window=2) -> set[int]:
     """Returns set of wrestlers who have, in the last two years,
     wrestled 10 or more matches in TJPW"""
 
-    tjpw_wrestlers = all_tjpw_wrestlers(wrestler_db)
+    tjpw_wrestlers = all_tjpw_wrestlers()
     print(f"Total TJPW wrestlers: {len(tjpw_wrestlers)}")
 
     valid_years = set(range(THIS_YEAR - year_window, THIS_YEAR + 1))

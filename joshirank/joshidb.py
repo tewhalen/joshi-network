@@ -24,20 +24,19 @@ from joshirank.db_wrapper import DBWrapper
 
 
 class WrestlerDb(DBWrapper):
-    def __init__(self, path: pathlib.Path, readonly=True):
-        self.path = path
-
-        if readonly:
-            self.sqldb = sqlite3.connect(
-                f"file:{self.path.with_suffix('.sqlite3')}?mode=ro", uri=True
-            )
-        else:
-            self.sqldb = sqlite3.connect(str(self.path.with_suffix(".sqlite3")))
-            self._initialize_sql_db()
-
-    def _initialize_sql_db(self):
+    def initialize_sql_db(self):
         """If necessary, create the SQL tables for wrestler metadata."""
-        cursor = self.sqldb.cursor()
+        self._create_wrestlers_table()
+        self._create_matches_table()
+        self._create_promotions_table()
+        self._create_opponents_table()
+
+        self._commit()
+        self._seed_database()
+
+    def _create_wrestlers_table(self):
+        cursor = self._rw_cursor()
+
         cursor.execute(
             """
         CREATE TABLE IF NOT EXISTS wrestlers (
@@ -75,15 +74,10 @@ class WrestlerDb(DBWrapper):
             # Column doesn't exist yet, will be added later
             pass
         cursor.close()
-        self.sqldb.commit()
-
-        self._create_matches_table()
-        self._create_promotions_table()
-        self._create_opponents_table()
 
     def _create_matches_table(self):
         """Create the matches table if it does not exist."""
-        cursor = self.sqldb.cursor()
+        cursor = self._rw_cursor()
         cursor.execute(
             """ CREATE TABLE IF NOT EXISTS matches (
             wrestler_id INTEGER,
@@ -104,11 +98,10 @@ class WrestlerDb(DBWrapper):
             """CREATE INDEX IF NOT EXISTS idx_matches_updated ON matches (last_updated)"""
         )
         cursor.close()
-        self.sqldb.commit()
 
     def _create_promotions_table(self):
         """Create the promotions table if it does not exist."""
-        cursor = self.sqldb.cursor()
+        cursor = self._rw_cursor()
         cursor.execute(
             """CREATE TABLE IF NOT EXISTS promotions (
             promotion_id INTEGER PRIMARY KEY,
@@ -126,11 +119,10 @@ class WrestlerDb(DBWrapper):
             """CREATE INDEX IF NOT EXISTS idx_promotion_updated ON promotions (last_updated)"""
         )
         cursor.close()
-        self.sqldb.commit()
 
     def _create_opponents_table(self):
         """Create the normalized opponents table for fast lookups."""
-        cursor = self.sqldb.cursor()
+        cursor = self._rw_cursor()
         cursor.execute(
             """CREATE TABLE IF NOT EXISTS wrestler_opponents (
             wrestler_id INTEGER,
@@ -149,7 +141,6 @@ class WrestlerDb(DBWrapper):
             ON wrestler_opponents(wrestler_id, year)"""
         )
         cursor.close()
-        self.sqldb.commit()
 
     def is_female(self, wrestler_id: int) -> bool:
         """Return True if the wrestler is considered female."""
@@ -322,7 +313,8 @@ class WrestlerDb(DBWrapper):
 
     def _update_opponents_table(self, wrestler_id: int, year: int, opponents: Counter):
         """Update the normalized opponents table for a wrestler/year."""
-        cursor = self.sqldb.cursor()
+
+        cursor = self._rw_cursor()
         # Delete existing entries for this wrestler/year
         cursor.execute(
             """DELETE FROM wrestler_opponents 
@@ -337,7 +329,8 @@ class WrestlerDb(DBWrapper):
                 VALUES (?, ?, ?, ?)""",
                 (wrestler_id, opponent_id, year, count),
             )
-        self.sqldb.commit()
+        cursor.close()
+        self._commit()
 
     def update_wrestler_from_matches(self, wrestler_id: int):
         """Using the stored match info for the wrestler, update their metadata in the SQL db."""
@@ -353,7 +346,7 @@ class WrestlerDb(DBWrapper):
         )
 
         # Update gender classification for gender-diverse wrestlers
-        update_gender_diverse_classification(wrestler_id, db=self)
+        update_gender_diverse_classification(wrestler_id)
 
     def guess_location_from_matches(self, wrestler_id: int):
         """Guess the wrestler's location based on countries worked in matches."""
@@ -378,7 +371,7 @@ class WrestlerDb(DBWrapper):
 
     def close(self):
         # self.db.close()
-        self.sqldb.close()
+        self.sqldb_ro.close()
 
     def get_wrestler(self, wrestler_id: int) -> dict:
         """Given a wrestler ID, return their stored data as a dict."""
@@ -681,36 +674,41 @@ class WrestlerDb(DBWrapper):
             return dt.timestamp()
         return 0.0
 
+    def _seed_database(self):
+        """Seed the database with known missing profiles."""
+        logger.info("Seeding database with known missing profiles...")
+        missing_wrestlers = [9232]
+        for wid in missing_wrestlers:
+            self.save_profile_for_wrestler(wid, {"Missing Profile": True})
+            self.update_wrestler_from_profile(wid)
+            self.save_matches_for_wrestler(wid, [], 2025)
+
 
 # Default read-only database instance for convenience
 _default_db_path = pathlib.Path("data/joshi_wrestlers.y")
-wrestler_db = WrestlerDb(_default_db_path, readonly=True)
+wrestler_db = WrestlerDb(_default_db_path)
 
 
 @contextmanager
 def reopen_rw():
-    """Context manager for temporarily opening the database in read-write mode.
+    """Context manager for opening database in read-write mode.
+
+    DEPRECATED: Use wrestler_db.writable() instead.
+
+    This creates a writable context on the global wrestler_db instance.
+    The instance temporarily switches to read-write mode, then restores
+    read-only mode on exit.
 
     Usage:
-        with reopen_rw() as db:
-            db.save_profile_for_wrestler(...)
+        with reopen_rw():
+            wrestler_db.save_profile_for_wrestler(...)
 
-    The database is automatically reopened as read-only when exiting the context.
+    New style (preferred):
+        with wrestler_db.writable():
+            wrestler_db.save_profile_for_wrestler(...)
     """
-    global wrestler_db
-    old_db = wrestler_db
-    old_db.close()
-
-    try:
-        # Open in read-write mode
-        rw_db = WrestlerDb(_default_db_path, readonly=False)
-        # Update the global reference
-        wrestler_db = rw_db
-        yield rw_db
-    finally:
-        # Always restore read-only mode
-        rw_db.close()
-        wrestler_db = WrestlerDb(_default_db_path, readonly=True)
+    with wrestler_db.writable():
+        yield wrestler_db
 
 
 @functools.lru_cache(maxsize=None)
@@ -729,18 +727,6 @@ def get_promotion_name(promotion_id: int) -> str:
         Promotion name, or str(promotion_id) if not found
     """
     return wrestler_db.get_promotion_name(promotion_id)
-
-
-def get_promotion_with_location(wrestler_id: int) -> str:
-    wrestler_info = wrestler_db.get_wrestler(wrestler_id)
-    promotion = wrestler_info.get("promotion", "")
-    if promotion == "" or promotion == "Freelancer":
-        location = wrestler_info.get("location", "Unknown")
-        if location != "Unknown":
-            promotion = f"Freelancer ({location})"
-        else:
-            promotion = "Freelancer"
-    return promotion
 
 
 if __name__ == "__main__":

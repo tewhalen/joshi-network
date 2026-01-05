@@ -8,7 +8,8 @@ from matplotlib import pyplot as plt
 from sparklines import sparklines
 from tabulate import tabulate
 
-from joshirank.joshidb import get_name, get_promotion_with_location, wrestler_db
+from joshirank.analysis.promotion import get_promotion_with_location
+from joshirank.joshidb import get_name, wrestler_db
 
 
 def match_count_report(year: int = 2025):

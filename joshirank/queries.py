@@ -6,48 +6,6 @@ database, including promotion-based wrestler discovery.
 For gender prediction functions, see joshirank.analysis.gender module.
 """
 
-import typing
-
-if typing.TYPE_CHECKING:
-    from joshirank.joshidb import WrestlerDb
-
-
-def ever_worked_promotion(wrestler_db: WrestlerDb, promotion_id: int) -> set[int]:
-    promotion_wrestlers = set()
-
-    for wid in wrestler_db.all_female_wrestlers():
-        # Check all available years for this wrestler using promotions_worked
-        for year in wrestler_db.match_years_available(wid):
-            match_info = wrestler_db.get_match_info(wid, year)
-            promotions = match_info.get("promotions_worked", {})
-            # promotions_worked maps promotion_id (as string or int) to count
-            if str(promotion_id) in promotions or promotion_id in promotions:
-                promotion_wrestlers.add(wid)
-                # having found a set of matches we know included the promotion
-                # we should check all the matches in that year to find all
-                # the wrestlers in those promotion matches
-                # because those wrestlers may not have the promotion in their promotions_worked
-                matches = wrestler_db.get_matches(wid, year)
-                for match in matches:
-                    if match.get("promotion") == promotion_id:
-                        for competitor in match.get("wrestlers", []):
-                            promotion_wrestlers.add(competitor)
-
-    # filter out any non-female wrestlers (in case of data errors)
-    # promotion_wrestlers = {
-    #    wid for wid in promotion_wrestlers if wrestler_db.is_female(wid)
-    # }
-    return promotion_wrestlers
-
-
-def all_tjpw_wrestlers(wrestler_db: WrestlerDb) -> set[int]:
-    """Return a set of all wrestlers who have ever wrestled for TJPW.
-
-    Uses the promotions_worked field for efficient querying.
-    """
-    # TJPW promotion ID on CageMatch is 1467
-    return ever_worked_promotion(wrestler_db, 1467)
-
 
 # Re-export gender functions for backwards compatibility
 # These have been moved to joshirank.analysis.gender and joshirank.analysis.gender_cache
@@ -95,6 +53,20 @@ def estimate_intergender_probability(match: dict, wrestler_db=None) -> float:
     from joshirank.analysis.gender import estimate_intergender_probability as _estimate
 
     return _estimate(match)
+
+
+# Re-export promotion functions for backwards compatibility
+def all_tjpw_wrestlers(wrestler_db=None) -> set[int]:
+    """Return a set of all wrestlers who have ever wrestled for TJPW.
+
+    DEPRECATED: Use joshirank.analysis.promotion.all_tjpw_wrestlers instead.
+    This wrapper is maintained for backwards compatibility.
+
+    Note: wrestler_db parameter is ignored (kept for API compatibility).
+    """
+    from joshirank.analysis.promotion import all_tjpw_wrestlers as _all_tjpw
+
+    return _all_tjpw()
 
 
 if __name__ == "__main__":

@@ -13,7 +13,7 @@ def temp_db():
     """Create a temporary database for testing."""
     with tempfile.TemporaryDirectory() as tmpdir:
         db_path = pathlib.Path(tmpdir) / "test.y"
-        db = WrestlerDb(db_path, readonly=False)
+        db = WrestlerDb(db_path)
         yield db
         db.close()
 

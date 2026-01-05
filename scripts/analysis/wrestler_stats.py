@@ -15,8 +15,11 @@ from datetime import datetime
 import click
 from tabulate import tabulate
 
+from joshirank.analysis.gender import (
+    guess_gender_of_wrestler,
+    percentage_of_female_colleagues,
+)
 from joshirank.joshidb import get_name, get_promotion_name, wrestler_db
-from joshirank.queries import guess_gender_of_wrestler
 
 
 def resolve_wrestler_id(identifier: str, female_only: bool = True) -> int | None:
@@ -136,7 +139,7 @@ def get_missing_wrestler_stats(wrestler_id: int) -> dict:
                         all_countries[match["country"]] += 1
 
     # Get gender prediction
-    gender_confidence = guess_gender_of_wrestler(wrestler_db, wrestler_id)
+    gender_confidence = guess_gender_of_wrestler(wrestler_id)
 
     return {
         "is_missing": True,
@@ -216,11 +219,11 @@ def get_wrestler_stats(wrestler_id: int) -> dict:
         "promotions_worked": all_promotions.most_common(),
         "total_opponents": len(all_colleagues),
         "total_inverse_colleagues": len(inverse_colleagues),
-        "female_colleagues_pct": wrestler_db.percentage_of_female_colleagues(
+        "female_colleagues_pct": percentage_of_female_colleagues(
             wrestler_id,
         ),
         "inverse_female_colleagues_pct": pct_of_inverse_female * 100,
-        "gender_confidence": guess_gender_of_wrestler(wrestler_db, wrestler_id),
+        "gender_confidence": guess_gender_of_wrestler(wrestler_id),
     }
 
 

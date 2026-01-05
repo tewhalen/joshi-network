@@ -11,7 +11,8 @@ from matplotlib import pyplot as plt
 from sparklines import sparklines
 from tabulate import tabulate
 
-from joshirank.joshidb import get_name, get_promotion_with_location, wrestler_db
+from joshirank.analysis.promotion import get_promotion_with_location
+from joshirank.joshidb import get_name, wrestler_db
 
 min_val = 0
 max_val = 120

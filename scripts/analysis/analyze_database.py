@@ -5,8 +5,9 @@ import time
 from collections import Counter, defaultdict
 from datetime import datetime
 
+from joshirank.analysis.gender import gender_diverse_wrestlers
 from joshirank.joshidb import wrestler_db
-from joshirank.analysis.gender import gender_diverse_wrestlers()
+
 
 def format_age(timestamp: float) -> str:
     """Format timestamp age in human-readable format."""

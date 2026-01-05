@@ -7,64 +7,14 @@ import jinja2
 from tabulate import tabulate
 
 from joshirank.all_matches import all_matches
+from joshirank.analysis.promotion import get_primary_promotion_for_year
 from joshirank.joshidb import (
     get_name,
-    get_promotion_name,
-    get_promotion_with_location,
-    wrestler_db,
 )
 from joshirank.ranking.glicko2 import Player
 from joshirank.ranking.record import Record
 
 URL_TEMPLATE = "https://www.cagematch.net/?id=2&nr={w_id}&view=&page=4&gimmick=&year={year}&promotion=&region=&location=&arena=&showtype=&constellationType=Singles&worker="
-
-
-def get_primary_promotion_for_year(wrestler_id: int, year: int) -> str:
-    """Determine the primary promotion for a wrestler in a given year.
-
-    Analyzes the wrestler's matches for the specified year and returns the
-    promotion where they wrestled the most. If no clear primary promotion
-    exists, returns "Freelancer" with location.
-
-    Args:
-        wrestler_id: The wrestler's ID
-        year: The year to analyze
-
-    Returns:
-        Promotion name, or "Freelancer (location)" if no clear primary
-    """
-    matches = wrestler_db.get_matches(wrestler_id, year)
-
-    if not matches:
-        # No matches this year, fall back to current profile
-        return get_promotion_with_location(wrestler_id)
-
-    # Count matches by promotion
-    promotion_counter = Counter()
-    for match in matches:
-        promotion_id = match.get("promotion")
-        if promotion_id:
-            promotion_counter[promotion_id] += 1
-
-    if not promotion_counter:
-        # No promotion data in matches, fall back
-        return get_promotion_with_location(wrestler_id)
-
-    # Get the most common promotion
-    most_common_promo_id, count = promotion_counter.most_common(1)[0]
-    total_matches = len(matches)
-
-    # If this promotion represents at least 40% of matches, use it
-    if count / total_matches >= 0.4:
-        promo_name = get_promotion_name(most_common_promo_id)
-        return promo_name
-
-    # Otherwise, they're a freelancer
-    wrestler_info = wrestler_db.get_wrestler(wrestler_id)
-    location = wrestler_info.get("location", "")
-    if location and location != "Unknown":
-        return f"Freelancer ({location})"
-    return "Freelancer"
 
 
 class Wrestler(Player):

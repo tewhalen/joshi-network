@@ -36,15 +36,6 @@ class OperationsManager:
         """
         return self.scraper.keep_going()
 
-    def seed_database(self):
-        """Seed the database with known missing profiles."""
-        logger.info("Seeding database with known missing profiles...")
-        missing_wrestlers = [9232]
-        for wid in missing_wrestlers:
-            self.wrestler_db.save_profile_for_wrestler(wid, {"Missing Profile": True})
-            self.wrestler_db.update_wrestler_from_profile(wid)
-            self.wrestler_db.save_matches_for_wrestler(wid, [], 2025)
-
     def refresh_profile(self, wrestler_id: int):
         """Scrape and update wrestler profile.
 

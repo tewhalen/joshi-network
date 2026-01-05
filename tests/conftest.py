@@ -41,7 +41,7 @@ def temp_db():
     """
     with tempfile.TemporaryDirectory() as tmpdir:
         db_path = pathlib.Path(tmpdir) / "test_wrestlers.y"
-        db = WrestlerDb(db_path, readonly=False)
+        db = WrestlerDb(db_path)
 
         yield db
 

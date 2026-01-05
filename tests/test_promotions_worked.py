@@ -1,7 +1,7 @@
 """Test promotions_worked field functionality."""
 
+from joshirank.analysis.promotion import all_tjpw_wrestlers
 from joshirank.joshidb import wrestler_db
-from joshirank.queries import all_tjpw_wrestlers
 
 
 def test_promotions_worked_field():
@@ -25,7 +25,7 @@ def test_promotions_worked_field():
 
 def test_all_tjpw_wrestlers():
     """Test that all_tjpw_wrestlers query works with new field."""
-    tjpw_wrestlers = all_tjpw_wrestlers(wrestler_db)
+    tjpw_wrestlers = all_tjpw_wrestlers()
 
     # Should find at least 50 TJPW wrestlers
     assert len(tjpw_wrestlers) >= 50
