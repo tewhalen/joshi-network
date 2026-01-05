@@ -143,9 +143,9 @@ class ScrapingSession:
     wrestler_db: WrestlerDb
 
     def __init__(
-        self, wrestler_db: WrestlerDb, queue_builder: QueueBuilder, dry_run=False
+        self, wrestler_db: WrestlerDb, queue_builder: QueueBuilder, dry_run=False, slow=False
     ):
-        self.ops_manager = OperationsManager(wrestler_db)
+        self.ops_manager = OperationsManager(wrestler_db, slow=slow)
         self.wrestler_db = wrestler_db
         self.queue_builder = queue_builder
         self.dry_run = dry_run  # If True, don't make actual HTTP requests
@@ -310,7 +310,12 @@ def setup_logging():
     is_flag=True,
     help="Skip database backup (not recommended)",
 )
-def cli(tjpw_only, wrestler_ids, dry_run, stats_only, force, no_backup):
+@click.option(
+    "--slow",
+    is_flag=True,
+    help="Slow mode: 7s between requests, no session limit",
+)
+def cli(tjpw_only, wrestler_ids, dry_run, stats_only, force, no_backup, slow):
     """Scrape wrestler profiles and matches from CageMatch.net."""
     setup_logging()
 
@@ -356,7 +361,10 @@ def cli(tjpw_only, wrestler_ids, dry_run, stats_only, force, no_backup):
         else:
             queue_builder = FullQueueBuilder(wrestler_db, force_refresh=force)
 
-        scraper = ScrapingSession(wrestler_db, queue_builder, dry_run=dry_run)
+        if slow:
+            logger.warning("SLOW MODE: 7s between requests, no session limit")
+
+        scraper = ScrapingSession(wrestler_db, queue_builder, dry_run=dry_run, slow=slow)
 
         if stats_only:
             logger.info("Stats-only mode: building work queue...")

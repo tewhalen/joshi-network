@@ -14,14 +14,19 @@ THIS_YEAR = time.localtime().tm_year
 class OperationsManager:
     """Manages scraping operations and HTTP session."""
 
-    def __init__(self, wrestler_db: WrestlerDb):
+    def __init__(self, wrestler_db: WrestlerDb, slow: bool = False):
         """Initialize operations manager.
 
         Args:
             wrestler_db: Database instance to update
+            slow: If True, use 7s delay and remove session limit
         """
         self.wrestler_db = wrestler_db
         self.scraper = CageMatchScraper()
+        
+        if slow:
+            self.scraper.sleep_delay = 7.0
+            self.scraper.max_requests_per_session = float('inf')  # No limit
 
     def keep_going(self) -> bool:
         """Check if we should continue scraping (rate limit check).
