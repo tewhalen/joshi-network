@@ -48,7 +48,7 @@ class GenderCache:
     """
 
     CACHE_VERSION = 1
-    STALENESS_DAYS = 90
+    STALENESS_HOURS = 8
 
     def __init__(self, cache_path: pathlib.Path | None = None):
         if cache_path is None:
@@ -147,8 +147,8 @@ class GenderCache:
             return None
 
         # Check staleness
-        age_days = (time.time() - row["timestamp"]) / 86400
-        if age_days > self.STALENESS_DAYS:
+        age_hours = (time.time() - row["timestamp"]) / 3600
+        if age_hours > self.STALENESS_HOURS:
             return None
 
         return row["confidence"]
@@ -179,7 +179,7 @@ class GenderCache:
             Number of entries removed
         """
         now = time.time()
-        stale_threshold = now - (self.STALENESS_DAYS * 86400)
+        stale_threshold = now - (self.STALENESS_HOURS * 3600)
 
         cursor = self._conn.cursor()
         cursor.execute(

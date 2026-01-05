@@ -79,6 +79,7 @@ class WrestlerDb(DBWrapper):
 
         self._create_matches_table()
         self._create_promotions_table()
+        self._create_opponents_table()
 
     def _create_matches_table(self):
         """Create the matches table if it does not exist."""
@@ -123,6 +124,29 @@ class WrestlerDb(DBWrapper):
         )
         cursor.execute(
             """CREATE INDEX IF NOT EXISTS idx_promotion_updated ON promotions (last_updated)"""
+        )
+        cursor.close()
+        self.sqldb.commit()
+
+    def _create_opponents_table(self):
+        """Create the normalized opponents table for fast lookups."""
+        cursor = self.sqldb.cursor()
+        cursor.execute(
+            """CREATE TABLE IF NOT EXISTS wrestler_opponents (
+            wrestler_id INTEGER,
+            opponent_id INTEGER,
+            year INTEGER,
+            match_count INTEGER DEFAULT 1,
+            PRIMARY KEY (wrestler_id, opponent_id, year)
+            )"""
+        )
+        cursor.execute(
+            """CREATE INDEX IF NOT EXISTS idx_opponent_lookup 
+            ON wrestler_opponents(opponent_id, year)"""
+        )
+        cursor.execute(
+            """CREATE INDEX IF NOT EXISTS idx_wrestler_year 
+            ON wrestler_opponents(wrestler_id, year)"""
         )
         cursor.close()
         self.sqldb.commit()
@@ -293,6 +317,27 @@ class WrestlerDb(DBWrapper):
                         year,
                     ),
                 )
+                # Update normalized opponents table
+                self._update_opponents_table(wrestler_id, year, opponents)
+
+    def _update_opponents_table(self, wrestler_id: int, year: int, opponents: Counter):
+        """Update the normalized opponents table for a wrestler/year."""
+        cursor = self.sqldb.cursor()
+        # Delete existing entries for this wrestler/year
+        cursor.execute(
+            """DELETE FROM wrestler_opponents 
+            WHERE wrestler_id = ? AND year = ?""",
+            (wrestler_id, year),
+        )
+        # Insert new entries
+        for opponent_id, count in opponents.items():
+            cursor.execute(
+                """INSERT INTO wrestler_opponents 
+                (wrestler_id, opponent_id, year, match_count)
+                VALUES (?, ?, ?, ?)""",
+                (wrestler_id, opponent_id, year, count),
+            )
+        self.sqldb.commit()
 
     def update_wrestler_from_matches(self, wrestler_id: int):
         """Using the stored match info for the wrestler, update their metadata in the SQL db."""
@@ -510,27 +555,29 @@ class WrestlerDb(DBWrapper):
             }
 
     def get_all_colleagues(self, wrestler_id: int) -> set[int]:
-        """Given a wrestler ID, return a set of all wrestler IDs that appeared in a match with them across all years."""
+        """Given a wrestler ID, return a set of all wrestler IDs that appeared in a match with them across all years.
+
+        Uses normalized opponents table for fast lookups without JSON parsing.
+        """
         rows = self._select_and_fetchall(
-            """SELECT opponents FROM matches WHERE wrestler_id=?""", (wrestler_id,)
+            """SELECT DISTINCT opponent_id FROM wrestler_opponents 
+            WHERE wrestler_id=?""",
+            (wrestler_id,),
         )
-
-        colleagues = set()
-        for row in rows:
-            if row[0]:  # if opponents is not None
-                opponents = json.loads(row[0])
-                colleagues.update(opponents)
-
-        return colleagues
+        return {row[0] for row in rows}
 
     def get_all_inverse_colleagues(self, wrestler_id: int) -> set[int]:
         """Given a wrestler ID, return a set of all wrestler IDs that
         had this wrestler as an opponent across all years.
 
-        WARNING: This does a full table scan and is expensive (~200ms).
-        Results are cached at the module level.
+        Uses normalized opponents table with index for fast lookups (~1ms).
         """
-        return set(_get_inverse_colleagues_cached(self, wrestler_id))
+        rows = self._select_and_fetchall(
+            """SELECT DISTINCT wrestler_id FROM wrestler_opponents 
+            WHERE opponent_id=?""",
+            (wrestler_id,),
+        )
+        return {row[0] for row in rows}
 
     def _is_gender_diverse(self, wrestler_id: int) -> bool:
         """Return True if the wrestler is considered gender-diverse."""
@@ -697,25 +744,6 @@ def get_promotion_with_location(wrestler_id: int) -> str:
         else:
             promotion = "Freelancer"
     return promotion
-
-
-@functools.lru_cache(maxsize=1000)
-def _get_inverse_colleagues_cached(db: WrestlerDb, wrestler_id: int) -> frozenset[int]:
-    """Cached implementation of get_all_inverse_colleagues.
-
-    Returns frozenset (hashable) for caching. The public method converts back to set.
-    """
-    rows = db._select_and_fetchall("""SELECT wrestler_id, opponents FROM matches""", ())
-
-    colleagues = set()
-    for row in rows:
-        wid = row[0]
-        if row[1]:  # if opponents is not None
-            opponents = json.loads(row[1])
-            if wrestler_id in opponents:
-                colleagues.add(wid)
-
-    return frozenset(colleagues)
 
 
 if __name__ == "__main__":
