@@ -27,7 +27,7 @@ def test_scrape_profile_with_vcr():
 def test_scrape_matches_with_vcr():
     """Test match scraping with VCR recording/replay."""
     scraper = CageMatchScraper()
-    matches = scraper.scrape_matches(wrestler_id=4629, year=2025)
+    matches, _ = scraper.scrape_matches(wrestler_id=4629, year=2025)
 
     assert len(matches) > 0
     # Should have the wrestler ID in every match

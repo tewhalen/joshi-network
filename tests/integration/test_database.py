@@ -154,6 +154,7 @@ def test_get_colleagues(temp_db):
     ]
 
     temp_db.save_matches_for_wrestler(100, matches, year=2025)
+    temp_db.update_matches_from_matches(100)
 
     colleagues = temp_db.get_all_colleagues(100)
 
