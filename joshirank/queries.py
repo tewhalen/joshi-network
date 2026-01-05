@@ -48,7 +48,7 @@ class GenderCache:
     """
 
     CACHE_VERSION = 1
-    STALENESS_HOURS = 8
+    STALENESS_HOURS = 2  # keep very short, as the calculation improves with more data
 
     def __init__(self, cache_path: pathlib.Path | None = None):
         if cache_path is None:

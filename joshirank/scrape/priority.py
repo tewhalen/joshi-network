@@ -81,7 +81,7 @@ def calculate_missing_wrestler_priority(
     elif n_opponents >= 10:
         base_priority = PRIORITY_HIGH
     elif n_opponents >= 5:
-        base_priority = PRIORITY_NORMAL + (9 - n_opponents)  # 30-34
+        base_priority = PRIORITY_NORMAL
     elif n_opponents >= 3:
         base_priority = 60 + (4 - n_opponents)  # 60-62
     else:
@@ -96,6 +96,18 @@ def calculate_missing_wrestler_priority(
             confidence = guess_gender_of_wrestler(wrestler_db, wrestler_id)
 
             # Apply gender-based priority adjustments
+            # For wrestlers with very few opponents, keep priority below NORMAL
+            # even if we're confident they're female (insufficient data)
+            if n_opponents < 5:
+                # Keep below NORMAL (>30) regardless of gender confidence
+                if confidence >= 0.75:
+                    # Likely female but few opponents
+                    return max(40, base_priority)  # 40-92 range
+                else:
+                    # Not confident female + few opponents
+                    return base_priority  # Use base (60-92 range)
+
+            # For wrestlers with sufficient opponents, apply full gender-based priority
             if confidence >= 0.95:
                 # Very confident female (100% precision thresholds)
                 # Strongest boost - these are almost certainly Joshi wrestlers
@@ -103,7 +115,7 @@ def calculate_missing_wrestler_priority(
                     return 1 + min(int((1.0 - confidence) * 20), 2)  # 1-3
                 elif n_opponents >= 10:
                     return 5 + min(int((1.0 - confidence) * 30), 3)  # 5-8
-                else:
+                else:  # 5-9 opponents
                     return 10 + min(int((1.0 - confidence) * 50), 5)  # 10-15
 
             elif confidence >= 0.75:
@@ -113,7 +125,7 @@ def calculate_missing_wrestler_priority(
                     return 10 + int((0.95 - confidence) * 10)  # 10-12
                 elif n_opponents >= 10:
                     return 15 + int((0.95 - confidence) * 15)  # 15-18
-                else:
+                else:  # 5-9 opponents
                     return 20 + int((0.95 - confidence) * 25)  # 20-25
 
             elif confidence >= 0.5:
