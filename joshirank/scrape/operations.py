@@ -71,7 +71,7 @@ class OperationsManager:
                     scraped_profile
                 )
                 logger.success(
-                    "Creating stub match entry for new female wrestler {} for years {}-{}",
+                    "Creating stubs for new wrestler {}, years {}-{}",
                     wrestler_id,
                     start_year,
                     end_year,

@@ -504,6 +504,23 @@ class WrestlerDb(DBWrapper):
 
         return colleagues
 
+    def get_all_inverse_colleagues(self, wrestler_id: int) -> set[int]:
+        """Given a wrestler ID, return a set of all wrestler IDs that
+        had this wrestler as an opponent across all years."""
+        rows = self._select_and_fetchall(
+            """SELECT wrestler_id, opponents FROM matches""", ()
+        )
+
+        colleagues = set()
+        for row in rows:
+            wid = row[0]
+            if row[1]:  # if opponents is not None
+                opponents = json.loads(row[1])
+                if wrestler_id in opponents:
+                    colleagues.add(wid)
+
+        return colleagues
+
     def _is_gender_diverse(self, wrestler_id: int) -> bool:
         """Return True if the wrestler is considered gender-diverse."""
         profile = self.get_cm_profile_for_wrestler(wrestler_id)

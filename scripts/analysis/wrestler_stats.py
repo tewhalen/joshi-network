@@ -68,6 +68,17 @@ def get_wrestler_stats(wrestler_id: int) -> dict:
     # Get all colleagues (opponents across all years)
     all_colleagues = wrestler_db.get_all_colleagues(wrestler_id)
 
+    # Get inverse colleagues (wrestlers who had this wrestler as a colleague)
+    inverse_colleagues = wrestler_db.get_all_inverse_colleagues(wrestler_id)
+
+    # percentage of female inverse colleagues
+    pct_of_inverse_female = (
+        sum(1 for cid in inverse_colleagues if wrestler_db.is_female(cid))
+        / len(inverse_colleagues)
+        if inverse_colleagues
+        else 0
+    )
+
     return {
         "info": wrestler_info,
         "available_years": sorted(available_years),
@@ -77,10 +88,11 @@ def get_wrestler_stats(wrestler_id: int) -> dict:
         "countries_worked": all_countries.most_common(),
         "promotions_worked": all_promotions.most_common(),
         "total_opponents": len(all_colleagues),
+        "total_inverse_colleagues": len(inverse_colleagues),
         "female_colleagues_pct": wrestler_db.percentage_of_female_colleagues(
-            wrestler_id
-        )
-        * 100,
+            wrestler_id,
+        ),
+        "inverse_female_colleagues_pct": pct_of_inverse_female * 100,
     }
 
 
@@ -146,6 +158,8 @@ def display_wrestler_stats(wrestler_id: int):
     print("-" * 80)
     print(f"Total unique opponents: {stats['total_opponents']}")
     print(f"Female colleagues: {stats['female_colleagues_pct']:.1f}%")
+    print(f"Total unique inverse colleagues: {stats['total_inverse_colleagues']}")
+    print(f"Inverse female colleagues: {stats['inverse_female_colleagues_pct']:.1f}%")
 
     if stats["top_opponents"]:
         print("\nTop 10 Most Frequent Opponents:")

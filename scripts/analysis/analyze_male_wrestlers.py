@@ -73,7 +73,7 @@ def male_wrestlers_in_female_matches():
                 female_opponents[colleague_id].add(female_id)
 
     print(
-        f"\nFound {len(male_appearances)} male wrestlers in female wrestler match data"
+        f"\nFound {len(male_appearances)} male wrestler appearances in female wrestler match data"
     )
     print(f"Total appearances: {sum(male_appearances.values())}")
 
@@ -129,7 +129,7 @@ def intergender_matches_analysis():
 
     for female_id in wrestler_db.all_female_wrestlers():
         colleagues = wrestler_db.get_all_colleagues(female_id)
-        male_colleagues = [c for c in colleagues if not wrestler_db.is_female(c)]
+        male_colleagues = {c for c in colleagues if not wrestler_db.is_female(c)}
 
         if male_colleagues:
             name = wrestler_db.get_name(female_id)
