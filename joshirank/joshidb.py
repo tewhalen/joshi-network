@@ -488,6 +488,57 @@ class WrestlerDb(DBWrapper):
         else:
             return "Unknown"
 
+    def find_wrestlers_by_name(
+        self, name: str, limit: int = 50, female_only: bool = False
+    ) -> list[dict]:
+        """Search for wrestlers by name (case-insensitive partial match).
+
+        Args:
+            name: Name or partial name to search for
+            limit: Maximum number of results to return (default 50)
+            female_only: If True, only return female wrestlers
+
+        Returns:
+            List of dicts with 'wrestler_id', 'name', 'is_female', 'promotion' keys
+            Sorted by exact match first, then alphabetically
+        """
+        search_pattern = f"%{name}%"
+
+        if female_only:
+            query = """
+                SELECT wrestler_id, name, is_female, promotion 
+                FROM wrestlers 
+                WHERE name LIKE ? AND is_female = 1
+                ORDER BY 
+                    CASE WHEN LOWER(name) = LOWER(?) THEN 0 ELSE 1 END,
+                    name
+                LIMIT ?
+            """
+            rows = self._select_and_fetchall(query, (search_pattern, name, limit))
+        else:
+            query = """
+                SELECT wrestler_id, name, is_female, promotion 
+                FROM wrestlers 
+                WHERE name LIKE ?
+                ORDER BY 
+                    CASE WHEN LOWER(name) = LOWER(?) THEN 0 ELSE 1 END,
+                    name
+                LIMIT ?
+            """
+            rows = self._select_and_fetchall(query, (search_pattern, name, limit))
+
+        results = []
+        for row in rows:
+            results.append(
+                {
+                    "wrestler_id": row[0],
+                    "name": row[1],
+                    "is_female": bool(row[2]) if row[2] is not None else False,
+                    "promotion": row[3] if row[3] else "",
+                }
+            )
+        return results
+
     def get_matches(self, wrestler_id: int, year: int) -> list[dict]:
         # first try to get from sqlite
         row = self._select_and_fetchone(

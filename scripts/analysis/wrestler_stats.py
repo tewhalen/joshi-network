@@ -2,19 +2,95 @@
 """Display comprehensive statistics for a wrestler from the database.
 
 Usage:
-    python wrestler_stats.py <wrestler_id>
-    python wrestler_stats.py 9462  # Hikaru Shida
+    python wrestler_stats.py <wrestler_id_or_name>
+    python wrestler_stats.py 9462              # By ID
+    python wrestler_stats.py "Hikaru Shida"    # By name
+    python wrestler_stats.py hikaru            # Partial name
 """
 
-import argparse
 import sys
 from collections import Counter
 from datetime import datetime
 
+import click
 from tabulate import tabulate
 
 from joshirank.joshidb import get_name, get_promotion_name, wrestler_db
 from joshirank.queries import guess_gender_of_wrestler
+
+
+def resolve_wrestler_id(identifier: str, female_only: bool = True) -> int | None:
+    """Resolve a wrestler identifier (ID or name) to a wrestler ID.
+
+    Args:
+        identifier: Either a numeric ID or a name to search for
+        female_only: If True (default), only search female wrestlers
+
+    Returns:
+        Wrestler ID if found, None otherwise
+    """
+    # Try to parse as integer ID first
+    try:
+        wrestler_id = int(identifier)
+        return wrestler_id
+    except ValueError:
+        pass
+
+    # Search by name
+    results = wrestler_db.find_wrestlers_by_name(
+        identifier, limit=20, female_only=female_only
+    )
+
+    if not results:
+        gender_note = " (female only)" if female_only else ""
+        print(f"❌ No wrestlers found matching '{identifier}'{gender_note}")
+        if female_only:
+            print("   💡 Tip: Use --all-gender flag to search all wrestlers")
+        return None
+
+    # If exactly one match, use it
+    if len(results) == 1:
+        result = results[0]
+        print(f"✓ Found: {result['name']} (ID: {result['wrestler_id']})")
+        return result["wrestler_id"]
+
+    # Multiple matches - show them and ask user to pick
+    gender_note = " (female only)" if female_only else ""
+    print(f"\n🔍 Found {len(results)} wrestlers matching '{identifier}'{gender_note}:")
+    print("=" * 70)
+
+    table_data = []
+    for i, r in enumerate(results[:15], 1):
+        gender = "♀" if r["is_female"] else "♂"
+        promotion = r["promotion"][:30] if r["promotion"] else ""
+        table_data.append([i, r["wrestler_id"], r["name"], gender, promotion])
+
+    print(
+        tabulate(
+            table_data, headers=["#", "ID", "Name", "", "Promotion"], tablefmt="simple"
+        )
+    )
+
+    if len(results) > 15:
+        print(f"... and {len(results) - 15} more matches")
+
+    # Interactive selection
+    print("\nEnter a number to select (or 'q' to quit): ", end="")
+    try:
+        choice = input().strip()
+        if choice.lower() == "q":
+            return None
+
+        idx = int(choice) - 1
+        if 0 <= idx < min(len(results), 15):
+            selected = results[idx]
+            print(f"✓ Selected: {selected['name']} (ID: {selected['wrestler_id']})\n")
+            return selected["wrestler_id"]
+        else:
+            print("❌ Invalid selection")
+            return None
+    except (ValueError, EOFError, KeyboardInterrupt):
+        return None
 
 
 def format_timestamp(timestamp: float) -> str:
@@ -348,15 +424,35 @@ def display_wrestler_stats(wrestler_id: int):
     print("\n" + "=" * 80)
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Display comprehensive statistics for a wrestler from the database."
-    )
-    parser.add_argument("wrestler_id", type=int, help="CageMatch wrestler ID")
+@click.command()
+@click.argument("identifier", required=True)
+@click.option(
+    "--all-gender",
+    is_flag=True,
+    help="Include non-female wrestlers in name search (default: female only)",
+)
+def main(identifier: str, all_gender: bool):
+    """Display comprehensive wrestler statistics.
 
-    args = parser.parse_args()
+    IDENTIFIER can be either a wrestler ID (numeric) or a name (partial or full).
+    By default, name searches only include female wrestlers.
 
-    display_wrestler_stats(args.wrestler_id)
+    \b
+    Examples:
+      wrestler_stats.py 9462              # By wrestler ID
+      wrestler_stats.py "Hikaru Shida"    # By full name (female only)
+      wrestler_stats.py hikaru            # By partial name (female only, interactive)
+      wrestler_stats.py hikaru --all-gender  # Include all genders in search
+    """
+    # Resolve the identifier to a wrestler ID
+    # Default to female_only=True, unless --all-gender flag is present
+    female_only = not all_gender
+    wrestler_id = resolve_wrestler_id(identifier, female_only=female_only)
+
+    if wrestler_id is None:
+        sys.exit(1)
+
+    display_wrestler_stats(wrestler_id)
 
 
 if __name__ == "__main__":
