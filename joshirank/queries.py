@@ -15,8 +15,8 @@ Gender Prediction Caching:
     - get_gender_cache_stats(): Get cache statistics
 """
 
-import json
 import pathlib
+import sqlite3
 import time
 import typing
 
@@ -28,57 +28,99 @@ if typing.TYPE_CHECKING:
 
 
 class GenderCache:
-    """Persistent cache for gender predictions to avoid expensive recalculations.
+    """Persistent cache for gender predictions using SQLite for efficient updates.
 
-    Cache format:
-    {
-        "wrestler_id": {
-            "confidence": 0.95,
-            "timestamp": 1704499200.0,
-            "version": 1
-        }
-    }
+    Uses SQLite instead of JSON to allow:
+    - Single-record updates without rewriting entire file
+    - Better concurrent access
+    - Efficient queries for stale entries
+    - Indexes for fast lookups
+
+    Schema:
+        CREATE TABLE gender_predictions (
+            wrestler_id INTEGER PRIMARY KEY,
+            confidence REAL NOT NULL,
+            timestamp REAL NOT NULL,
+            version INTEGER NOT NULL
+        )
 
     Staleness policy: Recalculate if cached prediction is >90 days old
     """
 
     CACHE_VERSION = 1
-    STALENESS_DAYS = 2
+    STALENESS_DAYS = 90
 
     def __init__(self, cache_path: pathlib.Path | None = None):
         if cache_path is None:
-            cache_path = pathlib.Path("data/gender_predictions_cache.json")
+            cache_path = pathlib.Path("data/gender_predictions_cache.db")
         self.cache_path = cache_path
-        self._cache: dict[int, dict] = {}
-        self._load()
+        self._conn = None
+        self._initialize_db()
+        self._migrate_from_json_if_needed()
 
-    def _load(self):
-        """Load cache from disk if it exists."""
-        if self.cache_path.exists():
-            try:
-                with open(self.cache_path, "r") as f:
-                    data = json.load(f)
-                    # Convert string keys back to ints
-                    self._cache = {int(k): v for k, v in data.items()}
-            except (json.JSONDecodeError, ValueError) as e:
-                print(f"Warning: Failed to load gender cache: {e}")
-                self._cache = {}
-        else:
-            self._cache = {}
+    def _initialize_db(self):
+        """Initialize SQLite database and create table if needed."""
+        # Ensure directory exists
+        self.cache_path.parent.mkdir(parents=True, exist_ok=True)
 
-    def save(self):
-        """Save cache to disk."""
+        self._conn = sqlite3.connect(str(self.cache_path))
+        self._conn.row_factory = sqlite3.Row
+
+        cursor = self._conn.cursor()
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS gender_predictions (
+                wrestler_id INTEGER PRIMARY KEY,
+                confidence REAL NOT NULL,
+                timestamp REAL NOT NULL,
+                version INTEGER NOT NULL
+            )
+        """
+        )
+        cursor.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_timestamp 
+            ON gender_predictions(timestamp)
+        """
+        )
+        self._conn.commit()
+
+    def _migrate_from_json_if_needed(self):
+        """Migrate data from old JSON cache file if it exists."""
+        json_path = self.cache_path.parent / "gender_predictions_cache.json"
+        if not json_path.exists():
+            return
+
         try:
-            # Ensure directory exists
-            self.cache_path.parent.mkdir(parents=True, exist_ok=True)
+            import json
 
-            # Convert int keys to strings for JSON
-            data = {str(k): v for k, v in self._cache.items()}
+            with open(json_path, "r") as f:
+                data = json.load(f)
 
-            with open(self.cache_path, "w") as f:
-                json.dump(data, f, indent=2)
+            # Import existing predictions into SQLite
+            cursor = self._conn.cursor()
+            for wid_str, entry in data.items():
+                wrestler_id = int(wid_str)
+                cursor.execute(
+                    """
+                    INSERT OR REPLACE INTO gender_predictions 
+                    (wrestler_id, confidence, timestamp, version)
+                    VALUES (?, ?, ?, ?)
+                """,
+                    (
+                        wrestler_id,
+                        entry["confidence"],
+                        entry["timestamp"],
+                        entry.get("version", 1),
+                    ),
+                )
+            self._conn.commit()
+
+            # Rename old JSON file to .migrated
+            json_path.rename(json_path.with_suffix(".json.migrated"))
+            print(f"Migrated {len(data)} entries from JSON to SQLite gender cache")
         except Exception as e:
-            print(f"Warning: Failed to save gender cache: {e}")
+            print(f"Warning: Failed to migrate gender cache from JSON: {e}")
 
     def get(self, wrestler_id: int) -> float | None:
         """Get cached gender prediction for wrestler.
@@ -86,29 +128,49 @@ class GenderCache:
         Returns:
             Confidence score (0.0-1.0) if cached and fresh, None if stale/missing
         """
-        if wrestler_id not in self._cache:
+        cursor = self._conn.cursor()
+        cursor.execute(
+            """
+            SELECT confidence, timestamp, version 
+            FROM gender_predictions 
+            WHERE wrestler_id = ?
+        """,
+            (wrestler_id,),
+        )
+
+        row = cursor.fetchone()
+        if not row:
             return None
 
-        entry = self._cache[wrestler_id]
-
         # Check version compatibility
-        if entry.get("version") != self.CACHE_VERSION:
+        if row["version"] != self.CACHE_VERSION:
             return None
 
         # Check staleness
-        age_days = (time.time() - entry["timestamp"]) / 86400
+        age_days = (time.time() - row["timestamp"]) / 86400
         if age_days > self.STALENESS_DAYS:
             return None
 
-        return entry.get("confidence")
+        return row["confidence"]
 
     def set(self, wrestler_id: int, confidence: float):
         """Cache a gender prediction for a wrestler."""
-        self._cache[wrestler_id] = {
-            "confidence": confidence,
-            "timestamp": time.time(),
-            "version": self.CACHE_VERSION,
-        }
+        cursor = self._conn.cursor()
+        cursor.execute(
+            """
+            INSERT OR REPLACE INTO gender_predictions 
+            (wrestler_id, confidence, timestamp, version)
+            VALUES (?, ?, ?, ?)
+        """,
+            (wrestler_id, confidence, time.time(), self.CACHE_VERSION),
+        )
+        self._conn.commit()
+
+    def save(self):
+        """Save cache to disk (for compatibility - commits happen on set())."""
+        # SQLite auto-commits on each set(), but we commit here for safety
+        if self._conn:
+            self._conn.commit()
 
     def clear_stale(self) -> int:
         """Remove stale entries from cache.
@@ -119,16 +181,39 @@ class GenderCache:
         now = time.time()
         stale_threshold = now - (self.STALENESS_DAYS * 86400)
 
-        stale_ids = [
-            wid
-            for wid, entry in self._cache.items()
-            if entry["timestamp"] < stale_threshold
-        ]
+        cursor = self._conn.cursor()
+        cursor.execute(
+            """
+            DELETE FROM gender_predictions 
+            WHERE timestamp < ?
+        """,
+            (stale_threshold,),
+        )
+        removed = cursor.rowcount
+        self._conn.commit()
+        return removed
 
-        for wid in stale_ids:
-            del self._cache[wid]
+    def __len__(self) -> int:
+        """Return the number of cached entries."""
+        cursor = self._conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM gender_predictions")
+        return cursor.fetchone()[0]
 
-        return len(stale_ids)
+    def clear(self):
+        """Clear all cached entries."""
+        cursor = self._conn.cursor()
+        cursor.execute("DELETE FROM gender_predictions")
+        self._conn.commit()
+
+    def close(self):
+        """Close the database connection."""
+        if self._conn:
+            self._conn.close()
+            self._conn = None
+
+    def __del__(self):
+        """Ensure connection is closed when object is destroyed."""
+        self.close()
 
 
 # Global cache instance
@@ -141,7 +226,7 @@ def clear_gender_cache():
     Useful for forcing recalculation after database updates or for testing.
     """
     global _gender_cache
-    _gender_cache._cache.clear()
+    _gender_cache.clear()
     _gender_cache.save()
 
 
@@ -154,10 +239,8 @@ def get_gender_cache_stats() -> dict:
         - cache_file: Path to cache file
         - exists: Whether cache file exists
     """
-    import pathlib
-
     return {
-        "total_entries": len(_gender_cache._cache),
+        "total_entries": len(_gender_cache),
         "cache_file": str(_gender_cache.cache_path),
         "exists": _gender_cache.cache_path.exists(),
     }

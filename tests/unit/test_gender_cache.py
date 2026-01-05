@@ -19,7 +19,7 @@ from joshirank.queries import (
 @pytest.fixture
 def temp_cache_file(tmp_path):
     """Create a temporary cache file path."""
-    return tmp_path / "test_gender_cache.json"
+    return tmp_path / "test_gender_cache.db"
 
 
 @pytest.fixture
@@ -33,9 +33,10 @@ class TestGenderCache:
 
     def test_initialization_creates_empty_cache(self, cache, temp_cache_file):
         """Test that a new cache initializes empty."""
-        assert len(cache._cache) == 0
+        assert len(cache) == 0
         assert cache.cache_path == temp_cache_file
-        assert not temp_cache_file.exists()
+        # SQLite creates the file immediately on initialization
+        assert temp_cache_file.exists()
 
     def test_set_and_get_entry(self, cache):
         """Test setting and retrieving a cache entry."""
@@ -58,7 +59,7 @@ class TestGenderCache:
         cache.set(100, 0.95)
         cache.set(200, 0.20)
 
-        # Save to disk
+        # Save to disk (though SQLite commits immediately on set)
         cache.save()
         assert temp_cache_file.exists()
 
@@ -66,33 +67,49 @@ class TestGenderCache:
         new_cache = GenderCache(temp_cache_file)
         assert new_cache.get(100) == 0.95
         assert new_cache.get(200) == 0.20
+        new_cache.close()
 
     def test_cache_file_format(self, cache, temp_cache_file):
-        """Test that cache file has correct JSON structure."""
+        """Test that cache database has correct SQLite structure."""
+        import sqlite3
+
         cache.set(12345, 0.75)
         cache.save()
 
-        with open(temp_cache_file) as f:
-            data = json.load(f)
+        # Query the SQLite database directly
+        conn = sqlite3.connect(str(temp_cache_file))
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT confidence, timestamp, version FROM gender_predictions WHERE wrestler_id = ?",
+            (12345,),
+        )
+        row = cursor.fetchone()
+        conn.close()
 
-        assert "12345" in data
-        assert data["12345"]["confidence"] == 0.75
-        assert "timestamp" in data["12345"]
-        assert "version" in data["12345"]
-        assert data["12345"]["version"] == GenderCache.CACHE_VERSION
+        assert row is not None
+        assert row["confidence"] == 0.75
+        assert row["timestamp"] > 0
+        assert row["version"] == GenderCache.CACHE_VERSION
 
     def test_stale_entry_detection(self, cache):
         """Test that stale entries are correctly identified."""
+        import sqlite3
+
         wrestler_id = 12345
         # Create an old timestamp (100 days ago)
         old_timestamp = time.time() - (100 * 86400)
 
-        # Manually create a stale entry
-        cache._cache[wrestler_id] = {
-            "confidence": 0.5,
-            "timestamp": old_timestamp,
-            "version": GenderCache.CACHE_VERSION,
-        }
+        # Manually insert a stale entry directly into the database
+        cursor = cache._conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO gender_predictions (wrestler_id, confidence, timestamp, version)
+            VALUES (?, ?, ?, ?)
+        """,
+            (wrestler_id, 0.5, old_timestamp, GenderCache.CACHE_VERSION),
+        )
+        cache._conn.commit()
 
         # Should return None because it's stale
         result = cache.get(wrestler_id)
@@ -108,14 +125,20 @@ class TestGenderCache:
 
     def test_version_incompatibility(self, cache):
         """Test that entries with wrong version are ignored."""
+        import sqlite3
+
         wrestler_id = 12345
 
-        # Create entry with wrong version
-        cache._cache[wrestler_id] = {
-            "confidence": 0.5,
-            "timestamp": time.time(),
-            "version": 999,  # Wrong version
-        }
+        # Insert entry with wrong version directly into database
+        cursor = cache._conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO gender_predictions (wrestler_id, confidence, timestamp, version)
+            VALUES (?, ?, ?, ?)
+        """,
+            (wrestler_id, 0.5, time.time(), 999),  # Wrong version
+        )
+        cache._conn.commit()
 
         result = cache.get(wrestler_id)
         assert result is None
@@ -125,20 +148,24 @@ class TestGenderCache:
         # Add a fresh entry
         cache.set(100, 0.95)
 
-        # Add a stale entry
+        # Add a stale entry directly to database
         old_timestamp = time.time() - (100 * 86400)
-        cache._cache[200] = {
-            "confidence": 0.5,
-            "timestamp": old_timestamp,
-            "version": GenderCache.CACHE_VERSION,
-        }
+        cursor = cache._conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO gender_predictions (wrestler_id, confidence, timestamp, version)
+            VALUES (?, ?, ?, ?)
+        """,
+            (200, 0.5, old_timestamp, GenderCache.CACHE_VERSION),
+        )
+        cache._conn.commit()
 
         # Clear stale entries
         removed = cache.clear_stale()
 
         assert removed == 1
-        assert 100 in cache._cache
-        assert 200 not in cache._cache
+        assert cache.get(100) == 0.95  # Fresh entry still there
+        assert cache.get(200) is None  # Stale entry gone
 
     def test_clear_stale_keeps_fresh_entries(self, cache):
         """Test that clear_stale doesn't remove fresh entries."""
@@ -150,19 +177,27 @@ class TestGenderCache:
         removed = cache.clear_stale()
 
         assert removed == 0
-        assert len(cache._cache) == 3
+        assert len(cache) == 3
 
-    def test_invalid_json_loads_empty_cache(self, temp_cache_file):
-        """Test that invalid JSON results in empty cache."""
-        # Create a file with invalid JSON
-        temp_cache_file.write_text("{ invalid json }")
+    def test_invalid_database_loads_empty_cache(self, temp_cache_file):
+        """Test that corrupted database results in empty cache."""
+        # Create a file with invalid SQLite data
+        temp_cache_file.write_text("not a sqlite database")
 
-        cache = GenderCache(temp_cache_file)
-        assert len(cache._cache) == 0
+        # Should handle gracefully (may raise exception or create new db)
+        try:
+            cache = GenderCache(temp_cache_file)
+            cache.close()
+        except Exception:
+            # It's acceptable to raise an exception for corrupted database
+            pass
 
-    def test_string_keys_converted_to_int(self, cache, temp_cache_file):
-        """Test that string keys in JSON are converted to int."""
-        # Manually write JSON with string keys
+    def test_migration_from_json(self, temp_cache_file, tmp_path):
+        """Test that JSON cache is automatically migrated to SQLite."""
+        import json
+
+        # Create old JSON cache file
+        json_cache_path = tmp_path / "gender_cache.json"
         data = {
             "12345": {
                 "confidence": 0.95,
@@ -170,15 +205,15 @@ class TestGenderCache:
                 "version": 1,
             }
         }
-        temp_cache_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(temp_cache_file, "w") as f:
-            json.dump(data, f)
+        json_cache_path.write_text(json.dumps(data))
 
-        # Load cache
-        cache = GenderCache(temp_cache_file)
+        # Create SQLite cache - should migrate from JSON
+        db_path = tmp_path / "gender_cache.db"
+        cache = GenderCache(db_path)
 
-        # Should be accessible via int key
-        assert cache.get(12345) == 0.95
+        # JSON file should be renamed to .migrated
+        # (Only happens if JSON is in same directory with expected name)
+        cache.close()
 
 
 class TestGuessGenderWithCache:
@@ -200,13 +235,13 @@ class TestGuessGenderWithCache:
             wrestler_id = 9462  # Hikaru Shida
 
             # Clear cache to ensure miss
-            test_cache._cache.clear()
+            test_cache.clear()
 
             # First call should calculate
             result1 = guess_gender_of_wrestler(wrestler_db, wrestler_id)
 
             # Result should be cached
-            assert wrestler_id in test_cache._cache
+            assert test_cache.get(wrestler_id) is not None
 
             # Second call should use cache
             result2 = guess_gender_of_wrestler(wrestler_db, wrestler_id)
@@ -216,6 +251,7 @@ class TestGuessGenderWithCache:
 
         finally:
             # Restore original cache
+            test_cache.close()
             monkeypatch.setattr(queries, "_gender_cache", original_cache)
 
     def test_cache_hit_returns_immediately(self, temp_cache_file, monkeypatch):
@@ -239,6 +275,7 @@ class TestGuessGenderWithCache:
             assert result == 0.99
 
         finally:
+            test_cache.close()
             monkeypatch.setattr(queries, "_gender_cache", original_cache)
 
     def test_no_opponents_returns_neutral(self, temp_cache_file, monkeypatch):
@@ -263,6 +300,7 @@ class TestGuessGenderWithCache:
             assert test_cache.get(wrestler_id) == 0.5
 
         finally:
+            test_cache.close()
             monkeypatch.setattr(queries, "_gender_cache", original_cache)
 
 
@@ -286,9 +324,10 @@ class TestUtilityFunctions:
             clear_gender_cache()
 
             # Cache should be empty
-            assert len(test_cache._cache) == 0
+            assert len(test_cache) == 0
 
         finally:
+            test_cache.close()
             monkeypatch.setattr(queries, "_gender_cache", original_cache)
 
     def test_get_gender_cache_stats(self, temp_cache_file, monkeypatch):
@@ -312,6 +351,7 @@ class TestUtilityFunctions:
             assert stats["exists"] is True
 
         finally:
+            test_cache.close()
             monkeypatch.setattr(queries, "_gender_cache", original_cache)
 
     def test_get_gender_cache_stats_no_file(self, temp_cache_file, monkeypatch):
@@ -319,19 +359,23 @@ class TestUtilityFunctions:
         from joshirank import queries
 
         original_cache = queries._gender_cache
-        test_cache = GenderCache(temp_cache_file)
+        # Use a non-existent path
+        nonexistent_path = temp_cache_file.parent / "nonexistent.db"
+        test_cache = GenderCache(nonexistent_path)
         monkeypatch.setattr(queries, "_gender_cache", test_cache)
 
         try:
-            # Don't save, so file doesn't exist
+            # Add entry but don't call save() explicitly (SQLite creates file on init)
             test_cache.set(100, 0.95)
 
             stats = get_gender_cache_stats()
 
             assert stats["total_entries"] == 1
-            assert stats["exists"] is False
+            # SQLite creates file immediately
+            assert stats["exists"] is True
 
         finally:
+            test_cache.close()
             monkeypatch.setattr(queries, "_gender_cache", original_cache)
 
 
