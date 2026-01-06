@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 from loguru import logger
 
 from joshirank.cagematch.data import wrestler_name_overrides
-from joshirank.cagematch.util import parse_cm_date
+from joshirank.cagematch.util import parse_cm_date_flexible
 from joshirank.joshi_data import considered_female, promotion_abbreviations
 
 date_re = re.compile(r"([0-9][0-9])\.([0-9][0-9])\.([0-9][0-9][0-9][0-9])")
@@ -29,18 +29,27 @@ def parse_wrestler_profile_page(html_data: str) -> dict:
     for pair in info_pairs:
         label = pair.find("div", class_="InformationBoxTitle").text.strip().strip(":")
         value = pair.find("div", class_="InformationBoxContents")
-        m = date_re.match(value.text.strip())
+        text_value = value.text.strip()
+        
+        # Try to parse any date-like fields
+        m = date_re.match(text_value)
         if m:
             try:
-                value = parse_cm_date(m.group(0)).isoformat()
-                # throws away the non-matching stuff
-            except ValueError:
-                value = value.text.strip()
+                value = parse_cm_date_flexible(m.group(0)).isoformat()
+            except (ValueError, AttributeError):
+                value = text_value
+        # For career start/end fields, try flexible parsing on the full text
+        elif label in ("Beginning of in-ring career", "End of in-ring career"):
+            parsed = parse_cm_date_flexible(text_value)
+            if parsed:
+                value = parsed.isoformat()
+            else:
+                value = text_value
         elif value.stripped_strings and len(list(value.stripped_strings)) > 1:
             # multiple strings, make a list
             value = [s.strip() for s in value.stripped_strings]
         else:
-            value = value.text.strip()
+            value = text_value
         wrestler_data[label] = value
 
     return wrestler_data

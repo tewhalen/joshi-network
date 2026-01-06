@@ -11,8 +11,8 @@ def test_save_and_retrieve_profile(temp_db):
         "Promotion": "Test Promotion",
     }
 
-    temp_db.save_profile_for_wrestler(100, profile_data)
-    temp_db.update_wrestler_from_profile(100)
+    with temp_db.writable():
+        temp_db.save_profile_for_wrestler(100, profile_data)
 
     wrestler = temp_db.get_wrestler(100)
     assert wrestler["name"] == "Test Wrestler"
@@ -41,7 +41,8 @@ def test_save_and_retrieve_matches(temp_db):
         },
     ]
 
-    temp_db.save_matches_for_wrestler(100, matches, year=2025)
+    with temp_db.writable():
+        temp_db.save_matches_for_wrestler(100, matches, year=2025)
 
     retrieved_matches = temp_db.get_matches(100, year=2025)
     assert len(retrieved_matches) == 2
@@ -52,43 +53,42 @@ def test_save_and_retrieve_matches(temp_db):
 def test_update_match_metadata(temp_db):
     """Test that match metadata is correctly computed."""
     # Create a wrestler first
-    temp_db.save_profile_for_wrestler(
-        100, {"Name": "Test", "Gender": "female", "Promotion": "Test"}
-    )
-    temp_db.update_wrestler_from_profile(100)
+    with temp_db.writable():
+        temp_db.save_profile_for_wrestler(
+            100, {"Name": "Test", "Gender": "female", "Promotion": "Test"}
+        )
 
-    matches = [
-        {
-            "date": "2025-01-01",
-            "wrestlers": [100, 200],
-            "side_a": [100],
-            "side_b": [200],
-            "is_victory": True,
-            "match_type": "Singles",
-            "country": "Japan",
-        },
-        {
-            "date": "2025-01-02",
-            "wrestlers": [100, 200],
-            "side_a": [100],
-            "side_b": [200],
-            "is_victory": False,
-            "match_type": "Singles",
-            "country": "Japan",
-        },
-        {
-            "date": "2025-01-03",
-            "wrestlers": [100, 300],
-            "side_a": [100],
-            "side_b": [300],
-            "is_victory": True,
-            "match_type": "Singles",
-            "country": "USA",
-        },
-    ]
+        matches = [
+            {
+                "date": "2025-01-01",
+                "wrestlers": [100, 200],
+                "side_a": [100],
+                "side_b": [200],
+                "is_victory": True,
+                "match_type": "Singles",
+                "country": "Japan",
+            },
+            {
+                "date": "2025-01-02",
+                "wrestlers": [100, 200],
+                "side_a": [100],
+                "side_b": [200],
+                "is_victory": False,
+                "match_type": "Singles",
+                "country": "Japan",
+            },
+            {
+                "date": "2025-01-03",
+                "wrestlers": [100, 300],
+                "side_a": [100],
+                "side_b": [300],
+                "is_victory": True,
+                "match_type": "Singles",
+                "country": "USA",
+            },
+        ]
 
-    temp_db.save_matches_for_wrestler(100, matches, year=2025)
-    temp_db.update_matches_from_matches(100)
+        temp_db.save_matches_for_wrestler(100, matches, year=2025)
 
     match_info = temp_db.get_match_info(100, year=2025)
 
@@ -124,37 +124,36 @@ def test_wrestler_exists(seeded_db):
 def test_get_colleagues(temp_db):
     """Test getting all colleagues from match history."""
     # Create wrestler and matches
-    temp_db.save_profile_for_wrestler(
-        100, {"Name": "Test", "Gender": "female", "Promotion": "Test"}
-    )
-    temp_db.update_wrestler_from_profile(100)
+    with temp_db.writable():
+        temp_db.save_profile_for_wrestler(
+            100, {"Name": "Test", "Gender": "female", "Promotion": "Test"}
+        )
 
-    matches = [
-        {
-            "date": "2025-01-01",
-            "wrestlers": [100, 200],
-            "side_a": [100],
-            "side_b": [200],
-            "is_victory": True,
-        },
-        {
-            "date": "2025-01-02",
-            "wrestlers": [100, 300],
-            "side_a": [100],
-            "side_b": [300],
-            "is_victory": False,
-        },
-        {
-            "date": "2025-01-03",
-            "wrestlers": [100, 200],  # Duplicate opponent
-            "side_a": [100],
-            "side_b": [200],
-            "is_victory": True,
-        },
-    ]
+        matches = [
+            {
+                "date": "2025-01-01",
+                "wrestlers": [100, 200],
+                "side_a": [100],
+                "side_b": [200],
+                "is_victory": True,
+            },
+            {
+                "date": "2025-01-02",
+                "wrestlers": [100, 300],
+                "side_a": [100],
+                "side_b": [300],
+                "is_victory": False,
+            },
+            {
+                "date": "2025-01-03",
+                "wrestlers": [100, 200],  # Duplicate opponent
+                "side_a": [100],
+                "side_b": [200],
+                "is_victory": True,
+            },
+        ]
 
-    temp_db.save_matches_for_wrestler(100, matches, year=2025)
-    temp_db.update_matches_from_matches(100)
+        temp_db.save_matches_for_wrestler(100, matches, year=2025)
 
     colleagues = temp_db.get_all_colleagues(100)
 

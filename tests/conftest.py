@@ -43,6 +43,10 @@ def temp_db():
         db_path = pathlib.Path(tmpdir) / "test_wrestlers.y"
         db = WrestlerDb(db_path)
 
+        # Initialize database tables
+        with db.writable():
+            db.initialize_sql_db()
+
         yield db
 
         db.close()
@@ -54,38 +58,36 @@ def seeded_db(temp_db):
 
     Seeds the database with a few known wrestlers for testing.
     """
-    # Seed with Emi Sakura
-    temp_db.save_profile_for_wrestler(
-        4629,
-        {
-            "Name": "Emi Sakura",
-            "Gender": "female",
-            "Promotion": "Gatoh Move",
-            "Birthplace": "Japan",
-        },
-    )
-    temp_db.update_wrestler_from_profile(4629)
+    with temp_db.writable():
+        # Seed with Emi Sakura
+        temp_db.save_profile_for_wrestler(
+            4629,
+            {
+                "Name": "Emi Sakura",
+                "Gender": "female",
+                "Promotion": "Gatoh Move",
+                "Birthplace": "Japan",
+            },
+        )
 
-    # Seed with a male wrestler for comparison
-    temp_db.save_profile_for_wrestler(
-        1,
-        {
-            "Name": "Test Male",
-            "Gender": "male",
-            "Promotion": "Test Promotion",
-        },
-    )
-    temp_db.update_wrestler_from_profile(1)
+        # Seed with a male wrestler for comparison
+        temp_db.save_profile_for_wrestler(
+            1,
+            {
+                "Name": "Test Male",
+                "Gender": "male",
+                "Promotion": "Test Promotion",
+            },
+        )
 
-    # Seed with a female wrestler
-    temp_db.save_profile_for_wrestler(
-        2,
-        {
-            "Name": "Test Female",
-            "Gender": "female",
-            "Promotion": "Stardom",
-        },
-    )
-    temp_db.update_wrestler_from_profile(2)
+        # Seed with a female wrestler
+        temp_db.save_profile_for_wrestler(
+            2,
+            {
+                "Name": "Test Female",
+                "Gender": "female",
+                "Promotion": "Stardom",
+            },
+        )
 
     return temp_db

@@ -50,10 +50,10 @@ class OperationsManager:
 
         logger.info("Scraping profile for {} ({})", name, wrestler_id)
         scraped_profile = self.scraper.scrape_profile(wrestler_id)
+        # Atomically save JSON and update derived fields using in-memory data
         self.wrestler_db.save_profile_for_wrestler(
             wrestler_id, scraped_profile.profile_data
         )
-        self.wrestler_db.update_wrestler_from_profile(wrestler_id)
 
         if name == "Unknown":
             # Update name if it was previously unknown

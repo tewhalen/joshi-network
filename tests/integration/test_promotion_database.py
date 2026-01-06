@@ -14,6 +14,11 @@ def temp_db():
     with tempfile.TemporaryDirectory() as tmpdir:
         db_path = pathlib.Path(tmpdir) / "test.y"
         db = WrestlerDb(db_path)
+
+        # Initialize database tables
+        with db.writable():
+            db.initialize_sql_db()
+
         yield db
         db.close()
 
@@ -30,7 +35,8 @@ class TestPromotionDatabase:
         }
 
         # Save promotion
-        temp_db.save_promotion(745, promotion_data)
+        with temp_db.writable():
+            temp_db.save_promotion(745, promotion_data)
 
         # Retrieve promotion
         result = temp_db.get_promotion(745)
@@ -51,13 +57,16 @@ class TestPromotionDatabase:
             "Country": "USA",
         }
 
-        temp_db.save_promotion(17025, promotion_data)
+        with temp_db.writable():
+            temp_db.save_promotion(17025, promotion_data)
 
         name = temp_db.get_promotion_name(17025)
         assert name == "All Elite Wrestling"
 
     def test_get_nonexistent_promotion_name(self, temp_db):
         """Test retrieving name for promotion that doesn't exist."""
+        with temp_db.writable():
+            temp_db.initialize_sql_db()
         name = temp_db.get_promotion_name(99999)
         assert name == "99999"  # Returns ID as string
 
@@ -67,7 +76,8 @@ class TestPromotionDatabase:
 
         assert not temp_db.promotion_exists(123)
 
-        temp_db.save_promotion(123, promotion_data)
+        with temp_db.writable():
+            temp_db.save_promotion(123, promotion_data)
 
         assert temp_db.promotion_exists(123)
 
@@ -79,8 +89,9 @@ class TestPromotionDatabase:
             (326, {"Name": "Ice Ribbon"}),
         ]
 
-        for promo_id, data in promotions:
-            temp_db.save_promotion(promo_id, data)
+        with temp_db.writable():
+            for promo_id, data in promotions:
+                temp_db.save_promotion(promo_id, data)
 
         all_ids = temp_db.all_promotion_ids()
 
@@ -98,17 +109,20 @@ class TestPromotionDatabase:
         assert timestamp == 0.0
 
         # Save promotion and check timestamp
-        temp_db.save_promotion(123, promotion_data)
+        with temp_db.writable():
+            temp_db.save_promotion(123, promotion_data)
         timestamp = temp_db.get_promotion_timestamp(123)
         assert timestamp > 0.0
 
     def test_update_promotion(self, temp_db):
         """Test updating an existing promotion."""
         # Initial save
-        temp_db.save_promotion(123, {"Name": "Old Name", "Country": "USA"})
+        with temp_db.writable():
+            temp_db.save_promotion(123, {"Name": "Old Name", "Country": "USA"})
 
         # Update
-        temp_db.save_promotion(123, {"Name": "New Name", "Country": "Canada"})
+        with temp_db.writable():
+            temp_db.save_promotion(123, {"Name": "New Name", "Country": "Canada"})
 
         # Verify update
         result = temp_db.get_promotion(123)
@@ -117,6 +131,8 @@ class TestPromotionDatabase:
 
     def test_get_nonexistent_promotion(self, temp_db):
         """Test retrieving a promotion that doesn't exist."""
+        with temp_db.writable():
+            temp_db.initialize_sql_db()
         result = temp_db.get_promotion(99999)
         assert result is None
 
@@ -124,7 +140,8 @@ class TestPromotionDatabase:
         """Test saving promotion with missing fields."""
         promotion_data = {"Name": "Test Promotion"}  # No Founded or Country
 
-        temp_db.save_promotion(456, promotion_data)
+        with temp_db.writable():
+            temp_db.save_promotion(456, promotion_data)
 
         result = temp_db.get_promotion(456)
         assert result["name"] == "Test Promotion"
@@ -139,7 +156,8 @@ class TestPromotionDatabase:
             "Country": "Japan",
         }
 
-        temp_db.save_promotion(327, promotion_data)
+        with temp_db.writable():
+            temp_db.save_promotion(327, promotion_data)
 
         result = temp_db.get_promotion(327)
         assert result["name"] == "Pro Wrestling WAVE"
@@ -157,8 +175,9 @@ class TestPromotionIntegrationWithMatches:
             327: {"Name": "WAVE"},
         }
 
-        for promo_id, data in promotions.items():
-            temp_db.save_promotion(promo_id, data)
+        with temp_db.writable():
+            for promo_id, data in promotions.items():
+                temp_db.save_promotion(promo_id, data)
 
         # Verify we can resolve them
         assert temp_db.get_promotion_name(745) == "Stardom"

@@ -30,8 +30,6 @@ class WrestlerDb(DBWrapper):
         self._create_matches_table()
         self._create_promotions_table()
         self._create_opponents_table()
-
-        self._commit()
         self._seed_database()
 
     def _create_wrestlers_table(self):
@@ -47,7 +45,7 @@ class WrestlerDb(DBWrapper):
             last_updated TIMESTAMP,
             location TEXT,
             cm_profile_json TEXT,
-            career_start DATE,
+            career_start TEXT,
            
             PRIMARY KEY (wrestler_id)  
         )
@@ -156,6 +154,9 @@ class WrestlerDb(DBWrapper):
         """Save the profile data for a wrestler in the sql table as JSON.
 
         Sets the last_updated timestamp to current time."""
+
+        cm_profile = CMProfile.from_dict(wrestler_id, profile_data)
+
         try:
             cm_profile_json = json.dumps(profile_data)
         except:
@@ -165,13 +166,22 @@ class WrestlerDb(DBWrapper):
                 profile_data,
             )
             raise
+
         self._execute_and_commit(
             """
         INSERT OR REPLACE INTO wrestlers
-        (wrestler_id, cm_profile_json, last_updated)
-        VALUES (?, ?, CURRENT_TIMESTAMP)
+        (is_female, name, promotion, career_start, wrestler_id, cm_profile_json, last_updated, location)
+        VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, COALESCE((SELECT location FROM wrestlers WHERE wrestler_id=?), NULL))
         """,
-            (wrestler_id, cm_profile_json),
+            (
+                cm_profile.is_female(),
+                cm_profile.name(),
+                cm_profile.promotion(),
+                cm_profile.career_start(),
+                wrestler_id,
+                cm_profile_json,
+                wrestler_id,
+            ),
         )
 
     def set_timestamp(self, wrestler_id: int, timestamp: float | datetime.datetime):
@@ -201,44 +211,66 @@ class WrestlerDb(DBWrapper):
         else:
             return {}
 
-    def update_wrestler_from_profile(self, wrestler_id: int):
-        """Using the stored profile info for the wrestler, update their metadata in the SQL db."""
+    def update_wrestler_from_profile(
+        self, wrestler_id: int, profile_data: dict | None = None
+    ):
+        """Now a noop, kept for compatibility."""
+        pass
 
-        wrestler_profile = self.get_cm_profile_for_wrestler(wrestler_id)
-        # if not wrestler_profile:
-        #    raise ValueError(
-        #        f"No profile data found for wrestler ID {wrestler_id} to update from."
-        #    )
-        cm_profile = CMProfile.from_dict(wrestler_id, wrestler_profile)
+    def save_matches_for_wrestler(
+        self, wrestler_id: int, match_data: list[dict], year: int
+    ):
+        """Save the match data for a wrestler in the sql table as JSON."""
+        try:
+            cm_matches_json = json.dumps(match_data)
+        except:
+            logger.error(
+                "Could not serialize profile data for wrestler ID {}: {}",
+                wrestler_id,
+                match_data,
+            )
+            raise
+
+        opponents, countries_worked, promotions_worked = (
+            self._extract_data_from_match_data(wrestler_id, match_data)
+        )
 
         self._execute_and_commit(
             """
-        UPDATE wrestlers
-        SET is_female=?, name=?, promotion=?, career_start=?
-        WHERE wrestler_id=?
+        INSERT OR REPLACE INTO matches
+        (wrestler_id, year, cm_matches_json, last_updated, opponents, match_count, countries_worked, promotions_worked)
+        VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?)
         """,
             (
-                cm_profile.is_female(),
-                cm_profile.name(),
-                cm_profile.promotion(),
-                cm_profile.career_start(),
-                wrestler_id,
+                wrestler_id,  # wrestler_id + year is the primary key
+                year,
+                cm_matches_json,
+                json.dumps([x[0] for x in opponents.most_common()]),
+                len(match_data),
+                json.dumps(dict(countries_worked)),
+                json.dumps(dict(promotions_worked)),
             ),
         )
+        # Update normalized opponents table
+        self._update_opponents_table(wrestler_id, year, opponents)
 
-    def save_matches_for_wrestler(
-        self, wrestler_id: int, matches: list[dict], year: int
-    ):
-        """Save the match data for a wrestler in the sql table as JSON."""
-        cm_matches_json = json.dumps(matches)
-        return self._execute_and_commit(
-            """
-        INSERT OR REPLACE INTO matches
-        (wrestler_id, cm_matches_json, year, last_updated)
-        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-        """,
-            (wrestler_id, cm_matches_json, year),
+    def _extract_data_from_match_data(
+        self, wrestler_id: int, match_data: list[dict]
+    ) -> tuple[Counter, Counter, Counter]:
+        opponents, countries_worked, promotions_worked = (
+            Counter(),
+            Counter(),
+            Counter(),
         )
+        for match in match_data:
+            for wid in match["wrestlers"]:
+                if wid != wrestler_id:
+                    opponents[wid] += 1
+            if "country" in match:
+                countries_worked[match["country"]] += 1
+            if "promotion" in match and match["promotion"] is not None:
+                promotions_worked[match["promotion"]] += 1
+        return opponents, countries_worked, promotions_worked
 
     def create_stale_match_stubs(self, wrestler_id: int, years: set[int]):
         """Create stub match entries for years that don't exist yet.
@@ -269,30 +301,21 @@ class WrestlerDb(DBWrapper):
             )
 
     def update_matches_from_matches(self, wrestler_id: int):
-        """Using the stored json matches for the wrestler, update their metadata in the SQL db."""
+        """Using the stored json matches for the wrestler, update their metadata in the SQL db.
+
+        Deprecated!"""
         rows = self._select_and_fetchall(
             """SELECT cm_matches_json, year FROM matches WHERE wrestler_id=?""",
             (wrestler_id,),
         )
         for row in rows:
             if row and row[0]:
-                matches = json.loads(row[0])
                 year = row[1]
-                if not matches:
-                    continue
+                matches = json.loads(row[0])
                 opponents, countries_worked, promotions_worked = (
-                    Counter(),
-                    Counter(),
-                    Counter(),
+                    self._extract_data_from_match_data(wrestler_id, matches)
                 )
-                for match in matches:
-                    for wid in match["wrestlers"]:
-                        if wid != wrestler_id:
-                            opponents[wid] += 1
-                    if "country" in match:
-                        countries_worked[match["country"]] += 1
-                    if "promotion" in match and match["promotion"] is not None:
-                        promotions_worked[match["promotion"]] += 1
+
                 self._execute_and_commit(
                     """
                 UPDATE matches
@@ -308,6 +331,7 @@ class WrestlerDb(DBWrapper):
                         year,
                     ),
                 )
+
                 # Update normalized opponents table
                 self._update_opponents_table(wrestler_id, year, opponents)
 
@@ -330,7 +354,7 @@ class WrestlerDb(DBWrapper):
                 (wrestler_id, opponent_id, year, count),
             )
         cursor.close()
-        self._commit()
+        # Note: Commit is deferred if in batch mode via _execute_and_commit or context manager
 
     def update_wrestler_from_matches(self, wrestler_id: int):
         """Using the stored match info for the wrestler, update their metadata in the SQL db."""
@@ -680,35 +704,12 @@ class WrestlerDb(DBWrapper):
         missing_wrestlers = [9232]
         for wid in missing_wrestlers:
             self.save_profile_for_wrestler(wid, {"Missing Profile": True})
-            self.update_wrestler_from_profile(wid)
             self.save_matches_for_wrestler(wid, [], 2025)
 
 
 # Default read-only database instance for convenience
 _default_db_path = pathlib.Path("data/joshi_wrestlers.y")
 wrestler_db = WrestlerDb(_default_db_path)
-
-
-@contextmanager
-def reopen_rw():
-    """Context manager for opening database in read-write mode.
-
-    DEPRECATED: Use wrestler_db.writable() instead.
-
-    This creates a writable context on the global wrestler_db instance.
-    The instance temporarily switches to read-write mode, then restores
-    read-only mode on exit.
-
-    Usage:
-        with reopen_rw():
-            wrestler_db.save_profile_for_wrestler(...)
-
-    New style (preferred):
-        with wrestler_db.writable():
-            wrestler_db.save_profile_for_wrestler(...)
-    """
-    with wrestler_db.writable():
-        yield wrestler_db
 
 
 @functools.lru_cache(maxsize=None)
@@ -727,6 +728,9 @@ def get_promotion_name(promotion_id: int) -> str:
         Promotion name, or str(promotion_id) if not found
     """
     return wrestler_db.get_promotion_name(promotion_id)
+
+
+
 
 
 if __name__ == "__main__":
