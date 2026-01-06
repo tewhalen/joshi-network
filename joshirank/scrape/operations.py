@@ -51,18 +51,18 @@ class OperationsManager:
         logger.info("Scraping profile for {} ({})", name, wrestler_id)
         scraped_profile = self.scraper.scrape_profile(wrestler_id)
         # Atomically save JSON and update derived fields using in-memory data
-        self.wrestler_db.save_profile_for_wrestler(
+        wrestler_profile = self.wrestler_db.save_profile_for_wrestler(
             wrestler_id, scraped_profile.profile_data
         )
 
         if name == "Unknown":
             # Update name if it was previously unknown
-            updated_name = self.wrestler_db.get_name(wrestler_id)
+            updated_name = wrestler_profile.name()
             logger.info("Learned '{}' for ID {}", updated_name, wrestler_id)
 
             # For newly discovered female wrestlers, create a stub match entry
             # to ensure their matches get queued in the next session
-            if self.wrestler_db.is_female(wrestler_id):
+            if wrestler_profile.is_female():
                 start_year, end_year = self._guess_likely_match_year_range(
                     scraped_profile
                 )
@@ -104,7 +104,7 @@ class OperationsManager:
             self.wrestler_db.create_stale_match_stubs(wrestler_id, available_years)
 
         # Update derived metadata from match data
-        self.wrestler_db.update_matches_from_matches(wrestler_id)
+
         self.wrestler_db.update_wrestler_from_matches(wrestler_id)
 
     def refresh_all_matches(self, wrestler_id: int):
@@ -149,7 +149,7 @@ class OperationsManager:
                 self.wrestler_db.save_matches_for_wrestler(wrestler_id, [], year=year)
 
         # Update derived metadata from match data
-        self.wrestler_db.update_matches_from_matches(wrestler_id)
+
         self.wrestler_db.update_wrestler_from_matches(wrestler_id)
 
     def refresh_promotion(self, promotion_id: int):

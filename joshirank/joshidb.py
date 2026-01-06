@@ -24,6 +24,12 @@ from joshirank.db_wrapper import DBWrapper
 
 
 class WrestlerDb(DBWrapper):
+    """Database wrapper for wrestler data storage."""
+
+    ##
+    ## Initialization Functions
+    ##
+
     def initialize_sql_db(self):
         """If necessary, create the SQL tables for wrestler metadata."""
         self._create_wrestlers_table()
@@ -46,6 +52,7 @@ class WrestlerDb(DBWrapper):
             location TEXT,
             cm_profile_json TEXT,
             career_start TEXT,
+            career_end TEXT,
            
             PRIMARY KEY (wrestler_id)  
         )
@@ -150,11 +157,31 @@ class WrestlerDb(DBWrapper):
             return False
         return bool(row[0])
 
-    def save_profile_for_wrestler(self, wrestler_id: int, profile_data: dict):
-        """Save the profile data for a wrestler in the sql table as JSON.
+    ##
+    ## Saving of Profile and Match data
+    ##
 
-        Sets the last_updated timestamp to current time."""
+    def save_profile_for_wrestler(
+        self, wrestler_id: int, profile_data: dict
+    ) -> CMProfile:
+        """Save the profile data for a wrestler in the database table as JSON.
 
+        Sets the last_updated timestamp to current time.
+        Extracts additional derived fields from the profile data, including name,
+        is_female, promotion, career_start.
+
+        Does not commit; caller is responsible for committing transaction.
+
+        Will not overwrite existing "location" field.
+
+        Args:
+            wrestler_id: ID of the wrestler
+            profile_data: Dict of profile data as scraped from CageMatch
+
+        Returns:
+            The CMProfile object created from the profile_data.
+
+        """
         cm_profile = CMProfile.from_dict(wrestler_id, profile_data)
 
         try:
@@ -167,7 +194,7 @@ class WrestlerDb(DBWrapper):
             )
             raise
 
-        self._execute_and_commit(
+        self._execute(
             """
         INSERT OR REPLACE INTO wrestlers
         (is_female, name, promotion, career_start, wrestler_id, cm_profile_json, last_updated, location)
@@ -184,43 +211,20 @@ class WrestlerDb(DBWrapper):
             ),
         )
 
-    def set_timestamp(self, wrestler_id: int, timestamp: float | datetime.datetime):
-        """Set the last_updated timestamp for a wrestler."""
-        if isinstance(timestamp, float):
-            str_timestamp = datetime.datetime.fromtimestamp(timestamp).isoformat()
-        else:
-            str_timestamp = timestamp.isoformat()
-        self._execute_and_commit(
-            """
-        UPDATE wrestlers
-        SET last_updated=?
-        WHERE wrestler_id=?
-        """,
-            (str_timestamp, wrestler_id),
-        )
-
-    def get_cm_profile_for_wrestler(self, wrestler_id: int) -> dict:
-        """Return the CM profile data for a wrestler as a dict."""
-        row = self._select_and_fetchone(
-            """SELECT cm_profile_json FROM wrestlers WHERE wrestler_id=?""",
-            (wrestler_id,),
-        )
-
-        if row and row[0]:
-            return json.loads(row[0])
-        else:
-            return {}
-
-    def update_wrestler_from_profile(
-        self, wrestler_id: int, profile_data: dict | None = None
-    ):
-        """Now a noop, kept for compatibility."""
-        pass
-
     def save_matches_for_wrestler(
         self, wrestler_id: int, match_data: list[dict], year: int
     ):
-        """Save the match data for a wrestler in the sql table as JSON."""
+        """Save the match data for a wrestler in the database table as JSON.
+
+        Also parses out opponents, countries worked, and promotions worked for metadata.
+        Sets the last_updated timestamp to current time.
+        Args:
+            wrestler_id: ID of the wrestler
+            match_data: List of match dicts as scraped from CageMatch
+            year: Year the matches belong to
+
+        Does not commit; caller is responsible for committing transaction.
+        """
         try:
             cm_matches_json = json.dumps(match_data)
         except:
@@ -303,7 +307,9 @@ class WrestlerDb(DBWrapper):
     def update_matches_from_matches(self, wrestler_id: int):
         """Using the stored json matches for the wrestler, update their metadata in the SQL db.
 
-        Deprecated!"""
+        Deprecated!
+
+        """
         rows = self._select_and_fetchall(
             """SELECT cm_matches_json, year FROM matches WHERE wrestler_id=?""",
             (wrestler_id,),
@@ -357,41 +363,27 @@ class WrestlerDb(DBWrapper):
         # Note: Commit is deferred if in batch mode via _execute_and_commit or context manager
 
     def update_wrestler_from_matches(self, wrestler_id: int):
-        """Using the stored match info for the wrestler, update their metadata in the SQL db."""
-        from joshirank.analysis.gender import update_gender_diverse_classification
+        """Using the stored match info for the wrestler, update their metadata in the SQL db.
 
-        self._execute_and_commit(
-            """
-                UPDATE wrestlers
-                SET location=?
-                WHERE wrestler_id=?
-                """,
-            (self.guess_location_from_matches(wrestler_id), wrestler_id),
-        )
+        Because this is a combined read/write to the database, or rather a write based on
+        a read, there may be commit issues if called within a batch mode context.
+        """
+        from joshirank.analysis.gender import update_gender_diverse_classification
 
         # Update gender classification for gender-diverse wrestlers
         update_gender_diverse_classification(wrestler_id)
 
-    def guess_location_from_matches(self, wrestler_id: int):
-        """Guess the wrestler's location based on countries worked in matches."""
-        # get countries worked from matches
-        rows = self._select_and_fetchall(
-            """SELECT countries_worked FROM matches WHERE wrestler_id=?""",
+    def get_cm_profile_for_wrestler(self, wrestler_id: int) -> dict:
+        """Return the CM profile data for a wrestler as a dict."""
+        row = self._select_and_fetchone(
+            """SELECT cm_profile_json FROM wrestlers WHERE wrestler_id=?""",
             (wrestler_id,),
         )
-        if not rows:
-            return
 
-        country_counter = Counter()
-        for row in rows:
-            if row and row[0]:
-                # should be a dict stored as json
-                countries_worked = json.loads(row[0])
-                country_counter.update(countries_worked)
-
-        if country_counter:
-            # get the most common country
-            return max(country_counter.items(), key=lambda x: x[1])[0]
+        if row and row[0]:
+            return json.loads(row[0])
+        else:
+            return {}
 
     def close(self):
         # self.db.close()
@@ -728,9 +720,6 @@ def get_promotion_name(promotion_id: int) -> str:
         Promotion name, or str(promotion_id) if not found
     """
     return wrestler_db.get_promotion_name(promotion_id)
-
-
-
 
 
 if __name__ == "__main__":

@@ -178,19 +178,17 @@ class DBWrapper:
 
     def _execute_and_commit(self, query: str, params: tuple) -> int:
         """Helper method to execute a query and commit changes."""
-        cursor = self.sqldb_rw.cursor()
-        cursor.execute(query, params)
+        rowcount = self._execute(query, params)
+
         # In batch mode, defer commit to context exit
         if not self._batch_mode:
             self.sqldb_rw.commit()
-        rowcount = cursor.rowcount
-        cursor.close()
 
         # return the status of the execution if needed
         return rowcount
 
     def _execute(self, query: str, params: tuple) -> int:
-        """Helper method to execute a query without out committing changes."""
+        """Helper method to execute a read/write query without committing changes."""
         cursor = self.sqldb_rw.cursor()
         cursor.execute(query, params)
         rowcount = cursor.rowcount

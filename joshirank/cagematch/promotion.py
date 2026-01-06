@@ -10,20 +10,20 @@ def parse_promotion_page(html_data: str) -> dict:
 
     # Find all InformationBoxTable sections
     info_tables = soup.find_all("div", class_="InformationBoxTable")
-    
+
     for info_table in info_tables:
         # Find all rows in this table
         rows = info_table.find_all("div", class_="InformationBoxRow")
         for row in rows:
             title_div = row.find("div", class_="InformationBoxTitle")
             contents_div = row.find("div", class_="InformationBoxContents")
-            
+
             if not title_div or not contents_div:
                 continue
-            
+
             label = title_div.text.strip().rstrip(":")
             value = contents_div.text.strip()
-            
+
             # Map CageMatch fields to our schema
             if label == "Current name":
                 promotion_data["Name"] = value
