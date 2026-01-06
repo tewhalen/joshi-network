@@ -27,6 +27,8 @@ class WrestlerScrapeInfo:
         - Female wrestlers: 90 days
         - Non-female wrestlers: 365 days
         """
+        if self.wrestler_db.wrestler_exists(wrestler_id) is False:
+            return True  # definitely stale if not in DB
         wrestler_info = self.wrestler_db.get_wrestler(wrestler_id)
         timestamp = wrestler_info.get("timestamp", 0)
         is_female = self.wrestler_db.is_female(wrestler_id)

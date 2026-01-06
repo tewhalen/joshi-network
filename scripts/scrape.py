@@ -10,6 +10,7 @@ from pathlib import Path
 import click
 from loguru import logger
 
+from joshirank.analysis.promotion import ever_worked_promotion
 from joshirank.joshidb import WrestlerDb, wrestler_db
 from joshirank.scrape.operations import OperationsManager
 from joshirank.scrape.queue_builder import (
@@ -288,6 +289,11 @@ def setup_logging():
 
 @click.command()
 @click.option(
+    "--promotion",
+    type=int,
+    help="Promotion ID to scrape (overrides other filters, scrapes all wrestlers in that promotion)",
+)
+@click.option(
     "--tjpw-only",
     is_flag=True,
     help="Only scrape TJPW wrestlers instead of all female wrestlers",
@@ -321,7 +327,9 @@ def setup_logging():
     is_flag=True,
     help="Slow mode: 7s between requests, no session limit",
 )
-def cli(tjpw_only, wrestler_ids, dry_run, stats_only, force, no_backup, slow):
+def cli(
+    tjpw_only, wrestler_ids, dry_run, stats_only, force, no_backup, slow, promotion
+):
     """Scrape wrestler profiles and matches from CageMatch.net."""
     setup_logging()
 
@@ -354,6 +362,17 @@ def cli(tjpw_only, wrestler_ids, dry_run, stats_only, force, no_backup, slow):
 
         wrestler_filter = all_tjpw_wrestlers()
         logger.info("TJPW-only mode: limiting to {} wrestlers", len(wrestler_filter))
+        queue_builder = FilteredQueueBuilder(
+            wrestler_db, wrestler_filter, force_refresh=force
+        )
+    elif promotion:
+        promo_name = wrestler_db.get_promotion_name(int(promotion))
+        logger.info(
+            "Promotion mode: scraping all wrestlers from promotion {} ({})",
+            promo_name,
+            promotion,
+        )
+        wrestler_filter = ever_worked_promotion(int(promotion))
         queue_builder = FilteredQueueBuilder(
             wrestler_db, wrestler_filter, force_refresh=force
         )

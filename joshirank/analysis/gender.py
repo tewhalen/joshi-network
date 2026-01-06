@@ -56,7 +56,7 @@ def gender_diverse_wrestlers():
             yield wrestler_id
 
 
-def update_gender_diverse_classification(wrestler_id: int, rw_db) -> bool:
+def update_gender_diverse_classification(wrestler_id: int) -> bool:
     """Update gender classification for a gender-diverse wrestler based on colleagues.
 
     For wrestlers marked as gender-diverse, this function analyzes their match
@@ -67,7 +67,6 @@ def update_gender_diverse_classification(wrestler_id: int, rw_db) -> bool:
 
     Args:
         wrestler_id: ID of gender-diverse wrestler to classify
-        rw_db: WrestlerDb instance (must be writable, not read-only)
 
     Returns:
         True if classification was updated, False if skipped
@@ -88,7 +87,7 @@ def update_gender_diverse_classification(wrestler_id: int, rw_db) -> bool:
     # Set is_female if the majority of colleagues are female
     if percentage_of_female_colleagues(wrestler_id) > 0.5:
         logger.info("Gender-diverse {} -> female", wrestler_id)
-        rw_db._execute_and_commit(
+        wrestler_db._execute_and_commit(
             """
             UPDATE wrestlers
             SET is_female=1
@@ -99,7 +98,7 @@ def update_gender_diverse_classification(wrestler_id: int, rw_db) -> bool:
         return True
     else:
         logger.info("Gender-diverse {} -> not female", wrestler_id)
-        rw_db._execute_and_commit(
+        wrestler_db._execute_and_commit(
             """
             UPDATE wrestlers
             SET is_female=0
