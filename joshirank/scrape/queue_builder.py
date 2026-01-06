@@ -33,6 +33,8 @@ class QueueBuilder:
     - Current year gets NORMAL priority (minimal data exists)
     """
 
+    only_matches: bool = False
+
     def __init__(
         self,
         wrestler_db: WrestlerDb,
@@ -192,6 +194,8 @@ class FullQueueBuilder(QueueBuilder):
 
         Returns True for full scraping, False when filtering to specific wrestlers.
         """
+        if self.only_matches:
+            return False
         return True
 
     def should_scrape_non_female_profiles(self) -> bool:
@@ -199,6 +203,8 @@ class FullQueueBuilder(QueueBuilder):
 
         Returns True for full scraping, False when filtering.
         """
+        if self.only_matches:
+            return False
         return True
 
     def should_scrape_gender_diverse(self) -> bool:
@@ -206,6 +212,8 @@ class FullQueueBuilder(QueueBuilder):
 
         Returns True for full scraping, False when filtering.
         """
+        if self.only_matches:
+            return False
         return True
 
     def should_scrape_promotions(self) -> bool:
@@ -213,6 +221,8 @@ class FullQueueBuilder(QueueBuilder):
 
         Returns True for full scraping, False when filtering.
         """
+        if self.only_matches:
+            return False
         return True
 
     def build(self) -> WorkQueue:
@@ -237,9 +247,10 @@ class FullQueueBuilder(QueueBuilder):
                 )
 
         # 2. Stale target wrestler profiles
-        for wid in self.get_target_wrestlers():
-            for item in self.stale_profile_tasks(wid):
-                queue.enqueue(item)
+        if not self.only_matches:
+            for wid in self.get_target_wrestlers():
+                for item in self.stale_profile_tasks(wid):
+                    queue.enqueue(item)
 
         # 3. All stale non-female profiles
         if self.should_scrape_non_female_profiles():
@@ -343,9 +354,10 @@ class FilteredQueueBuilder(QueueBuilder):
         queue = WorkQueue()
 
         # 1. Stale target profiles
-        for wid in self.get_target_wrestlers():
-            for item in self.stale_profile_tasks(wid):
-                queue.enqueue(item)
+        if not self.only_matches:
+            for wid in self.get_target_wrestlers():
+                for item in self.stale_profile_tasks(wid):
+                    queue.enqueue(item)
 
         # 2. Stale match-years for target wrestlers (year-based priorities)
         for wid in self.get_target_wrestlers():
@@ -353,36 +365,38 @@ class FilteredQueueBuilder(QueueBuilder):
                 queue.enqueue(item)
 
         # 3. Opponents of target wrestlers who are missing profiles
-        for wid in self.get_target_wrestlers():
-            for missing_wid in self.scrape_info.find_missing_wrestlers_for_wrestler(
-                wid
-            ):
-                if missing_wid in self.wrestler_filter:
-                    priority = calculate_missing_wrestler_priority(10)
-                    queue.enqueue(
-                        WorkItem(
-                            priority=priority,
-                            object_id=missing_wid,
-                            operation="refresh_profile",
+        if not self.only_matches:
+            for wid in self.get_target_wrestlers():
+                for missing_wid in self.scrape_info.find_missing_wrestlers_for_wrestler(
+                    wid
+                ):
+                    if missing_wid in self.wrestler_filter:
+                        priority = calculate_missing_wrestler_priority(10)
+                        queue.enqueue(
+                            WorkItem(
+                                priority=priority,
+                                object_id=missing_wid,
+                                operation="refresh_profile",
+                            )
                         )
-                    )
 
         # 4. LOW: Promotion data for frequently referenced promotions
 
-        promotion_counter = self._collect_promotion_ids()
-        for promotion_id, frequency in promotion_counter.most_common():
-            if self.force_refresh or self._promotion_is_stale(promotion_id):
-                # Priority based on frequency of promotion in match data
-                # Most common promotions get higher priority (lower number)
-                # Scale: 0 (most common) to 95 (rare)
-                priority = max(0, min(95, 95 - (frequency // 100)))
-                queue.enqueue(
-                    WorkItem(
-                        priority=priority,
-                        object_id=promotion_id,
-                        operation="refresh_promotion",
+        if not self.only_matches:
+            promotion_counter = self._collect_promotion_ids()
+            for promotion_id, frequency in promotion_counter.most_common():
+                if self.force_refresh or self._promotion_is_stale(promotion_id):
+                    # Priority based on frequency of promotion in match data
+                    # Most common promotions get higher priority (lower number)
+                    # Scale: 0 (most common) to 95 (rare)
+                    priority = max(0, min(95, 95 - (frequency // 100)))
+                    queue.enqueue(
+                        WorkItem(
+                            priority=priority,
+                            object_id=promotion_id,
+                            operation="refresh_promotion",
+                        )
                     )
-                )
 
         logger.info("Built work queue with {} items", len(queue))
         return queue

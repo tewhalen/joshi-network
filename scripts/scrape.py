@@ -293,6 +293,7 @@ def setup_logging():
     type=int,
     help="Promotion ID to scrape (overrides other filters, scrapes all wrestlers in that promotion)",
 )
+@click.option("--matches-only", is_flag=True, help="Only scrape matches!")
 @click.option(
     "--tjpw-only",
     is_flag=True,
@@ -328,7 +329,15 @@ def setup_logging():
     help="Slow mode: 7s between requests, no session limit",
 )
 def cli(
-    tjpw_only, wrestler_ids, dry_run, stats_only, force, no_backup, slow, promotion
+    tjpw_only,
+    wrestler_ids,
+    dry_run,
+    stats_only,
+    force,
+    no_backup,
+    slow,
+    promotion,
+    matches_only,
 ):
     """Scrape wrestler profiles and matches from CageMatch.net."""
     setup_logging()
@@ -385,6 +394,9 @@ def cli(
     else:
         queue_builder = FullQueueBuilder(wrestler_db, force_refresh=force)
 
+    if matches_only:
+        queue_builder.only_matches = True
+        logger.info("Matches-only mode: only scraping matches")
     if slow:
         logger.warning("SLOW MODE: 7s between requests, no session limit")
 
