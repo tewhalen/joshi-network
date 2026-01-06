@@ -348,6 +348,7 @@ def display_wrestler_stats(wrestler_id: int):
         ["Promotion", info.get("promotion", "Unknown")],
         ["Location", info.get("location", "Unknown")],
         ["Career Start", info.get("career_start", "Unknown")],
+        ["Career End", info.get("career_end", "Unknown")],
         ["Profile Last Updated", format_timestamp(info.get("timestamp", 0))],
     ]
     print(tabulate(basic_data, tablefmt="plain"))
