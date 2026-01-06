@@ -103,10 +103,6 @@ class OperationsManager:
             )
             self.wrestler_db.create_stale_match_stubs(wrestler_id, available_years)
 
-        # Update derived metadata from match data
-
-        self.wrestler_db.update_wrestler_from_matches(wrestler_id)
-
     def refresh_all_matches(self, wrestler_id: int):
         """Scrape and update all matches for a wrestler.
 
@@ -147,11 +143,6 @@ class OperationsManager:
             if year not in matches_by_year:
                 # This year exists in DB but had no matches - update timestamp to mark as checked
                 self.wrestler_db.save_matches_for_wrestler(wrestler_id, [], year=year)
-
-        # Update derived metadata from match data
-        logger.info("{} | Updating derived metadata from matches", wrestler_id)
-
-        self.wrestler_db.update_wrestler_from_matches(wrestler_id)
 
     def refresh_promotion(self, promotion_id: int):
         """Scrape and update promotion data.

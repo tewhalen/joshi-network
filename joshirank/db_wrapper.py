@@ -38,7 +38,6 @@ Writing data (requires context manager):
     # Open temporary write connection
     with wrestler_db.writable():
         wrestler_db.save_profile_for_wrestler(wrestler_id, profile_data)
-        wrestler_db.update_wrestler_from_profile(wrestler_id)
         # All writes committed automatically on context exit
     # Write connection closed here
     ```
@@ -88,6 +87,24 @@ Legacy code may use deprecated `reopen_rw()` function in joshidb.py:
     ```
 
 Both work identically - `reopen_rw()` is just a wrapper around `wrestler_db.writable()`.
+
+SQLite PRAGMAs & Locking Strategy
+---------------------------------
+
+To minimize "database is locked" errors while keeping reads fast:
+
+- Writer connection uses Write-Ahead Logging (WAL) and grabs the write lock up front:
+    - `PRAGMA journal_mode = WAL;`
+    - `PRAGMA synchronous = NORMAL;` (safe default for WAL)
+    - `BEGIN IMMEDIATE;` to avoid mid-transaction lock surprises
+    - `PRAGMA busy_timeout = 10000;` (10s) to tolerate brief contention
+
+- Read-only connection sets:
+    - `PRAGMA busy_timeout = 10000;` so readers also patiently wait
+
+Notes:
+- Changing `journal_mode` requires a writable connection; attempts on the RO connection are ignored.
+- WAL allows concurrent readers with a single writer, which fits the read-mostly pattern here.
 """
 
 import pathlib
@@ -110,6 +127,11 @@ class DBWrapper:
             tmp_conn.close()
         # Always-open read-only connection
         self.sqldb_ro = sqlite3.connect(f"file:{db_file}?mode=ro", uri=True)
+        # Best-effort: set a reasonable busy timeout on the RO connection
+        try:
+            self.sqldb_ro.execute("PRAGMA busy_timeout = 10000;")
+        except Exception:
+            pass
         self.__sqldb_rw = None  # Temporary write connection, only set in context
         self._batch_mode = False
 
@@ -131,6 +153,19 @@ class DBWrapper:
         if self.__sqldb_rw is not None:
             raise RuntimeError("Already in writable context!")
         self.__sqldb_rw = sqlite3.connect(str(self.path.with_suffix(".sqlite3")))
+        # Configure connection PRAGMAs for stable write behavior
+        try:
+            # Allow concurrent readers while writing
+            self.__sqldb_rw.execute("PRAGMA journal_mode = WAL;")
+            # Reasonable safety/performance tradeoff for WAL
+            self.__sqldb_rw.execute("PRAGMA synchronous = NORMAL;")
+            # Be patient with brief contention windows
+            self.__sqldb_rw.execute("PRAGMA busy_timeout = 10000;")
+            # Grab write lock up-front to avoid mid-batch surprises
+            self.__sqldb_rw.execute("BEGIN IMMEDIATE;")
+        except Exception:
+            # If any PRAGMA isn't supported, proceed without failing the context
+            pass
         self._batch_mode = True
 
         try:
@@ -177,7 +212,8 @@ class DBWrapper:
         return rows
 
     def _execute_and_commit(self, query: str, params: tuple) -> int:
-        """Helper method to execute a query and commit changes."""
+        """Helper method to execute a query and commit changes. The
+        commit is deferred if in batch mode."""
         rowcount = self._execute(query, params)
 
         # In batch mode, defer commit to context exit
