@@ -48,7 +48,7 @@ class OperationsManager:
 
         name = self.wrestler_db.get_name(wrestler_id)
 
-        logger.info("Scraping profile for {} ({})", name, wrestler_id)
+        logger.info("{} | Scraping profile for {} ", wrestler_id, name)
         scraped_profile = self.scraper.scrape_profile(wrestler_id)
         # Atomically save JSON and update derived fields using in-memory data
         wrestler_profile = self.wrestler_db.save_profile_for_wrestler(
@@ -58,7 +58,7 @@ class OperationsManager:
         if name == "Unknown":
             # Update name if it was previously unknown
             updated_name = wrestler_profile.name()
-            logger.info("Learned '{}' for ID {}", updated_name, wrestler_id)
+            logger.info("{} | Learned '{}' ", wrestler_id, updated_name)
 
             # For newly discovered female wrestlers, create a stub match entry
             # to ensure their matches get queued in the next session
@@ -67,7 +67,7 @@ class OperationsManager:
                     scraped_profile
                 )
                 logger.success(
-                    "Creating stubs for new wrestler {}, years {}-{}",
+                    "{} | Creating stubs for years {}-{}",
                     wrestler_id,
                     start_year,
                     end_year,
@@ -88,7 +88,7 @@ class OperationsManager:
             return
 
         name = self.wrestler_db.get_name(wrestler_id)
-        logger.info("Scraping {} | {} ({})", year, name, wrestler_id)
+        logger.info("{} | Scraping {} for {}", wrestler_id, year, name)
         matches, available_years = self.scraper.scrape_matches(wrestler_id, year)
 
         self.wrestler_db.save_matches_for_wrestler(wrestler_id, matches, year)
@@ -96,9 +96,9 @@ class OperationsManager:
         # Create stale stubs for any newly discovered years
         if available_years:
             logger.debug(
-                "Discovered {} available years for {}: {}",
+                "{} | Discovered {} available years: {}",
+                wrestler_id,
                 len(available_years),
-                name,
                 sorted(available_years),
             )
             self.wrestler_db.create_stale_match_stubs(wrestler_id, available_years)
@@ -118,7 +118,7 @@ class OperationsManager:
             return
 
         name = self.wrestler_db.get_name(wrestler_id)
-        logger.info("Scraping all  | {} ({})", name, wrestler_id)
+        logger.info("{} | Scraping all matches for {}", wrestler_id, name)
         matches = self.scraper.scrape_all_matches(wrestler_id)
 
         # matches is a list of match dicts which need to be grouped by year
@@ -149,6 +149,7 @@ class OperationsManager:
                 self.wrestler_db.save_matches_for_wrestler(wrestler_id, [], year=year)
 
         # Update derived metadata from match data
+        logger.info("{} | Updating derived metadata from matches", wrestler_id)
 
         self.wrestler_db.update_wrestler_from_matches(wrestler_id)
 
@@ -158,15 +159,15 @@ class OperationsManager:
         Args:
             promotion_id: ID of promotion to scrape
         """
-        logger.info("Scraping promotion {}", promotion_id)
+        logger.info("{} | Scraping promotion", promotion_id)
         try:
             scraped_promotion = self.scraper.scrape_promotion(promotion_id)
             self.wrestler_db.save_promotion(promotion_id, scraped_promotion.to_dict())
             logger.success(
-                "Saved promotion {}: {}", promotion_id, scraped_promotion.name()
+                "{} | Saved promotion: {}", promotion_id, scraped_promotion.name()
             )
         except Exception as e:
-            logger.error("Failed to scrape promotion {}: {}", promotion_id, e)
+            logger.error("{} | Failed to scrape promotion: {}", promotion_id, e)
 
     def _guess_likely_match_year_range(self, profile) -> tuple[int, int]:
         """Guess a range of years most likely to have matches for a newly discovered wrestler.

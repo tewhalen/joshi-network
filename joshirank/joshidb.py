@@ -210,6 +210,7 @@ class WrestlerDb(DBWrapper):
                 wrestler_id,
             ),
         )
+        return cm_profile
 
     def save_matches_for_wrestler(
         self, wrestler_id: int, match_data: list[dict], year: int
