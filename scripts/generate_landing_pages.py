@@ -5,6 +5,29 @@ import pathlib
 
 import jinja2
 
+from joshirank.joshidb import wrestler_db
+
+
+def get_year_stats(year: int) -> dict:
+    """Get statistics for a given year from the database."""
+    wrestlers_with_matches = set()
+    total_matches = 0
+
+    # Count all wrestlers with matches in this year (regardless of female flag)
+    for wrestler_id in wrestler_db.all_wrestler_ids():
+        available_years = wrestler_db.match_years_available(wrestler_id)
+        if year in available_years:
+            info = wrestler_db.get_match_info(wrestler_id, year)
+            match_count = info.get("match_count", 0)
+            if match_count > 0:
+                wrestlers_with_matches.add(wrestler_id)
+                total_matches += match_count
+
+    return {
+        "female_wrestlers": len(wrestlers_with_matches),
+        "matches": total_matches,
+    }
+
 
 def generate_year_hub(year: int):
     """Generate an index.html for a specific year directory."""
@@ -141,6 +164,9 @@ def generate_main_landing_page(years: list[int]):
             padding: 2rem 1rem;
             text-align: center;
             transition: transform 0.2s, border-color 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
         
         .year-card:hover {
@@ -153,6 +179,28 @@ def generate_main_landing_page(years: list[int]):
             text-decoration: none;
             font-size: 2rem;
             font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .year-stats {
+            font-size: 0.85rem;
+            color: #999;
+            border-top: 1px solid var(--border);
+            padding-top: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .stat-line {
+            margin: 0.3rem 0;
+        }
+        
+        .stat-label {
+            color: #777;
+        }
+        
+        .stat-value {
+            color: var(--accent);
+            font-weight: 600;
         }
         
         footer {
@@ -180,7 +228,7 @@ def generate_main_landing_page(years: list[int]):
         </header>
         
         <div class="description">
-            <p>Exploring the collaborative network and competitive rankings of Japanese women's professional wrestling (Joshi Puroresu), powered by data from CageMatch.net.</p>
+            <p>Exploring the collaborative network and competitive rankings of women's professional wrestling, powered by data from CageMatch.net.</p>
         </div>
         
         <div class="years-grid">
@@ -190,8 +238,13 @@ def generate_main_landing_page(years: list[int]):
     for year in sorted(years, reverse=True):
         year_dir = pathlib.Path(f"output/{year}")
         if year_dir.exists() and (year_dir / "index.html").exists():
+            stats = get_year_stats(year)
             html += f"""            <div class="year-card">
                 <a href="{year}/index.html">{year}</a>
+                <div class="year-stats">
+                    <div class="stat-line"><span class="stat-label">Wrestlers:</span> <span class="stat-value">{stats["female_wrestlers"]}</span></div>
+                    <div class="stat-line"><span class="stat-label">Matches:</span> <span class="stat-value">{stats["matches"]}</span></div>
+                </div>
             </div>
 """
 

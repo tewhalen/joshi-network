@@ -66,6 +66,7 @@ international_women_promotions = {
     "Gorgeous Ladies Of Wrestling",
     "Lucha Libre Femenil",
     "Magnificent Ladies Wrestling",
+    "Pro-Wrestling: EVE",
 }
 
 promotion_map = {
