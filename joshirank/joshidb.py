@@ -197,14 +197,15 @@ class WrestlerDb(DBWrapper):
         self._execute(
             """
         INSERT OR REPLACE INTO wrestlers
-        (is_female, name, promotion, career_start, wrestler_id, cm_profile_json, last_updated, location)
-        VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, COALESCE((SELECT location FROM wrestlers WHERE wrestler_id=?), NULL))
+        (is_female, name, promotion, career_start, career_end, wrestler_id, cm_profile_json, last_updated, location)
+        VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, COALESCE((SELECT location FROM wrestlers WHERE wrestler_id=?), NULL))
         """,
             (
                 cm_profile.is_female(),
                 cm_profile.name(),
                 cm_profile.promotion(),
                 cm_profile.career_start(),
+                cm_profile.career_end(),
                 wrestler_id,
                 cm_profile_json,
                 wrestler_id,
