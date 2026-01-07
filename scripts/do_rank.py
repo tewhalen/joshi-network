@@ -286,10 +286,6 @@ class Ranker:
         with open(output_dir / "ranking.html", "w") as f:
             f.write(rendered_html)
 
-        # Also write to old location for backwards compatibility
-        with open(f"output/{self.year}_ranking.html", "w") as f:
-            f.write(rendered_html)
-
 
 @click.command()
 @click.argument(

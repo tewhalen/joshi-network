@@ -433,7 +433,7 @@ class WrestlerDb(DBWrapper):
 
         return row is not None
 
-    def all_female_wrestlers(self):
+    def all_female_wrestlers(self) -> list[int]:
         """Return a generator of wrestler ids and info"""
         rows = self._select_and_fetchall(
             """SELECT wrestler_id FROM wrestlers WHERE is_female=1""", ()

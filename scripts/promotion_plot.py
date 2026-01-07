@@ -11,7 +11,10 @@ from matplotlib import pyplot as plt
 from sparklines import sparklines
 from tabulate import tabulate
 
-from joshirank.analysis.promotion import get_promotion_with_location
+from joshirank.analysis.promotion import (
+    get_primary_promotion_for_year,
+    get_promotion_with_location,
+)
 from joshirank.joshidb import get_name, wrestler_db
 
 min_val = 0
@@ -22,12 +25,12 @@ def match_count_report(year: int = 2025):
     accumulator = []
     promotions = defaultdict(list)
     for wid in wrestler_db.all_female_wrestlers():
-        name = get_name(int(wid))
-        matches = wrestler_db.get_matches(int(wid), year=year)
+        name = get_name(wid)
+        matches = wrestler_db.get_matches(wid, year=year)
         match_count = len(matches)
         if not match_count:
             continue  # don't count zeros
-        promotion = get_promotion_with_location(int(wid))
+        promotion = get_primary_promotion_for_year(wid, year=year)
 
         promotions[promotion].append((name, match_count))
         # accumulator.append((name, promotion, match_count))

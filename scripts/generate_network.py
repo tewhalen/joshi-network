@@ -5,8 +5,11 @@ import pathlib
 from collections import Counter
 
 import click
+from loguru import logger
 
-from joshirank.analysis.promotion import get_promotion_with_location
+from joshirank.analysis.promotion import (
+    get_primary_promotion_for_year,
+)
 from joshirank.identifier import Identifier
 from joshirank.joshi_data import joshi_promotions
 from joshirank.joshidb import get_name, wrestler_db
@@ -75,16 +78,16 @@ def build_graph(from_wrestlers: set, year: int, threshold=8):
 
                 wrestlers.add(wrestler)
         # wget_all_wrestlers(info))
-    print(match_counts.most_common(20))
+    # print(match_counts.most_common(20))
     d = {}
     nodes = []
     to_remove = {x for x in wrestlers if match_counts[x] < threshold}
     wrestlers = wrestlers.difference(to_remove)
-    print("Removed", len(to_remove), "wrestlers with <", threshold, "matches")
-    print("Remaining wrestlers:", len(wrestlers))
+    logger.debug("Removed {} wrestlers with < {} matches", len(to_remove), threshold)
+    logger.debug("Remaining wrestlers: {}", len(wrestlers))
     # wrestlers = wrestlers.intersection(joshi_wrestlers())
     for wrestler in wrestlers:
-        promotion = get_promotion_with_location(wrestler)
+        promotion = get_primary_promotion_for_year(wrestler, year)
 
         nodes.append(
             {
@@ -96,7 +99,7 @@ def build_graph(from_wrestlers: set, year: int, threshold=8):
             }
         )
     d["nodes"] = nodes
-    print(promotion_id)
+    # print(promotion_id)
     links = []
     for interaction, count in interactions.items():
         source, target = tuple(interaction)
@@ -122,7 +125,7 @@ def build_graph(from_wrestlers: set, year: int, threshold=8):
 )
 def main(year: int):
     """Generate network graph JSON files."""
-    print(f"Generating network graph for year {year}...")
+    logger.info(f"Generating network graph for year {year}...")
 
     # Create year subdirectory
     output_dir = pathlib.Path(f"output/{year}")
@@ -130,7 +133,7 @@ def main(year: int):
 
     output = build_graph(all_female_wrestlers(), year)
     fn = output_dir / "network.json"
-    print(
+    logger.info(
         f"Writing {len(output['nodes'])} wrestlers with {len(output['links'])} links to '{fn}'"
     )
     json.dump(output, open(fn, "w"), indent=2)
@@ -140,7 +143,7 @@ def main(year: int):
 
     output = build_graph(all_joshi_japanese_wrestlers(), year, threshold=2)
     fn_jpn = output_dir / "network-jpn.json"
-    print(
+    logger.info(
         f"Writing {len(output['nodes'])} wrestlers with {len(output['links'])} links to '{fn_jpn}'"
     )
     json.dump(output, open(fn_jpn, "w"), indent=2)

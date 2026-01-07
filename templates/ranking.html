@@ -1,28 +1,81 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ year }} Rankings</title>
 
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="
 https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css">
     <style>
+        :root {
+            --bg: #1a1a1a;
+            --fg: #e0e0e0;
+            --accent: #ff69b4;
+            --card-bg: #2a2a2a;
+            --border: #444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         /* sensible system font stack and dark background */
         html,
         body {
-            height: 100%;
             margin: 0;
-            background: #0b0f14;
-            color: #e6eef8;
+            background: var(--bg);
+            color: var(--fg);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             font-size: 14px;
             line-height: 1.45;
         }
 
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-size: 3rem;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #999;
+            margin-bottom: 2rem;
+        }
+
+        .nav-links {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .nav-links a {
+            color: var(--accent);
+            text-decoration: none;
+            margin: 0 1rem;
+            font-size: 1.1rem;
+        }
+
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+
         a {
-            color: #e6eef8;
+            color: var(--fg);
         }
 
         /* table basics */
@@ -31,6 +84,7 @@ https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css">
             border-collapse: collapse;
             background: transparent;
             box-shadow: 0 1px 0 rgba(255, 255, 255, 0.02) inset;
+            margin-top: 2rem;
         }
 
         /* header */
@@ -39,7 +93,7 @@ https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css">
             top: 0;
             z-index: 3;
             background: linear-gradient(180deg, rgba(20, 24, 28, 0.95), rgba(16, 20, 24, 0.95));
-            color: #e6eef8;
+            color: var(--fg);
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
             font-weight: 600;
             padding: 10px 12px;
@@ -144,7 +198,28 @@ https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css">
 </head>
 
 <body>
-    {{ the_table }}
+    <div class="container">
+        <header>
+            <h1>📊 Rankings</h1>
+            <div class="subtitle">{{ year }} Glicko2 Rankings</div>
+        </header>
+
+        <div class="nav-links">
+            <a href="index.html">← Back</a>
+        </div>
+
+        <div class="nav-links" style="margin-bottom: 1rem; font-size: 0.95rem; color: #999;">
+            <a href="../{{ year - 1 }}/ranking.html" style="color: var(--accent);">← {{ year - 1 }}</a>
+            <span style="color: #666; margin: 0 1rem;">{{ year }}</span>
+            <a href="../{{ year + 1 }}/ranking.html" style="color: var(--accent);">{{ year + 1 }} →</a>
+        </div>
+
+        {{ the_table }}
+
+        <footer style="text-align: center; margin-top: 4rem; color: #666; font-size: 0.9rem;">
+            <p>Data sourced from CageMatch.net</p>
+        </footer>
+    </div>
 </body>
 
 </html>

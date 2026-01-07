@@ -91,6 +91,8 @@ def get_primary_promotion_for_year(wrestler_id: int, year: int) -> str | None:
     # which is unpacked json! just use that!
 
     promotion_counter = Counter(match_info.get("promotions_worked", {}))
+    if not promotion_counter:
+        return None
 
     # Get the most common promotion
     most_common_promo_id, count = promotion_counter.most_common(1)[0]

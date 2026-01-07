@@ -1,28 +1,109 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ year }} Promotions</title>
 
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="
 https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css">
     <style>
+        :root {
+            --bg: #1a1a1a;
+            --fg: #e0e0e0;
+            --accent: #ff69b4;
+            --card-bg: #2a2a2a;
+            --border: #444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         /* sensible system font stack and dark background */
         html,
         body {
-            height: 100%;
             margin: 0;
-            background: #0b0f14;
-            color: #e6eef8;
+            background: var(--bg);
+            color: var(--fg);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             font-size: 14px;
             line-height: 1.45;
         }
 
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-size: 3rem;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #999;
+            margin-bottom: 2rem;
+        }
+
+        .nav-links {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .nav-links a {
+            color: var(--accent);
+            text-decoration: none;
+            margin: 0 1rem;
+            font-size: 1.1rem;
+        }
+
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+
+        .description {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            line-height: 1.8;
+        }
+
+        .description h2 {
+            color: var(--accent);
+            margin-bottom: 1rem;
+        }
+
+        .description p {
+            color: #aaa;
+            margin-bottom: 0.8rem;
+        }
+
+        .description a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .description a:hover {
+            text-decoration: underline;
+        }
+
         a {
-            color: #e6eef8;
+            color: var(--fg);
         }
 
         /* table basics */
@@ -31,6 +112,7 @@ https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css">
             border-collapse: collapse;
             background: transparent;
             box-shadow: 0 1px 0 rgba(255, 255, 255, 0.02) inset;
+            margin-top: 2rem;
         }
 
         /* header */
@@ -39,7 +121,7 @@ https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css">
             top: 0;
             z-index: 3;
             background: linear-gradient(180deg, rgba(20, 24, 28, 0.95), rgba(16, 20, 24, 0.95));
-            color: #e6eef8;
+            color: var(--fg);
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
             font-weight: 600;
             padding: 10px 12px;
@@ -144,25 +226,46 @@ https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css">
 </head>
 
 <body>
-    <div style="max-width: 900px; margin: auto; padding: 20px;">
-        <h1>Women's Wrestling by Promotion and Region</h1>
-        <p>This table shows the number of matches wrestled by women (and relevant non-binary wrestlers) in various
-            promotions and regions in 2025,
-            along with summary statistics. </p>
+    <div class="container">
+        <header>
+            <h1>🏢 Promotions</h1>
+            <div class="subtitle">{{ year }} Promotion Statistics</div>
+        </header>
 
-        <p>The number for "matches" isn't the total number of women's matches in that
-            promotion/region, but rather the total number of matches wrestled by all the women in that
-            promotion/region (so a tag match involving four women would count as four matches).</p>
+        <div class="nav-links">
+            <a href="index.html">← Back</a>
+        </div>
 
-        <p>25%, 50% (median), and 75% quantiles are shown to illustrate the distribution of match counts within each
-            promotion/region (and the max number of matches wrestled by a single woman in that promotion/region).
-            There's also a little histogram giving a visual sense of the distribution of match counts across the
-            promotion...</p>
-        <p>Data is sourced from <a href="https://www.cagematch.net/">Cagematch</a> as of December 2025.
-            Only promotions/regions with 5 or more women are included.
-        </p>
+        <div class="nav-links" style="margin-bottom: 1rem; font-size: 0.95rem; color: #999;">
+            <a href="../{{ year - 1 }}/promotions.html" style="color: var(--accent);">← {{ year - 1 }}</a>
+            <span style="color: #666; margin: 0 1rem;">{{ year }}</span>
+            <a href="../{{ year + 1 }}/promotions.html" style="color: var(--accent);">{{ year + 1 }} →</a>
+        </div>
+
+        <div class="description">
+            <h2>About This Data</h2>
+            <p>This table shows the number of matches wrestled by women (and relevant non-binary wrestlers) in various
+                promotions and regions in {{ year }}, along with summary statistics.</p>
+
+            <p>The number for "matches" isn't the total number of women's matches in that promotion/region, but rather
+                the total number of matches wrestled by all the women in that promotion/region (so a tag match involving
+                four women would count as four matches).</p>
+
+            <p>25%, 50% (median), and 75% quantiles are shown to illustrate the distribution of match counts within each
+                promotion/region (and the max number of matches wrestled by a single woman in that promotion/region).
+                There's also a little histogram giving a visual sense of the distribution of match counts across the
+                promotion.</p>
+
+            <p>Data is sourced from <a href="https://www.cagematch.net/">Cagematch</a>. Only promotions/regions with 5
+                or more women are included.</p>
+        </div>
+
+        {{ the_table }}
+
+        <footer style="text-align: center; margin-top: 4rem; color: #666; font-size: 0.9rem;">
+            <p>Data sourced from CageMatch.net</p>
+        </footer>
     </div>
-    {{ the_table }}
 </body>
 
 </html>
