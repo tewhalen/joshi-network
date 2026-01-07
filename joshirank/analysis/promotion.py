@@ -26,6 +26,7 @@ For this reason, the use of the location field in the wrestler table is discoura
 import json
 from collections import Counter
 
+from joshirank.joshi_data import promotion_abbreviations, promotion_name_changes
 from joshirank.joshidb import get_promotion_name, wrestler_db
 
 
@@ -65,6 +66,25 @@ def get_promotion_with_location(wrestler_id: int) -> str:
         return promotion
 
 
+def get_short_primary_promotion_for_year(wrestler_id: int, year: int) -> str | None:
+    """Get the short name for the primary promotion for a wrestler in a given year.
+
+    Args:
+        wrestler_id: The wrestler's ID
+        year: The year to analyze
+
+    Returns:
+        Short promotion name, or None if no matches exist.
+    """
+    promo_name = get_primary_promotion_for_year(wrestler_id, year)
+    if promo_name is None:
+        return None
+
+    # map full promotion name to abbreviation if available
+    short_name = promotion_abbreviations.get(promo_name, promo_name)
+    return short_name
+
+
 def get_primary_promotion_for_year(wrestler_id: int, year: int) -> str | None:
     """Determine the primary promotion for a wrestler in a given year.
 
@@ -100,7 +120,7 @@ def get_primary_promotion_for_year(wrestler_id: int, year: int) -> str | None:
     # If this promotion represents at least 40% of matches, use it
     if count / match_count >= 0.4:
         promo_name = get_promotion_name(most_common_promo_id)
-        return promo_name
+        return adjust_promotion_name_for_year(promo_name, year)
 
     # Otherwise, they're a freelancer
 
@@ -110,6 +130,25 @@ def get_primary_promotion_for_year(wrestler_id: int, year: int) -> str | None:
         return f"Freelancer ({location})"
     else:
         return "Freelancer"
+
+
+def adjust_promotion_name_for_year(promotion_name: str, year: int) -> str:
+    """Adjust promotion name for known name changes in a given year.
+
+    Args:
+        promotion_name: The original promotion name
+        year: The year to consider
+
+    Returns:
+        Adjusted promotion name if applicable, else original name.
+    """
+    # look up the promotion name in the changes dict
+    if promotion_name in promotion_name_changes:
+        change_year, old_name = promotion_name_changes[promotion_name]
+        if year < change_year:
+            # iterate in case of multiple changes
+            return adjust_promotion_name_for_year(old_name, year)
+    return promotion_name
 
 
 def get_primary_location_for_year(wrestler_id: int, year: int) -> str | None:

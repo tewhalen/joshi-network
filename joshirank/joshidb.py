@@ -440,6 +440,17 @@ class WrestlerDb(DBWrapper):
         )
         return [row[0] for row in rows]
 
+    def all_female_wrestlers_with_matches_in_year(self, year: int) -> list[int]:
+        """Return a list of wrestler ids"""
+        rows = self._select_and_fetchall(
+            """SELECT w.wrestler_id 
+            FROM wrestlers w
+            JOIN matches m ON w.wrestler_id = m.wrestler_id
+            WHERE w.is_female=1 AND m.year=? and m.match_count > 0""",
+            (year,),
+        )
+        return [row[0] for row in rows]
+
     def wrestler_in_sql(self, wrestler_id: int) -> bool:
         row = self._select_and_fetchone(
             """SELECT 1 FROM wrestlers WHERE wrestler_id=?""", (wrestler_id,)

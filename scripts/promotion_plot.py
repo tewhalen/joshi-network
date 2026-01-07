@@ -13,7 +13,7 @@ from tabulate import tabulate
 
 from joshirank.analysis.promotion import (
     get_primary_promotion_for_year,
-    get_promotion_with_location,
+    get_short_primary_promotion_for_year,
 )
 from joshirank.joshidb import get_name, wrestler_db
 
@@ -24,13 +24,12 @@ max_val = 120
 def match_count_report(year: int = 2025):
     accumulator = []
     promotions = defaultdict(list)
-    for wid in wrestler_db.all_female_wrestlers():
+    for wid in wrestler_db.all_female_wrestlers_with_matches_in_year(year=year):
         name = get_name(wid)
-        matches = wrestler_db.get_matches(wid, year=year)
-        match_count = len(matches)
-        if not match_count:
-            continue  # don't count zeros
-        promotion = get_primary_promotion_for_year(wid, year=year)
+        match_info = wrestler_db.get_match_info(wid, year=year)
+        match_count = match_info.get("match_count", 0)
+
+        promotion = get_short_primary_promotion_for_year(wid, year=year)
 
         promotions[promotion].append((name, match_count))
         # accumulator.append((name, promotion, match_count))
@@ -87,8 +86,24 @@ def save_results(results, year: int = 2025):
         "<table>", '<table id="ranking-table" class="display">'
     )
 
+    # Get available years for navigation
+    from scripts.list_available_years import get_available_years
+
+    all_years = sorted(get_available_years())
+    try:
+        year_idx = all_years.index(year)
+        prev_year = all_years[year_idx - 1] if year_idx > 0 else None
+        next_year = all_years[year_idx + 1] if year_idx < len(all_years) - 1 else None
+    except ValueError:
+        prev_year = next_year = None
+
     output_text = template.render(
-        the_table=rendered_table, year=year, sort_column=4, sort_order="desc"
+        the_table=rendered_table,
+        year=year,
+        sort_column=4,
+        sort_order="desc",
+        prev_year=prev_year,
+        next_year=next_year,
     )
 
     # Create year subdirectory

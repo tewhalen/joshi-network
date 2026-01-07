@@ -9,6 +9,7 @@ from loguru import logger
 
 from joshirank.analysis.promotion import (
     get_primary_promotion_for_year,
+    get_short_primary_promotion_for_year,
 )
 from joshirank.identifier import Identifier
 from joshirank.joshi_data import joshi_promotions
@@ -87,7 +88,7 @@ def build_graph(from_wrestlers: set, year: int, threshold=8):
     logger.debug("Remaining wrestlers: {}", len(wrestlers))
     # wrestlers = wrestlers.intersection(joshi_wrestlers())
     for wrestler in wrestlers:
-        promotion = get_primary_promotion_for_year(wrestler, year)
+        promotion = get_short_primary_promotion_for_year(wrestler, year)
 
         nodes.append(
             {

@@ -4,10 +4,14 @@ from collections import Counter, defaultdict
 
 import click
 import jinja2
+from loguru import logger
 from tabulate import tabulate
 
 from joshirank.all_matches import all_matches
-from joshirank.analysis.promotion import get_primary_promotion_for_year
+from joshirank.analysis.promotion import (
+    get_primary_promotion_for_year,
+    get_short_primary_promotion_for_year,
+)
 from joshirank.joshidb import (
     get_name,
 )
@@ -36,10 +40,19 @@ class Wrestler(Player):
 
 
 class Ranker:
-    wrestler_objects: dict[str, Wrestler]
+    """
+    A class to manage the ranking process for a given year.
 
-    def __init__(self, year: int):
+
+    """
+
+    wrestler_objects: dict[str, Wrestler]
+    start_rating: int = 1500
+    start_rd: int = 400
+
+    def __init__(self, year: int, by_week: bool = False):
         self.year = year
+        self.by_week = by_week
         self.wrestler_objects = {}
         self.rank_history = {}
         self.record_history = {}
@@ -48,11 +61,25 @@ class Ranker:
         if wrestler_id in self.wrestler_objects:
             return self.wrestler_objects[wrestler_id]
         else:
-            start_rating = 1500
-            start_rd = 400
+            start_rating = self.start_rating
+            start_rd = self.start_rd
             new_object = Wrestler(rating=start_rating, rd=start_rd)
             self.wrestler_objects[wrestler_id] = new_object
             return new_object
+
+    def matches_by_month(self) -> dict[tuple[int, int], list[dict]]:
+        """Returns a dict of (year, month) -> list of matches"""
+        matches_by_month = defaultdict(list)
+        for match in all_matches(self.year):
+            match_dict = dict(match)
+            match_date = match_dict["date"]
+            if match_date == "Unknown":
+                continue
+            date_obj = datetime.date.fromisoformat(match_date)
+            year = date_obj.year
+            month = date_obj.month
+            matches_by_month[(year, month)].append(match_dict)
+        return matches_by_month
 
     def matches_by_week(self) -> dict[tuple[int, int], list[dict]]:
         """Returns a dict of (year, week) -> list of matches"""
@@ -93,18 +120,21 @@ class Ranker:
         return result_vectors
 
     def main(self):
-        # iterate over all the weeks in order
-        matches_by_week = self.matches_by_week()
-        all_weeks = list(matches_by_week.keys())
-        all_weeks.sort()
-        for year_week in all_weeks:
-            year, week = year_week
+        # iterate over all the intervals in order
+        if self.by_week:
+            matches_by_interval = self.matches_by_week()
+        else:
+            matches_by_interval = self.matches_by_month()
 
-            results = self.matches_to_result_vectors(matches_by_week[year_week])
-            seen_this_week = set()
+        all_intervals = list(matches_by_interval.keys())
+        all_intervals.sort()
+
+        for interval in all_intervals:
+            results = self.matches_to_result_vectors(matches_by_interval[interval])
+            seen_this_interval = set()
             # now update each wrestler
             for wrestler_id, (opp_ratings, opp_rds, outcomes) in results.items():
-                seen_this_week.add(wrestler_id)
+                seen_this_interval.add(wrestler_id)
                 wrestler = self.get_wrestler(wrestler_id)
                 wrestler.add_wld(
                     sum(1 for o in outcomes if o == 1),
@@ -117,35 +147,9 @@ class Ranker:
                     outcomes,
                 )
             for wrestler_id in self.wrestler_objects:
-                if wrestler_id not in seen_this_week:
+                if wrestler_id not in seen_this_interval:
                     wrestler = self.get_wrestler(wrestler_id)
                     wrestler.did_not_compete()
-
-    def old_main(self):
-        all_the_matches = list(dict(match) for match in all_matches())
-        all_the_matches.sort(key=lambda x: x["date"])
-        for match in all_the_matches:  # should sort by date
-            # turn it back into a dict
-            match_dict = dict(match)
-
-            winner = self.get_wrestler(match_dict["side_a"][0])
-            loser = self.get_wrestler(match_dict["side_b"][0])
-            # print(winner, loser)
-            if match_dict["is_victory"]:
-                winner.add_wld(1, 0, 0)
-                loser.add_wld(0, 1, 0)
-
-                winner.update_player([loser.rating], [loser.rd], [1])
-                loser.update_player([winner.rating], [winner.rd], [0])
-            else:
-                winner.add_wld(0, 0, 1)
-                loser.add_wld(0, 0, 1)
-
-                winner.update_player([loser.rating], [loser.rd], [0.5])
-                loser.update_player([winner.rating], [winner.rd], [0.5])
-
-        # self.display_upsets_and_squashes()
-        # self.save_long_data()
 
     def current_rankings_table(self):
         rankings = self.current_rankings()
@@ -167,7 +171,7 @@ class Ranker:
                 [
                     i,
                     html_link,
-                    get_primary_promotion_for_year(d["id"], self.year),
+                    get_short_primary_promotion_for_year(d["id"], self.year),
                     f"{d['rating']:.0f}",
                     f"{d['rd']:.0f}",
                     d["record"],
@@ -274,8 +278,27 @@ class Ranker:
         rendered_table = rendered_table.replace(
             "<table>", '<table id="ranking-table" class="display">'
         )
+
+        # Get available years for navigation
+        from scripts.list_available_years import get_available_years
+
+        all_years = sorted(get_available_years())
+        try:
+            year_idx = all_years.index(self.year)
+            prev_year = all_years[year_idx - 1] if year_idx > 0 else None
+            next_year = (
+                all_years[year_idx + 1] if year_idx < len(all_years) - 1 else None
+            )
+        except ValueError:
+            prev_year = next_year = None
+
         rendered_html = template.render(
-            the_table=rendered_table, year=self.year, sort_column=0, sort_order="asc"
+            the_table=rendered_table,
+            year=self.year,
+            sort_column=0,
+            sort_order="asc",
+            prev_year=prev_year,
+            next_year=next_year,
         )
 
         # Create year subdirectory
@@ -293,16 +316,44 @@ class Ranker:
     type=int,
     default=datetime.datetime.now().year - 1,
 )
-def main(year):
+@click.option(
+    "--seed",
+    is_flag=True,
+    help="Use the previous year's rankings as the starting point",
+)
+@click.option(
+    "--by-week", is_flag=True, help="Process matches by week instead of by month"
+)
+def main(year: int, seed: bool, by_week: bool):
     """Generate Glicko2 rankings from match data.
 
     YEAR: Year to generate rankings for (default: previous year)
+    SEED: If set, seed the rankings from the previous year's results.
+
+    Seeding calculates and then copies over rating and rating deviation (RD) from the previous year.
+
     """
-    click.echo(f"Generating rankings for year {year}...")
-    r = Ranker(year)
+    logger.info("Starting ranking process for {}...", year)
+    logger.info("Using by-week mode: {}", by_week)
+
+    if seed:
+        logger.info("Seeding rankings for year {} from {}...", year, year - 1)
+        r = Ranker(year - 1, by_week=by_week)
+        r.main()
+        previous_rankings = r.current_rankings()
+        r = Ranker(year, by_week=by_week)
+        for d in previous_rankings:
+            # generate wrestler objects in the new year
+            # copy over rating and rd
+            wrestler = r.get_wrestler(d["id"])
+            wrestler.rating = d["rating"]
+            wrestler.rd = d["rd"]
+    else:
+        r = Ranker(year, by_week=by_week)
+    logger.info("Generating rankings for year {}...", year)
     r.main()
     r.save_rankings_to_html()
-    click.echo(f"Rankings saved to output/{year}_ranking.html")
+    logger.success("Rankings saved to output/{}_ranking.html", year)
 
 
 if __name__ == "__main__":
