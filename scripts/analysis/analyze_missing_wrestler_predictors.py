@@ -67,7 +67,7 @@ def estimate_intergender_probability(match: dict) -> float:
         prob *= 1.2  # These regions: higher intergender rates
 
     # Multi-sided matches
-    if match.get("is_multi_sided", False):
+    if match["sides"] and len(match["sides"]) > 2:
         prob *= 1.3  # 3+ sides: 6.5% intergender vs 2.5% female-only
 
     # Cap at reasonable bounds

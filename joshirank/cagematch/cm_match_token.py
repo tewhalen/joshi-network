@@ -1,10 +1,10 @@
+import datetime
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, TypedDict
 
 from bs4 import BeautifulSoup
 
-from joshirank.cagematch.cm_match import MatchDict
 from joshirank.cagematch.match_tokenizer import (
     DateToken,
     EventDetailToken,
@@ -21,12 +21,27 @@ from joshirank.cagematch.match_tokenizer import (
 )
 
 
+class MatchDict(TypedDict):
+    version: int
+    sides: list[tuple[int, ...]]
+    date: str
+    wrestlers: list[int]
+    is_victory: bool
+    promotion: int | None
+    raw_html: str
+    match_type: str
+    country: str | None
+    teams: dict[int, dict]  # optional
+    wrestler_names: dict[int, list[str]]
+    event_info: dict[str, str | int | None] | None
+
+
 @dataclass
 class ParseState:
     """State machine for parsing match tokens."""
 
     # Match metadata
-    date: str | None = None
+    date: datetime.date | None = None
     promotion_id: int | None = None
     promotion_name: str | None = None
     event_id: int | None = None
@@ -147,8 +162,8 @@ def parse_match(match: BeautifulSoup) -> MatchDict:
                 state.event_id = eid
                 state.event_name = ename
 
-            case DateToken(text=date_text):
-                state.date = date_text
+            case DateToken(date=date_val):
+                state.date = date_val
 
             case MatchTypeToken(match_type=mtype):
                 state.match_type = mtype
@@ -228,20 +243,25 @@ def parse_match(match: BeautifulSoup) -> MatchDict:
     state.finalize()
 
     # Build MatchDict
-    pre_match_dict = {
-        "date": state.date,
-        "promotion_id": state.promotion_id,
-        "promotion_name": state.promotion_name,
-        "event_id": state.event_id,
-        "event_name": state.event_name,
-        "match_type": state.match_type,
-        "country": state.country or "Unknown",
-        "wrestlers": list(state.all_wrestlers),
-        "wrestler_names": dict(state.wrestler_names),
-        "sides": state.final_sides(),
-        "is_victory": state.is_victory if state.is_victory is not None else False,
-        "teams": state.teams,  # Team metadata separate from sides
-    }
+    pre_match_dict = MatchDict(
+        version=3,
+        sides=state.final_sides(),
+        date=state.date.isoformat() if state.date else "Unknown",
+        wrestlers=sorted(state.all_wrestlers),
+        is_victory=state.is_victory if state.is_victory is not None else False,
+        promotion=state.promotion_id,
+        country=state.country,
+        teams=state.teams,  # Team metadata separate from sides
+        event_info={
+            "event_id": state.event_id,
+            "event_name": state.event_name,
+        }
+        if state.event_id or state.event_name
+        else None,
+        match_type=state.match_type or "Unknown",
+        raw_html=str(match),
+        wrestler_names=dict(state.wrestler_names),
+    )
 
     return pre_match_dict
 

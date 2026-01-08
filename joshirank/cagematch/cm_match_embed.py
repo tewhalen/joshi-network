@@ -95,39 +95,6 @@ def extract_team_info(match: BeautifulSoup) -> dict[tuple, dict]:
     return team_map
 
 
-def extract_gimmick_names(match: BeautifulSoup) -> dict[int, str]:
-    """Extract gimmick names used by wrestlers in the match HTML.
-
-    Basically we're capturing the text inside the links to wrestler profiles.
-    However, we also need to handle cases where a wrestler has no profile link.
-
-    Returns a dict mapping wrestler_id to gimmick_name. Uses -1 for unknown wrestlers.
-
-    When more than one gimmick name is found for the same wrestler_id, the last one is used.
-     (This will happen occasionally in multi-sided matches where a wrestler is listed more than once.)
-     (And will be an issue if more than one wrestler lacks a profile link, as only one will be captured as -1.)
-    """
-    gimmick_map = {}
-
-    match_card = match.find(class_="MatchCard")
-    if not match_card:
-        return gimmick_map
-
-    # Pattern to find wrestler links: <a href="?id=2&nr=123">Gimmick Name</a>
-    wrestler_link_pattern = re.compile(
-        r'<a href="\?id=2&amp;nr=(\d+)[^"]*">([^<]+)</a>'
-    )
-    html_str = str(match_card)
-    for match_obj in wrestler_link_pattern.finditer(html_str):
-        wrestler_id = int(match_obj.group(1))
-        gimmick_name = match_obj.group(2)
-        gimmick_map[wrestler_id] = gimmick_name
-
-    # Now handle gimmick names without profile links
-
-    return gimmick_map
-
-
 def extract_country(match_soup: BeautifulSoup) -> str:
     """Guess the country of a match based on its HTML content."""
     eventline = match_soup.find("div", class_="MatchEventLine")

@@ -6,6 +6,7 @@ colleague analysis, and profile data.
 
 from loguru import logger
 
+from joshirank.cagematch.cm_match import MatchDict
 from joshirank.joshi_data import considered_female, joshi_promotions
 from joshirank.joshidb import get_promotion_name, wrestler_db
 
@@ -109,7 +110,7 @@ def update_gender_diverse_classification(wrestler_id: int) -> bool:
         return True
 
 
-def estimate_intergender_probability(match: dict) -> float:
+def estimate_intergender_probability(match: MatchDict) -> float:
     """Estimate probability that a match is intergender based on its features.
 
     Based on analysis of 19,563 intergender and 50,365 female-only matches:
@@ -162,7 +163,12 @@ def estimate_intergender_probability(match: dict) -> float:
         prob *= 1.2  # These regions: higher intergender rates
 
     # Multi-sided matches
-    if match.get("is_multi_sided", False):
+
+    if match.get("version", 1) == 1:
+        # Old format - cannot determine sides
+        if len(match["side_b"]) > len(match["side_a"]):
+            prob *= 1.3  # More wrestlers on side B, probably multisided
+    elif len(match["sides"]) > 2:
         prob *= 1.3  # 3+ sides: 6.5% intergender vs 2.5% female-only
 
     # Cap at reasonable bounds

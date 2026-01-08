@@ -14,10 +14,8 @@ def test_singles_draw():
 
     assert match["is_victory"] is False
     assert len(match["sides"]) == 2
-    assert set(match["sides"][0]["wrestlers"]) == {4629}
-    assert set(match["sides"][1]["wrestlers"]) == {9462}
-    assert match["sides"][0]["is_winner"] is False
-    assert match["sides"][1]["is_winner"] is False
+    assert set(match["sides"][0]) == {4629}
+    assert set(match["sides"][1]) == {9462}
 
 
 def test_tag_draw():
@@ -29,8 +27,8 @@ def test_tag_draw():
 
     assert match["is_victory"] is False
     assert len(match["sides"]) == 2
-    assert set(match["sides"][0]["wrestlers"]) == {4629, 9462}
-    assert set(match["sides"][1]["wrestlers"]) == {9434, 10402}
+    assert set(match["sides"][0]) == {4629, 9462}
+    assert set(match["sides"][1]) == {9434, 10402}
 
 
 def test_singles_with_unlinked_loser():
@@ -42,8 +40,9 @@ def test_singles_with_unlinked_loser():
 
     assert match["is_victory"] is True
     assert len(match["sides"]) == 2
-    assert set(match["sides"][0]["wrestlers"]) == {828}
-    assert set(match["sides"][1]["wrestlers"]) == {-1}
+    assert set(match["sides"][0]) == {828}
+    assert set(match["sides"][1]) == {-1}
+    assert "Unknown Wrestler" in match["wrestler_names"][-1]
 
 
 def test_singles_both_unlinked():
@@ -55,8 +54,10 @@ def test_singles_both_unlinked():
 
     assert match["is_victory"] is True
     assert len(match["sides"]) == 2
-    assert set(match["sides"][0]["wrestlers"]) == {-1}
-    assert set(match["sides"][1]["wrestlers"]) == {-1}
+    assert set(match["sides"][0]) == {-1}
+    assert set(match["sides"][1]) == {-1}
+    assert "Unknown Wrestler A" in match["wrestler_names"][-1]
+    assert "Unknown Wrestler B" in match["wrestler_names"][-1]
 
 
 def test_four_way_match():
@@ -67,16 +68,15 @@ def test_four_way_match():
     match = parse_match(soup)
 
     assert match["is_victory"] is True
-    assert match["is_multi_sided"] is True
+
     assert len(match["sides"]) == 4
-    assert set(match["sides"][0]["wrestlers"]) == {19353}
-    assert match["sides"][0]["is_winner"] is True
-    assert set(match["sides"][1]["wrestlers"]) == {18539}
-    assert match["sides"][1]["is_winner"] is False
-    assert set(match["sides"][2]["wrestlers"]) == {14219}
-    assert match["sides"][2]["is_winner"] is False
-    assert set(match["sides"][3]["wrestlers"]) == {22930}
-    assert match["sides"][3]["is_winner"] is False
+    assert set(match["sides"][0]) == {19353}
+
+    assert set(match["sides"][1]) == {18539}
+
+    assert set(match["sides"][2]) == {14219}
+
+    assert set(match["sides"][3]) == {22930}
 
 
 def test_team_name_extraction():
@@ -89,11 +89,8 @@ def test_team_name_extraction():
     assert len(match["sides"]) == 2
     # Winner side should have team info
     winner_side = match["sides"][0]
-    assert set(winner_side["wrestlers"]) == {16613, 15712}
-    assert "team_id" in winner_side
-    assert winner_side["team_id"] == 10833
-    assert winner_side["team_name"] == "Kyoraku Kyomei"
-    assert winner_side["team_type"] == "tag_team"
+    assert set(winner_side) == {16613, 15712}
+    assert match["teams"][10833]["team_name"] == "Kyoraku Kyomei"
 
 
 def test_match_has_version_field():
@@ -104,7 +101,7 @@ def test_match_has_version_field():
     match = parse_match(soup)
 
     assert "version" in match
-    assert match["version"] == 2
+    assert match["version"] == 3
 
 
 def test_triple_threat_draw():
@@ -115,11 +112,9 @@ def test_triple_threat_draw():
     match = parse_match(soup)
 
     assert match["is_victory"] is False
-    assert match["is_multi_sided"] is True
+
     assert len(match["sides"]) == 3
     # All sides should be marked as not winning in a draw
-    for side in match["sides"]:
-        assert side["is_winner"] is False
 
 
 def test_tag_with_multiple_unlinked_on_same_side():
@@ -132,5 +127,6 @@ def test_tag_with_multiple_unlinked_on_same_side():
     assert match["is_victory"] is True
     assert len(match["sides"]) == 2
     # Winner side should have two -1 sentinels
-    assert match["sides"][0]["wrestlers"] == (-1, -1)
-    assert set(match["sides"][1]["wrestlers"]) == {828, 4629}
+    assert match["sides"][0] == (-1, -1)
+    assert set(match["sides"][1]) == {828, 4629}
+    assert match["wrestler_names"][-1] == ["Unknown A", "Unknown B"]

@@ -1,5 +1,7 @@
 """Unit tests for the match tokenizer."""
 
+import datetime
+
 from bs4 import BeautifulSoup
 
 from joshirank.cagematch.match_tokenizer import (
@@ -245,3 +247,37 @@ def test_tokenizer_handles_parentheses_with_text():
             break
 
     assert found_sequence, "Expected 'Logan Cavazos (9:51)' to be properly tokenized"
+
+
+def test_tokenizer_finds_date():
+    """Test that date token is found and correct."""
+    tokens = match_tokenizer(SAMPLE_THREE_WAY_TAG)
+    date_tokens = [t for t in tokens if isinstance(t, DateToken)]
+
+    assert len(date_tokens) == 1
+    assert date_tokens[0].text == "18.11.1996"
+    assert date_tokens[0].date == datetime.date(1996, 11, 18)
+
+
+def test_tokenizer_finds_partial_date():
+    """Test that a partial date token is found and correct."""
+    modified_html = BeautifulSoup(
+        str(SAMPLE_THREE_WAY_TAG).replace("18.11.1996", "11.1996"),
+        "html.parser",
+    )
+    tokens = match_tokenizer(modified_html)
+    date_tokens = [t for t in tokens if isinstance(t, DateToken)]
+
+    assert len(date_tokens) == 1
+    assert date_tokens[0].text == "11.1996"
+    assert date_tokens[0].date == datetime.date(1996, 11, 1)
+
+
+def test_tokenizer_dates():
+    sample_html = '<tr class="TRow1 TRowOnlineStream"><td class="TCol AlignCenter TextLowlight">1</td><td class="TCol TColSeparator">31.12.2025</td><td class="TCol TColSeparator"><a href="?id=8&amp;nr=2143"><img alt="ChocoPro" class="ImagePromotionLogoMini ImagePromotionLogo_mini" height="18" src="/site/main/img/ligen/normal/2143__20241006-.gif" title="ChocoPro" width="36"/></a></td><td class="TCol TColSeparator">\n<span class="MatchCard"><a href="?id=2&amp;nr=21376&amp;name=Chie+Koishikawa">Chie Koishikawa</a>, <a href="?id=2&amp;nr=4629&amp;name=Emi+Sakura">Emi Sakura</a>, <a href="?id=2&amp;nr=21423&amp;name=Sayaka">Sayaka</a> &amp; <a href="?id=2&amp;nr=21426&amp;name=Tokiko+Kirihara">Tokiko Kirihara</a> defeat <a href="?id=2&amp;nr=29562&amp;name=Erii+Kanae">Erii Kanae</a>, <a href="?id=2&amp;nr=30089&amp;name=Hiyori+Yawata">Hiyori Yawata</a>, <a href="?id=2&amp;nr=31375&amp;name=Kaho+Hiromi">Kaho Hiromi</a> &amp; <a href="?id=2&amp;nr=19811&amp;name=Mei+Suruga">Mei Suruga</a> (17:50)</span><div class="MatchEventLine"><a href="?id=1&amp;nr=443207">ChocoPro #497</a> - Online Stream @ Ichigaya Chocolate Hiroba in Tokyo, Japan</div></td></tr>'
+    soup = BeautifulSoup(sample_html, "html.parser")
+    tokens = match_tokenizer(soup)
+    date_tokens = [t for t in tokens if isinstance(t, DateToken)]
+    assert len(date_tokens) == 1
+    assert date_tokens[0].text == "31.12.2025"
+    assert date_tokens[0].date == datetime.date(2025, 12, 31)

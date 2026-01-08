@@ -2,7 +2,8 @@
 
 from bs4 import BeautifulSoup
 
-from joshirank.cagematch.cm_match import extract_match_data_from_match_page, parse_match
+from joshirank.cagematch.cm_match import extract_match_data_from_match_page
+from joshirank.cagematch.cm_match_token import parse_match
 
 
 def test_parse_match_list(sample_matches_html):
@@ -15,8 +16,6 @@ def test_parse_match_list(sample_matches_html):
     first_match = matches[0]
     assert "date" in first_match
     assert "wrestlers" in first_match
-    assert "side_a" in first_match
-    assert "side_b" in first_match
     assert "is_victory" in first_match
     assert "match_type" in first_match
 
@@ -39,19 +38,17 @@ def test_match_has_valid_dates(sample_matches_html):
             assert date[4] == "-" and date[7] == "-"
 
 
-def test_match_sides_are_lists(sample_matches_html):
+def test_match_sides_are_tuples(sample_matches_html):
     """Test that match sides are properly structured."""
     matches = list(extract_match_data_from_match_page(sample_matches_html))
 
     for match in matches:
         # Match parser returns tuples for sides
-        assert isinstance(match["side_a"], (list, tuple))
-        assert isinstance(match["side_b"], (list, tuple))
-        assert len(match["side_a"]) > 0
-        assert len(match["side_b"]) > 0
+        assert isinstance(match["sides"][0], tuple)
+        assert isinstance(match["sides"][1], tuple)
 
         # All IDs should be integers
-        for wrestler_id in list(match["side_a"]) + list(match["side_b"]):
+        for wrestler_id in list(match["sides"][0]) + list(match["sides"][1]):
             assert isinstance(wrestler_id, int)
 
 
@@ -60,8 +57,8 @@ def test_parsing_of_tag_match_with_unknowns():
     soup = BeautifulSoup(sample_html, "html.parser")
     match = parse_match(soup)
     assert match["is_victory"] is True
-    assert match["side_a"] == (-1, 233)
-    assert match["side_b"] == (-1, 1078)
+    assert match["sides"][0] == (-1, 233)
+    assert match["sides"][1] == (-1, 1078)
     assert match["country"] == "Canada"
 
 
@@ -91,11 +88,13 @@ def test_parsing_of_three_way_tag():
     print(match["sides"])
     assert match["is_victory"] is True
     assert len(sides) == 3
-    assert set(sides[0]["wrestlers"]) == {429, 807}
-    assert sides[0]["is_winner"] is True
-    assert sides[0]["team_name"] == "The Outsiders"
-    assert set(sides[1]["wrestlers"]) == {694, 413}
-    assert set(sides[2]["wrestlers"]) == {633, 558}
+    assert set(sides[0]) == {429, 807}
+    # Winner is first side (is_victory + position determines winner)
+    assert 71 in match["teams"]  # The Outsiders team ID
+    assert match["teams"][71]["team_name"] == "The Outsiders"
+    assert set(match["teams"][71]["members"]) == {429, 807}
+    assert set(sides[1]) == {694, 413}
+    assert set(sides[2]) == {633, 558}
     assert match["country"] == "USA"
 
 
@@ -109,9 +108,9 @@ def test_parsing_of_three_way_tag_nc():
     print(match["sides"])
     assert match["is_victory"] is False
     assert len(sides) == 3
-    assert set(sides[0]["wrestlers"]) == {1256, 1007}
-    assert set(sides[1]["wrestlers"]) == {1681, 1682}
-    assert set(sides[2]["wrestlers"]) == {633, 558}
+    assert set(sides[0]) == {1256, 1007}
+    assert set(sides[1]) == {1681, 1682}
+    assert set(sides[2]) == {633, 558}
     assert match["country"] == "USA"
 
 
@@ -125,9 +124,9 @@ def test_parsing_of_three_way_tag_with_missing():
     print(match["sides"])
     assert match["is_victory"] is False
     assert len(sides) == 3
-    assert set(sides[0]["wrestlers"]) == {1256, 1007}
-    assert set(sides[1]["wrestlers"]) == {-1, 1682}
-    assert set(sides[2]["wrestlers"]) == {633, 558}
+    assert set(sides[0]) == {1256, 1007}
+    assert set(sides[1]) == {-1, 1682}
+    assert set(sides[2]) == {633, 558}
     assert match["country"] == "USA"
 
 
@@ -140,8 +139,8 @@ def test_standard_tag_team():
     print(match["sides"])
     assert match["is_victory"] is True
     assert len(sides) == 2
-    assert set(sides[0]["wrestlers"]) == {27181, 14328}
-    assert set(sides[1]["wrestlers"]) == {26772, 29260}
+    assert set(sides[0]) == {27181, 14328}
+    assert set(sides[1]) == {26772, 29260}
 
 
 def test_trios_with_named_tag_subsets():
@@ -151,17 +150,23 @@ def test_trios_with_named_tag_subsets():
     match = parse_match(soup)
     sides = match["sides"]
     print(match["sides"])
+    print(match["teams"])
     assert match["is_victory"] is True
     assert len(sides) == 2
-    assert set(sides[0]["wrestlers"]) == {16613, 15712, 19837}
+    assert set(sides[0]) == {16613, 15712, 19837}
 
-    # Note that this assertion currently fails but
-    # we're not actually sure how to specify that 2 out of 3 wrestlers
-    # on the side are on a named team.
-    # And we have NO idea how to handle a side made up of multiple named teams.
-    # assert sides[0]["team_name"] == "Kyoraku Kyomei"
+    # Check that we have team data
+    assert len(match["teams"]) == 2
+    # Kyoraku Kyomei team (ID 10833)
+    assert 10833 in match["teams"]
+    assert match["teams"][10833]["team_name"] == "Kyoraku Kyomei"
+    assert set(match["teams"][10833]["members"]) == {16613, 15712}
+    # Hakuchumu team (ID 9865)
+    assert 9865 in match["teams"]
+    assert match["teams"][9865]["team_name"] == "Hakuchumu"
+    assert set(match["teams"][9865]["members"]) == {19649, 16650}
 
-    assert set(sides[1]["wrestlers"]) == {19649, 16650, 27181}
+    assert set(sides[1]) == {19649, 16650, 27181}
 
 
 def test_standard_singles():
@@ -173,8 +178,8 @@ def test_standard_singles():
     print(match["sides"])
     assert match["is_victory"] is True
     assert len(sides) == 2
-    assert set(sides[0]["wrestlers"]) == {27181}
-    assert set(sides[1]["wrestlers"]) == {27259}
+    assert set(sides[0]) == {27181}
+    assert set(sides[1]) == {27259}
     assert match["country"] == "Japan"
 
 
@@ -184,9 +189,11 @@ def test_singles_with_unknown():
     soup = BeautifulSoup(sample_html, "html.parser")
     match = parse_match(soup)
     sides = match["sides"]
-    print(match["sides"])
+
     assert match["is_victory"] is True
     assert len(sides) == 2
-    assert set(sides[0]["wrestlers"]) == {-1}
-    assert set(sides[1]["wrestlers"]) == {828}
+    assert set(sides[0]) == {-1}
+    assert set(sides[1]) == {828}
     assert match["country"] == "Japan"
+    assert -1 in match["wrestler_names"]
+    assert match["wrestler_names"][-1] == ["Mr. Kasai"]

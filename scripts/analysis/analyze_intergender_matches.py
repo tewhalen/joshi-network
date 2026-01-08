@@ -111,7 +111,7 @@ def extract_match_features(match: dict, female_count: int, male_count: int) -> d
         "is_joshi_promotion": is_joshi_promotion,
         "country": match.get("country", "Unknown"),
         "year": int(match.get("date", "2000-01-01")[:4]) if match.get("date") else None,
-        "is_multi_sided": match.get("is_multi_sided", False),
+        "is_multi_sided": len(sides) > 2,
     }
 
 

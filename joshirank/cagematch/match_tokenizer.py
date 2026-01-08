@@ -4,10 +4,13 @@ Takes in the match HTML and walks through it to extract information about
 the wrestlers involved in the match.
 """
 
+import datetime
 from dataclasses import dataclass
 from typing import Literal
 
 from bs4 import BeautifulSoup
+
+from joshirank.cagematch.util import parse_cm_date_flexible
 
 # basic token types
 
@@ -54,6 +57,10 @@ class TagToken:
     name: str
     attrs: dict
     type: Literal["tag"] = "tag"
+
+
+# Union type for all raw tokens
+RawToken = TextToken | SpanToken | DivToken | LinkToken | TagToken
 
 
 ## Classified Tokens
@@ -109,6 +116,7 @@ class SeparatorToken:
 class DateToken:
     """A date in DD.MM.YYYY format."""
 
+    date: datetime.date
     text: str
     type: Literal["date"] = "date"
 
@@ -139,17 +147,11 @@ class EventDetailToken:
     type: Literal["event_detail"] = "event_detail"
 
 
-# Union type for all tokens
-Token = (
+ClassifiedToken = (
     WrestlerToken
     | NamedTeamToken
     | SeparatorToken
     | DateToken
-    | TextToken
-    | SpanToken
-    | DivToken
-    | LinkToken
-    | TagToken
     | PromotionToken
     | EventToken
     | MatchTypeToken
@@ -157,8 +159,11 @@ Token = (
     | EventDetailToken
 )
 
+# Union type for all tokens
+Token = RawToken | ClassifiedToken
 
-def raw_tokens(match_soup: BeautifulSoup) -> list[Token]:
+
+def raw_tokens(match_soup: BeautifulSoup) -> list[RawToken]:
     """Tokenize match HTML into a structured list of tokens.
 
     Args:
@@ -174,7 +179,7 @@ def raw_tokens(match_soup: BeautifulSoup) -> list[Token]:
     return raw_tokens
 
 
-def _process_element(element) -> list[Token]:
+def _process_element(element) -> list[RawToken]:
     """Process a BeautifulSoup element and yield tokens."""
     tokens = []
 
@@ -203,28 +208,13 @@ def _process_element(element) -> list[Token]:
     return tokens
 
 
-def is_wrestler_token(token: Token) -> bool:
-    """Determine if a token represents a wrestler link."""
-    return isinstance(token, LinkToken) and "id=2&nr=" in token.href
-
-
-def date_token(token: Token) -> DateToken | None:
+def date_token(token: TextToken) -> DateToken | None:
     """If a token represents a date, return it as DateToken, else None."""
-    if isinstance(token, TextToken):
-        # Simple check for date format DD.MM.YYYY
-        parts = token.text.split(".")
-        if len(parts) == 3:
-            day, month, year = parts
-            if (
-                day.isdigit()
-                and month.isdigit()
-                and year.isdigit()
-                and len(day) == 2
-                and len(month) == 2
-                and len(year) == 4
-            ):
-                return DateToken(text=token.text)
-    return None
+    parsed_value = parse_cm_date_flexible(token.text)
+    if parsed_value is not None:
+        return DateToken(date=parsed_value, text=token.text)
+    else:
+        return None
 
 
 def wrestler_token(token: LinkToken) -> WrestlerToken | None:
@@ -322,6 +312,8 @@ def specialize_text_token(token: TextToken):
     text = token.text
 
     # Check if this is a date first (dates shouldn't be split)
+    # if any wrestler has a name like "2001" or "1999.1" this could create
+    # issues
     date_token_instance = date_token(token)
     if date_token_instance is not None:
         yield date_token_instance
@@ -396,20 +388,21 @@ def match_tokenizer(match_soup: BeautifulSoup) -> list[Token]:
     tokens = []
 
     for token in raw_tokens(match_soup):
-        if isinstance(token, LinkToken):
-            specialized = specialize_link_token(token)
-            tokens.append(specialized)
-            continue
-        elif isinstance(token, SpanToken):
-            specialized = specialize_span_token(token)
-            tokens.append(specialized)
-            continue
-        elif isinstance(token, TextToken):
-            for specialized in specialize_text_token(token):
-                if isinstance(specialized, Token):
-                    tokens.append(specialized)
-            continue
-        else:
-            # Keep original token if not reclassified
-            tokens.append(token)
+        match token:
+            case LinkToken():
+                specialized = specialize_link_token(token)
+                tokens.append(specialized)
+                continue
+            case SpanToken():
+                specialized = specialize_span_token(token)
+                tokens.append(specialized)
+                continue
+            case TextToken():
+                for specialized in specialize_text_token(token):
+                    if isinstance(specialized, Token):
+                        tokens.append(specialized)
+                continue
+            case _:
+                # Keep original token if not reclassified
+                tokens.append(token)
     return tokens

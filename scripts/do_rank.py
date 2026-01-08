@@ -111,9 +111,11 @@ class Ranker:
             lambda: ([], [], [])
         )  # wrestler_id -> (opp_rating, opp_rd, outcomes)
         for match in matches:
-            for wid_a in match["side_a"]:
+            side_a = match["sides"][0] if "sides" in match else match["side_a"]
+            side_b = match["sides"][1] if "sides" in match else match["side_b"]
+            for wid_a in side_a:
                 w_a = self.get_wrestler(wid_a)
-                for wid_b in match["side_b"]:
+                for wid_b in side_b:
                     w_b = self.get_wrestler(wid_b)
                     result_vectors[wid_a][0].append(w_b.rating)
                     result_vectors[wid_a][1].append(w_b.rd)
