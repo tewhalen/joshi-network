@@ -67,17 +67,9 @@ international_women_promotions = {
     "Lucha Libre Femenil",
     "Magnificent Ladies Wrestling",
     "Pro-Wrestling: EVE",
-}
-
-promotion_map = {
-    "21342": "666",
-    "17025": "All Elite Wrestling",  # Nyla Rose
-    "23408": "DEFY Wrestling",  # vert vixen
-    "17510": "FCF Wrestling",
-    "17272": "All Elite Wrestling",  # Willow
-    "26052": "Game Changer Wrestling",  # Sawyer
-    "4629": "All Elite Wrestling",  # emi sakura
-    "9462": "All Elite Wrestling",  # hikaru shida
+    "Dangerous Women Of Wrestling",
+    "Lucha Internacional Femenil",
+    "Sukeban",
 }
 
 
@@ -115,12 +107,31 @@ promotion_abbreviations = {
     "Ladies Legend Pro Wrestling-X": "LLPW-X",
     "2Point5 Joshi Pro-Wrestling": "2Point5",
     "Best Body Japan Pro-Wrestling": "Best Body Japan",
+    "World Wrestling Federation": "WWF",
+    "All Japan Women's Pro-Wrestling": "AJW",
+    "GAEA Japan": "GAEA",
+    "Major Girl's Fighting AtoZ": "AtoZ",
+    "Hyper Visual Fighting Arsion": "Arsion",
+    "World Wide Wrestling Federation": "WWWF",
+    "Frontier Martial-Arts Wrestling": "FMW",
+    "World Championship Wrestling": "WCW",
+    "Japanese Women Pro-Wrestling Project": "JWP",
+    "Gatoh Move Pro Wrestling": "Gatoh Move",
+}
+
+# for example, WWE was WWF before 2002
+promotion_name_changes = {
+    "World Wrestling Entertainment": (2002, "World Wrestling Federation"),
+    "Major Girl's Fighting AtoZ": (2003, "Hyper Visual Fighting Arsion"),
+    "World Wrestling Federation": (1979, "World Wide Wrestling Federation"),
+    "World Wide Wrestling Federation": (1963, "Capitol Wrestling Corporation"),
+    "ChocoPro": (2024, "Gatoh Move Pro Wrestling"),
 }
 
 
 considered_female = {
-    22620,
-    22139,
+    22620,  # abadon
+    22139,  # max the impaler
     26282,  # (Kouki Amarei)
     32870,  # ren konatsu
     26191,  # sazzy boatright
