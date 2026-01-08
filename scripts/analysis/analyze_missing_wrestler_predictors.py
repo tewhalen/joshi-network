@@ -11,7 +11,7 @@ Therefore:
 - The KEY signal is HOW MANY female wrestlers faced them and WHERE they wrestled
 """
 
-from collections import Counter, defaultdict
+from collections import Counter
 
 from joshirank.joshi_data import joshi_promotions
 from joshirank.joshidb import wrestler_db

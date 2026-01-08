@@ -1,6 +1,5 @@
 """Script to scrape wrestler profiles and matches from CageMatch.net."""
 
-import shutil
 import sqlite3
 import sys
 import time
@@ -126,7 +125,7 @@ def backup_database(source_path: Path, backup_dir: Path) -> Path:
             backup_path.unlink()  # Delete corrupted backup
             raise RuntimeError("Database backup failed integrity check")
         verify_conn.close()
-    except Exception as e:
+    except Exception:
         verify_conn.close()
         raise
 

@@ -1,7 +1,6 @@
 import datetime
 import pathlib
-import shutil
-from collections import Counter, defaultdict
+from collections import defaultdict
 
 import click
 import jinja2

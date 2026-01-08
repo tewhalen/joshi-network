@@ -12,7 +12,7 @@ class Record(NamedTuple):
         else:
             return f"{self.wins}-{self.losses}"
 
-    def __add__(self, x) -> "Record":
+    def __add__(self, x) -> Record:
         return Record(
             wins=self.wins + x[0],
             losses=self.losses + x[1],

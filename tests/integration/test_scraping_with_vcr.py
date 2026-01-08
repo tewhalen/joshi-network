@@ -57,5 +57,5 @@ def test_scrape_all_matches():
     assert len(matches) > 0
     for match in matches:
         assert 828 in match["wrestlers"], (
-            "Wrestler ID should be in every match, but isn't in: {}".format(match)
+            f"Wrestler ID should be in every match, but isn't in: {match}"
         )

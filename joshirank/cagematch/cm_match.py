@@ -149,7 +149,8 @@ Current implementation:
 
 import re
 import urllib.parse
-from typing import Generator, TypedDict
+from collections.abc import Generator
+from typing import TypedDict
 
 from bs4 import BeautifulSoup, Tag
 from loguru import logger
@@ -184,7 +185,7 @@ class MatchDict(TypedDict):
 
 def extract_match_data_from_match_page(
     content: str,
-) -> Generator[MatchDict, None, None]:
+) -> Generator[MatchDict]:
     """Extract match data from a CageMatch match page HTML content."""
     soup = BeautifulSoup(content, "html.parser")
     # print(soup)
@@ -314,7 +315,7 @@ def parse_match(match: BeautifulSoup) -> MatchDict:
     for side in sides:
         wrestlers.update(side["wrestlers"])
 
-    wrestlers = list(sorted(wrestlers))
+    wrestlers = sorted(wrestlers)
 
     d = m_date(match)
     if d == "Unknown":

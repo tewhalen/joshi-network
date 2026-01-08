@@ -27,7 +27,7 @@ import json
 from collections import Counter
 
 from joshirank.joshi_data import promotion_abbreviations, promotion_name_changes
-from joshirank.joshidb import get_promotion_name, wrestler_db
+from joshirank.joshidb import MatchInfoDict, get_promotion_name, wrestler_db
 
 
 def wrestler_is_retired(wrestler_id: int) -> bool:
@@ -128,7 +128,7 @@ def get_primary_promotion_for_year(wrestler_id: int, year: int) -> str | None:
     return _adjust_freelancer_by_location(match_info)
 
 
-def _adjust_freelancer_by_location(match_info: dict) -> str:
+def _adjust_freelancer_by_location(match_info: MatchInfoDict) -> str:
     # see if there's a location we can include
     location = _get_primary_location_for_year(match_info)
     if location:
@@ -174,7 +174,7 @@ def get_primary_location_for_year(wrestler_id: int, year: int) -> str | None:
     return _get_primary_location_for_year(match_info)
 
 
-def _get_primary_location_for_year(match_info: dict) -> str | None:
+def _get_primary_location_for_year(match_info: MatchInfoDict) -> str | None:
     match_count = match_info.get("match_count", 0)
 
     if match_count == 0:

@@ -1,19 +1,16 @@
 import datetime
 import pathlib
 import statistics
-from collections import Counter, defaultdict
+from collections import defaultdict
 
 import click
 import jinja2
-import matplotlib as mpl
-import matplotlib.patches as patches
 import numpy as np
 from matplotlib import pyplot as plt
 from sparklines import sparklines
 from tabulate import tabulate
 
 from joshirank.analysis.promotion import (
-    get_primary_promotion_for_year,
     get_short_primary_promotion_for_year,
 )
 from joshirank.joshidb import get_name, wrestler_db
@@ -74,7 +71,7 @@ def html_table_results(results, year: int):
     results = [x.copy() for x in results]
     for i, r in enumerate(results):
         del r["hist_data"]
-        r["histogram"] = "<img src='h/histogram_{}.png'/>".format(i)
+        r["histogram"] = f"<img src='h/histogram_{i}.png'/>"
     return tabulate(results, headers="keys", tablefmt="unsafehtml")
 
 

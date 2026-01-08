@@ -11,7 +11,7 @@ def test_singles_draw():
 <span class="MatchCard"><a href="?id=2&amp;nr=4629">Emi Sakura</a> vs. <a href="?id=2&amp;nr=9462">Mei Suruga</a> - Time Limit Draw</span></td></tr>"""
     soup = BeautifulSoup(sample_html, "html.parser")
     match = parse_match(soup)
-    
+
     assert match["is_victory"] is False
     assert len(match["sides"]) == 2
     assert set(match["sides"][0]["wrestlers"]) == {4629}
@@ -26,7 +26,7 @@ def test_tag_draw():
 <span class="MatchCard"><a href="?id=2&amp;nr=4629">Emi Sakura</a> &amp; <a href="?id=2&amp;nr=9462">Mei Suruga</a> vs. <a href="?id=2&amp;nr=10402">Yuna Mizumori</a> &amp; <a href="?id=2&amp;nr=9434">Baliyan Akki</a> - Double Count Out</span></td></tr>"""
     soup = BeautifulSoup(sample_html, "html.parser")
     match = parse_match(soup)
-    
+
     assert match["is_victory"] is False
     assert len(match["sides"]) == 2
     assert set(match["sides"][0]["wrestlers"]) == {4629, 9462}
@@ -39,7 +39,7 @@ def test_singles_with_unlinked_loser():
 <span class="MatchCard"><a href="?id=2&amp;nr=828">Aja Kong</a> defeats Unknown Wrestler</span></td></tr>"""
     soup = BeautifulSoup(sample_html, "html.parser")
     match = parse_match(soup)
-    
+
     assert match["is_victory"] is True
     assert len(match["sides"]) == 2
     assert set(match["sides"][0]["wrestlers"]) == {828}
@@ -52,7 +52,7 @@ def test_singles_both_unlinked():
 <span class="MatchCard">Unknown Wrestler A defeats Unknown Wrestler B</span></td></tr>"""
     soup = BeautifulSoup(sample_html, "html.parser")
     match = parse_match(soup)
-    
+
     assert match["is_victory"] is True
     assert len(match["sides"]) == 2
     assert set(match["sides"][0]["wrestlers"]) == {-1}
@@ -65,7 +65,7 @@ def test_four_way_match():
 <span class="MatchType">Fatal 4-Way: </span><span class="MatchCard"><a href="?id=2&amp;nr=19353">Maki Itoh</a> defeats <a href="?id=2&amp;nr=18539">Yuki Kamifuku</a> and <a href="?id=2&amp;nr=14219">Mizuki</a> and <a href="?id=2&amp;nr=22930">Pom Harajuku</a></span></td></tr>"""
     soup = BeautifulSoup(sample_html, "html.parser")
     match = parse_match(soup)
-    
+
     assert match["is_victory"] is True
     assert match["is_multi_sided"] is True
     assert len(match["sides"]) == 4
@@ -85,7 +85,7 @@ def test_team_name_extraction():
 <span class="MatchCard"><a href="?id=28&amp;nr=10833">Kyoraku Kyomei</a> (<a href="?id=2&amp;nr=16613">Hyper Misao</a> &amp; <a href="?id=2&amp;nr=15712">Shoko Nakajima</a>) defeat <a href="?id=2&amp;nr=19649">Miu Watanabe</a> &amp; <a href="?id=2&amp;nr=16650">Rika Tatsumi</a></span></td></tr>"""
     soup = BeautifulSoup(sample_html, "html.parser")
     match = parse_match(soup)
-    
+
     assert len(match["sides"]) == 2
     # Winner side should have team info
     winner_side = match["sides"][0]
@@ -102,7 +102,7 @@ def test_match_has_version_field():
 <span class="MatchCard"><a href="?id=2&amp;nr=4629">Emi Sakura</a> defeats <a href="?id=2&amp;nr=9462">Mei Suruga</a></span></td></tr>"""
     soup = BeautifulSoup(sample_html, "html.parser")
     match = parse_match(soup)
-    
+
     assert "version" in match
     assert match["version"] == 2
 
@@ -113,7 +113,7 @@ def test_triple_threat_draw():
 <span class="MatchType">Triple Threat: </span><span class="MatchCard"><a href="?id=2&amp;nr=4629">Emi Sakura</a> vs. <a href="?id=2&amp;nr=9462">Mei Suruga</a> vs. <a href="?id=2&amp;nr=10402">Yuna Mizumori</a> - No Contest</span></td></tr>"""
     soup = BeautifulSoup(sample_html, "html.parser")
     match = parse_match(soup)
-    
+
     assert match["is_victory"] is False
     assert match["is_multi_sided"] is True
     assert len(match["sides"]) == 3
@@ -128,7 +128,7 @@ def test_tag_with_multiple_unlinked_on_same_side():
 <span class="MatchCard">Unknown A &amp; Unknown B defeat <a href="?id=2&amp;nr=828">Aja Kong</a> &amp; <a href="?id=2&amp;nr=4629">Emi Sakura</a></span></td></tr>"""
     soup = BeautifulSoup(sample_html, "html.parser")
     match = parse_match(soup)
-    
+
     assert match["is_victory"] is True
     assert len(match["sides"]) == 2
     # Winner side should have two -1 sentinels

@@ -78,7 +78,7 @@ class GenderCache:
         try:
             import json
 
-            with open(json_path, "r") as f:
+            with open(json_path) as f:
                 data = json.load(f)
 
             # Import existing predictions into SQLite

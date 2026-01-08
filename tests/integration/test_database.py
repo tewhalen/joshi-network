@@ -1,6 +1,5 @@
 """Integration tests for database operations."""
 
-import json
 
 
 def test_save_and_retrieve_profile(temp_db):

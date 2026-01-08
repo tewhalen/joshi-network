@@ -13,7 +13,7 @@ Question: What OTHER signals (besides presence of male wrestler) predict interge
 - Year/era
 """
 
-from collections import Counter, defaultdict
+from collections import Counter
 
 from joshirank.joshi_data import joshi_promotions
 from joshirank.joshidb import wrestler_db
@@ -156,7 +156,7 @@ def compare_statistics(intergender: list[dict], female_only: list[dict]):
         if female_only
         else 0
     )
-    print(f"Average match size:")
+    print("Average match size:")
     print(f"  Intergender: {avg_inter_size:.2f}")
     print(f"  Female-only: {avg_female_size:.2f}")
     print()
@@ -182,7 +182,7 @@ def compare_statistics(intergender: list[dict], female_only: list[dict]):
     # Multi-sided matches
     inter_multi = sum(1 for m in intergender if m["is_multi_sided"])
     female_multi = sum(1 for m in female_only if m["is_multi_sided"])
-    print(f"Multi-sided (3+ sides) matches:")
+    print("Multi-sided (3+ sides) matches:")
     print(f"  Intergender: {inter_multi} ({inter_multi / len(intergender) * 100:.1f}%)")
     print(
         f"  Female-only: {female_multi} ({female_multi / len(female_only) * 100:.1f}%)"
@@ -211,7 +211,7 @@ def compare_statistics(intergender: list[dict], female_only: list[dict]):
     # Joshi promotion ratio
     inter_joshi = sum(1 for m in intergender if m["is_joshi_promotion"])
     female_joshi = sum(1 for m in female_only if m["is_joshi_promotion"])
-    print(f"Joshi Promotion Matches:")
+    print("Joshi Promotion Matches:")
     print(f"  Intergender: {inter_joshi} ({inter_joshi / len(intergender) * 100:.1f}%)")
     print(
         f"  Female-only: {female_joshi} ({female_joshi / len(female_only) * 100:.1f}%)"

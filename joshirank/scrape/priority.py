@@ -143,7 +143,7 @@ def calculate_missing_wrestler_priority(
                 # Heavily deprioritize (fixed floor of 80)
                 return max(80, min(98, base_priority + 40))
 
-        except Exception as e:
+        except Exception:
             # If gender prediction fails, fall back to base priority
             # This ensures scraping continues even if prediction breaks
             pass

@@ -15,7 +15,6 @@ import json
 import pathlib
 import sqlite3
 from collections import Counter
-from contextlib import contextmanager
 from typing import TypedDict
 
 from loguru import logger
@@ -273,7 +272,7 @@ class WrestlerDb(DBWrapper):
         self._update_opponents_table(wrestler_id, year, opponents)
 
     def _extract_data_from_match_data(
-        self, wrestler_id: int, match_data: list[dict]
+        self, wrestler_id: int, match_data: list[MatchDict]
     ) -> tuple[Counter, Counter, Counter]:
         opponents, countries_worked, promotions_worked = (
             Counter(),
@@ -304,7 +303,7 @@ class WrestlerDb(DBWrapper):
 
         # Use a timestamp from 2 years ago to ensure they're marked as stale
         stale_timestamp = datetime.datetime.now(
-            datetime.timezone.utc
+            datetime.UTC
         ) - datetime.timedelta(days=730)
         stale_timestamp_str = stale_timestamp.isoformat()
 
@@ -418,7 +417,7 @@ class WrestlerDb(DBWrapper):
             if "last_updated" in row and row["last_updated"]:
                 # SQLite CURRENT_TIMESTAMP is in UTC, parse as UTC and convert to epoch
                 dt = datetime.datetime.fromisoformat(row["last_updated"]).replace(
-                    tzinfo=datetime.timezone.utc
+                    tzinfo=datetime.UTC
                 )
                 row["timestamp"] = dt.timestamp()
             else:
@@ -566,7 +565,7 @@ class WrestlerDb(DBWrapper):
         if row and row[0]:
             # SQLite CURRENT_TIMESTAMP is in UTC, parse as UTC and convert to epoch
             dt = datetime.datetime.fromisoformat(row[0]).replace(
-                tzinfo=datetime.timezone.utc
+                tzinfo=datetime.UTC
             )
             return dt.timestamp()
         return 0.0
@@ -669,7 +668,7 @@ class WrestlerDb(DBWrapper):
             # Parse timestamp if present
             if "last_updated" in row and row["last_updated"]:
                 dt = datetime.datetime.fromisoformat(row["last_updated"]).replace(
-                    tzinfo=datetime.timezone.utc
+                    tzinfo=datetime.UTC
                 )
                 row["timestamp"] = dt.timestamp()
             return row
@@ -713,7 +712,7 @@ class WrestlerDb(DBWrapper):
         )
         if row and row[0]:
             dt = datetime.datetime.fromisoformat(row[0]).replace(
-                tzinfo=datetime.timezone.utc
+                tzinfo=datetime.UTC
             )
             return dt.timestamp()
         return 0.0
@@ -732,12 +731,12 @@ _default_db_path = pathlib.Path("data/joshi_wrestlers.y")
 wrestler_db = WrestlerDb(_default_db_path)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def get_name(wrestler_id: int) -> str:
     return wrestler_db.get_name(wrestler_id)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def get_promotion_name(promotion_id: int) -> str:
     """Get promotion name by ID, with caching.
 

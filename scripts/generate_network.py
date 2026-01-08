@@ -8,7 +8,6 @@ import click
 from loguru import logger
 
 from joshirank.analysis.promotion import (
-    get_primary_promotion_for_year,
     get_short_primary_promotion_for_year,
 )
 from joshirank.identifier import Identifier

@@ -1,6 +1,5 @@
 """Tests for gender-aware priority calculation for missing wrestlers."""
 
-import pytest
 
 from joshirank.scrape.priority import calculate_missing_wrestler_priority
 

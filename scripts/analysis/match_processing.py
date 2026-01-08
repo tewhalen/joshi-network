@@ -61,7 +61,7 @@ def investigate_wrestler_duplication(sampled_matches: list[list[dict]]):
                             "raw_html": raw_html,
                         }
                     )
-            except Exception as e:
+            except Exception:
                 pass
 
     # Print detailed report
@@ -79,11 +79,11 @@ def investigate_wrestler_duplication(sampled_matches: list[list[dict]]):
         print(f"  Side A: {case['side_a']}")
         print(f"  Side B: {case['side_b']}")
         if case["sides"]:
-            print(f"  Sides structure:")
+            print("  Sides structure:")
             for j, side in enumerate(case["sides"]):
                 print(f"    Side {j}: {side}")
         print(f"  Card text: {case['card_text'][:200]}")
-        print(f"  Raw HTML snippet:")
+        print("  Raw HTML snippet:")
         html_snippet = case["raw_html"]
         # Find MatchCard section
         if "MatchCard" in html_snippet:
@@ -208,11 +208,11 @@ def analyze_tag_team_extraction(sampled_matches: list[list[dict]]):
             print(f"\nExample {i}:")
             print(f"  Side A: {ex['side_a']}")
             print(f"  Side B: {ex['side_b']}")
-            print(f"  Team links found:")
+            print("  Team links found:")
             for link_type, team_id, team_name in ex["team_links"]:
                 link_type_name = "Tag Team" if link_type == "28" else "Stable"
                 print(f"    {link_type_name} ID {team_id}: {team_name}")
-            print(f"  HTML snippet:")
+            print("  HTML snippet:")
             print(f"    {ex['html_snippet'][:300]}...")
 
     # Show examples of team name patterns
@@ -226,7 +226,7 @@ def analyze_tag_team_extraction(sampled_matches: list[list[dict]]):
             print(f"  Side B: {ex['side_b']}")
             print(f"  Team names found: {ex['team_names']}")
             print(f"  Card text: {ex['card_text'][:200]}")
-            print(f"  HTML snippet:")
+            print("  HTML snippet:")
             print(f"    {ex['html_snippet'][:300]}...")
 
     # Analysis summary
@@ -237,20 +237,20 @@ def analyze_tag_team_extraction(sampled_matches: list[list[dict]]):
     print(
         f"  Coverage: {stats['matches_with_team_links']} matches ({100 * stats['matches_with_team_links'] / stats['tag_matches_count']:.1f}% of tag matches)"
     )
-    print(f"  Pros: Provides team IDs and names directly")
-    print(f"  Cons: Only available when teams are linked in HTML")
+    print("  Pros: Provides team IDs and names directly")
+    print("  Cons: Only available when teams are linked in HTML")
 
     print("\nOption 2: Extract team names from text patterns")
     print(
         f"  Coverage: {stats['matches_with_team_names']} matches ({100 * stats['matches_with_team_names'] / stats['tag_matches_count']:.1f}% of tag matches)"
     )
-    print(f"  Pros: Can capture team names even without IDs")
-    print(f"  Cons: Requires pattern matching, may have false positives")
+    print("  Pros: Can capture team names even without IDs")
+    print("  Cons: Requires pattern matching, may have false positives")
 
     print("\nOption 3: No extraction (current approach)")
-    print(f"  Coverage: All matches")
-    print(f"  Pros: Simple, no parsing errors")
-    print(f"  Cons: Loses team information")
+    print("  Coverage: All matches")
+    print("  Pros: Simple, no parsing errors")
+    print("  Cons: Loses team information")
 
     return team_data
 
@@ -538,7 +538,7 @@ def reprocess_matches(sampled_matches: list[list[dict]]):
         )
         print(f"  Version 1 → 2: {v1_to_v2}")
         if len(comparison["version_changes"]) > 0:
-            print(f"\nExample:")
+            print("\nExample:")
             ex = comparison["version_changes"][0]
             for key, value in ex.items():
                 print(f"    {key}: {value}")

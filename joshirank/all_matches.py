@@ -1,6 +1,5 @@
-from typing import Generator
+from collections.abc import Generator
 
-from bs4 import BeautifulSoup
 from loguru import logger
 
 import joshirank.cagematch.cm_match as cm_match
@@ -11,7 +10,7 @@ def to_tuple(dict_obj):
     return tuple(sorted(dict_obj.items()))
 
 
-def extract_singles_matches(match_data: list[dict]) -> Generator[tuple]:
+def extract_singles_matches(match_data: list[cm_match.MatchDict]) -> Generator[tuple]:
     """Given a list of matches, yield tuples of info about only singles matches between female wrestlers."""
     for res in match_data:
         # should look at 'sides' if present, and fall back to 'side_a' and 'side_b' if not

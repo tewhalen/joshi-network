@@ -45,11 +45,11 @@ def male_wrestler_statistics():
         promotions[promo] += 1
         locations[loc] += 1
 
-    print(f"\nTop 15 promotions (male wrestlers):")
+    print("\nTop 15 promotions (male wrestlers):")
     for promo, count in promotions.most_common(15):
         print(f"  {promo:40} {count:4d} wrestlers")
 
-    print(f"\nTop 10 locations (male wrestlers):")
+    print("\nTop 10 locations (male wrestlers):")
     for loc, count in locations.most_common(10):
         loc_str = loc if loc else "Unknown"
         print(f"  {loc_str:30} {count:4d} wrestlers")
@@ -79,7 +79,7 @@ def male_wrestlers_in_female_matches():
     print(f"Total appearances: {sum(male_appearances.values())}")
 
     # Top male wrestlers by appearances
-    print(f"\nTop 30 male wrestlers by appearances in female matches:")
+    print("\nTop 30 male wrestlers by appearances in female matches:")
     for i, (male_id, count) in enumerate(male_appearances.most_common(30), 1):
         name = wrestler_db.get_name(male_id)
         n_opponents = len(female_opponents[male_id])
@@ -105,7 +105,7 @@ def male_wrestlers_in_female_matches():
         else:
             frequency_buckets["50+ appearances"] += 1
 
-    print(f"\nMale wrestlers by appearance frequency:")
+    print("\nMale wrestlers by appearance frequency:")
     for bucket in [
         "1 appearance",
         "2-5 appearances",
@@ -153,7 +153,7 @@ def intergender_matches_analysis():
     )
 
     if female_with_male_opponents:
-        print(f"\nTop 30 female wrestlers by number of male opponents:")
+        print("\nTop 30 female wrestlers by number of male opponents:")
         for i, wrestler in enumerate(female_with_male_opponents[:30], 1):
             print(
                 f"  {i:2d}. {wrestler['name']:30} {wrestler['male_opponents']:3d} male opponents ({wrestler['percentage']:4.1f}% of total)"
@@ -166,7 +166,7 @@ def intergender_matches_analysis():
             w["male_opponents"] for w in female_with_male_opponents
         ) / len(female_with_male_opponents)
 
-        print(f"\nIntergender statistics:")
+        print("\nIntergender statistics:")
         print(
             f"  Female wrestlers with intergender matches: {with_intergender}/{total_female} ({100 * with_intergender / total_female:.1f}%)"
         )
@@ -179,7 +179,7 @@ def intergender_matches_analysis():
             if w["percentage"] > 50 and w["total_colleagues"] >= 10
         ]
         if high_percentage:
-            print(f"\nFemale wrestlers with >50% male opponents (min 10 colleagues):")
+            print("\nFemale wrestlers with >50% male opponents (min 10 colleagues):")
             for i, wrestler in enumerate(high_percentage[:15], 1):
                 print(
                     f"  {i:2d}. {wrestler['name']:30} {wrestler['male_opponents']:3d}/{wrestler['total_colleagues']:3d} colleagues ({wrestler['percentage']:4.1f}%)"
@@ -228,7 +228,7 @@ def male_wrestler_data_quality():
         if info.get("career_start"):
             with_career_start += 1
 
-    print(f"\nMale wrestler profile completeness:")
+    print("\nMale wrestler profile completeness:")
     print(
         f"  With promotion data: {with_promotion}/{len(male_ids)} ({100 * with_promotion / len(male_ids):.1f}%)"
     )
@@ -242,7 +242,7 @@ def male_wrestler_data_quality():
 
 def main():
     """Run all analysis functions."""
-    print(f"\nMale Wrestler Analysis Report")
+    print("\nMale Wrestler Analysis Report")
     print(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"Database: {wrestler_db.path}")
 

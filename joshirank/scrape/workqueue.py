@@ -1,6 +1,5 @@
 import heapq
 from dataclasses import dataclass, field
-from typing import Optional
 
 
 @dataclass(order=True)
@@ -10,7 +9,7 @@ class WorkItem:
         compare=False
     )  # Wrestler ID or Promotion ID depending on operation
     operation: str = field(compare=False)
-    year: Optional[int] = field(default=None, compare=False)
+    year: int | None = field(default=None, compare=False)
     force: bool = field(default=False, compare=False)
 
 
@@ -36,7 +35,7 @@ class WorkQueue:
             heapq.heappush(self._queue, item)
             self._seen.add(key)
 
-    def dequeue(self) -> Optional[WorkItem]:
+    def dequeue(self) -> WorkItem | None:
         """Get highest priority item."""
         if self._queue:
             item = heapq.heappop(self._queue)

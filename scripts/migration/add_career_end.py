@@ -13,7 +13,6 @@ import json
 from loguru import logger
 
 from joshirank.cagematch.profile import CMProfile
-from joshirank.cagematch.util import parse_cm_date_flexible
 from joshirank.joshidb import wrestler_db
 
 

@@ -94,7 +94,7 @@ def test_match(name, html):
     print(f"Version: {result.get('version')}")
     print(f"Side A: {result.get('side_a')}")
     print(f"Side B: {result.get('side_b')}")
-    print(f"\nSides structure:")
+    print("\nSides structure:")
     for i, side in enumerate(result["sides"]):
         print(f"  Side {i}:")
         print(f"    wrestlers: {side['wrestlers']}")
@@ -104,7 +104,7 @@ def test_match(name, html):
             print(f"    team_name: {side['team_name']}")
             print(f"    team_type: {side['team_type']}")
         else:
-            print(f"    (no team info)")
+            print("    (no team info)")
 
 
 if __name__ == "__main__":

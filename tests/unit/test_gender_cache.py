@@ -1,8 +1,6 @@
 """Unit tests for gender prediction cache functionality."""
 
 import json
-import pathlib
-import tempfile
 import time
 
 import pytest
@@ -95,7 +93,6 @@ class TestGenderCache:
 
     def test_stale_entry_detection(self, cache):
         """Test that stale entries are correctly identified."""
-        import sqlite3
 
         wrestler_id = 12345
         # Create an old timestamp (100 days ago)
@@ -126,7 +123,6 @@ class TestGenderCache:
 
     def test_version_incompatibility(self, cache):
         """Test that entries with wrong version are ignored."""
-        import sqlite3
 
         wrestler_id = 12345
 
@@ -195,7 +191,6 @@ class TestGenderCache:
 
     def test_migration_from_json(self, temp_cache_file, tmp_path):
         """Test that JSON cache is automatically migrated to SQLite."""
-        import json
 
         # Create old JSON cache file
         json_cache_path = tmp_path / "gender_cache.json"

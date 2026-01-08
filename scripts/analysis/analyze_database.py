@@ -52,11 +52,11 @@ def wrestler_statistics():
         promotions[promo] += 1
         locations[loc] += 1
 
-    print(f"\nTop 15 promotions (female wrestlers):")
+    print("\nTop 15 promotions (female wrestlers):")
     for promo, count in promotions.most_common(15):
         print(f"  {promo:40} {count:4d} wrestlers")
 
-    print(f"\nTop 10 locations (female wrestlers):")
+    print("\nTop 10 locations (female wrestlers):")
     for loc, count in locations.most_common(10):
         loc_str = loc if loc else "Unknown"
         print(f"  {loc_str:30} {count:4d} wrestlers")
@@ -78,7 +78,7 @@ def match_statistics():
             years[year]["wrestlers"] += 1
             years[year]["total_matches"] += info.get("match_count", 0)
 
-    print(f"\nMatch data by year:")
+    print("\nMatch data by year:")
     for year in sorted(years.keys(), reverse=True):
         data = years[year]
         avg_matches = (
@@ -89,7 +89,7 @@ def match_statistics():
         )
 
     # Most active wrestlers (2024-2025)
-    print(f"\nTop 20 most active wrestlers (2024-2025):")
+    print("\nTop 20 most active wrestlers (2024-2025):")
     activity = []
     for wid in wrestler_db.all_female_wrestlers():
         total = 0
@@ -126,7 +126,7 @@ def freshness_statistics():
         avg_age = sum(profile_ages) / len(profile_ages)
         median_age = profile_ages[len(profile_ages) // 2]
 
-        print(f"\nFemale wrestler profiles:")
+        print("\nFemale wrestler profiles:")
         print(f"  Total profiles: {len(profile_ages)}")
         print(f"  Average age: {avg_age / 86400:.1f} days")
         print(f"  Median age: {median_age / 86400:.1f} days")
@@ -134,7 +134,7 @@ def freshness_statistics():
         print(f"  Newest: {min(profile_ages) / 86400:.1f} days")
 
     # Match data freshness by year
-    print(f"\nMatch data freshness:")
+    print("\nMatch data freshness:")
     for year in [2026, 2025, 2024, 2023]:
         timestamps = []
         for wid in wrestler_db.all_female_wrestlers():
@@ -165,7 +165,7 @@ def coverage_statistics():
         for year in years:
             year_coverage[year] += 1
 
-    print(f"\nYear coverage (female wrestlers with match data):")
+    print("\nYear coverage (female wrestlers with match data):")
     for year in sorted(year_coverage.keys(), reverse=True):
         if year >= 2020:  # Only show recent years
             count = year_coverage[year]
@@ -188,7 +188,7 @@ def coverage_statistics():
         if 2025 not in years:
             missing_2025 += 1
 
-    print(f"\nMissing recent year data:")
+    print("\nMissing recent year data:")
     print(f"  Active wrestlers (have 2024/2025 data): {active_count}")
     print(
         f"  Active wrestlers missing 2026 data: {missing_2026} ({100 * missing_2026 / active_count:.1f}%)"
@@ -204,7 +204,7 @@ def coverage_statistics():
             for country, count in countries.items():
                 all_countries[country] += count
 
-    print(f"\nTop 10 countries by match count (2024-2025):")
+    print("\nTop 10 countries by match count (2024-2025):")
     for country, count in all_countries.most_common(10):
         print(f"  {country:30} {count:5d} matches")
 
@@ -230,7 +230,7 @@ def historical_coverage_statistics():
                 career_start_years.append(int(year_str))
 
     total_female = len(list(wrestler_db.all_female_wrestlers()))
-    print(f"\nCareer start data availability:")
+    print("\nCareer start data availability:")
     print(
         f"  Female wrestlers with career_start: {wrestlers_with_career_start}/{total_female} ({100 * wrestlers_with_career_start / total_female:.1f}%)"
     )
@@ -243,7 +243,7 @@ def historical_coverage_statistics():
             decade = (year // 10) * 10
             decades[decade] += 1
 
-        print(f"  Career starts by decade:")
+        print("  Career starts by decade:")
         for decade in sorted(decades.keys()):
             print(f"    {decade}s: {decades[decade]:4d} wrestlers")
 
@@ -336,7 +336,7 @@ def historical_coverage_statistics():
     )
     print("(These need initial scraping to discover all active years)")
     if single_stub_wrestlers:
-        print(f"\nTop 20 wrestlers needing discovery scraping:")
+        print("\nTop 20 wrestlers needing discovery scraping:")
         for i, w in enumerate(single_stub_wrestlers[:20], 1):
             print(
                 f"  {i:2d}. {w['name']:30} Career: {w['career_start_year']}-present ({w['career_length']:2d} years), "
@@ -349,13 +349,13 @@ def historical_coverage_statistics():
     print(f"\nWrestlers with multiple stub years: {len(multi_stub_wrestlers)}")
     print("(These have discovered years but need data to be filled in)")
     if multi_stub_wrestlers:
-        print(f"\nTop 20 wrestlers with most stub years needing data:")
+        print("\nTop 20 wrestlers with most stub years needing data:")
         for i, w in enumerate(multi_stub_wrestlers[:20], 1):
             recent_stubs = [y for y in w["stub_years"] if y >= 2020]
             stub_info = (
                 f"{len(recent_stubs)} recent (2020+)"
                 if recent_stubs
-                else f"all pre-2020"
+                else "all pre-2020"
             )
             career_info = (
                 f"debut: {w['career_start_year']}"
@@ -404,7 +404,7 @@ def missing_wrestlers_report():
         for wid, count in appearance_counter.most_common()
     ]
 
-    print(f"\nTop 20 missing wrestlers by appearances:")
+    print("\nTop 20 missing wrestlers by appearances:")
     for i, (wid, count, opponents) in enumerate(missing_list[:20], 1):
         # Show a few example wrestlers they've worked with
         opponent_names = [wrestler_db.get_name(oid) for oid in list(opponents)[:3]]
@@ -417,7 +417,7 @@ def missing_wrestlers_report():
 
     # Statistics
     avg_appearances = sum(appearance_counter.values()) / len(appearance_counter)
-    print(f"\nMissing wrestler statistics:")
+    print("\nMissing wrestler statistics:")
     print(f"  Average appearances per missing wrestler: {avg_appearances:.1f}")
     print(f"  Most appearances: {max(appearance_counter.values())}")
     print(f"  Least appearances: {min(appearance_counter.values())}")
@@ -436,7 +436,7 @@ def missing_wrestlers_report():
         else:
             frequency_buckets["20+ appearances"] += 1
 
-    print(f"\nMissing wrestlers by appearance frequency:")
+    print("\nMissing wrestlers by appearance frequency:")
     for bucket in [
         "1 appearance",
         "2-5 appearances",
@@ -450,7 +450,7 @@ def missing_wrestlers_report():
 
 def main():
     """Run all analysis functions."""
-    print(f"\nDatabase Analysis Report")
+    print("\nDatabase Analysis Report")
     print(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"Database: {wrestler_db.path}")
 

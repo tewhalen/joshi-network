@@ -1,12 +1,8 @@
 import random
 import statistics
-from collections import Counter, defaultdict
+from collections import defaultdict
 
-import jinja2
 import numpy as np
-from matplotlib import pyplot as plt
-from sparklines import sparklines
-from tabulate import tabulate
 
 from joshirank.analysis.promotion import get_primary_promotion_for_year
 from joshirank.joshidb import get_name, wrestler_db

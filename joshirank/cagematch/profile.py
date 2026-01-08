@@ -30,7 +30,7 @@ def parse_wrestler_profile_page(html_data: str) -> dict:
         label = pair.find("div", class_="InformationBoxTitle").text.strip().strip(":")
         value = pair.find("div", class_="InformationBoxContents")
         text_value = value.text.strip()
-        
+
         # Try to parse any date-like fields
         m = date_re.match(text_value)
         if m:

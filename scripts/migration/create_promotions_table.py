@@ -7,19 +7,19 @@ to existing databases.
 
 from loguru import logger
 
-from joshirank.joshidb import reopen_rw, wrestler_db
+from joshirank.joshidb import reopen_rw
 
 
 def main():
     logger.info("Creating promotions table...")
-    
+
     with reopen_rw() as db:
         # The _create_promotions_table method will be called if it doesn't exist
         # when the database is opened in read-write mode
         db._create_promotions_table()
-        
+
         logger.success("Promotions table created successfully")
-        
+
         # Verify it worked
         all_promos = db.all_promotion_ids()
         logger.info("Current promotions in database: {}", len(all_promos))

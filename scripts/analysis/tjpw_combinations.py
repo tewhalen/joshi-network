@@ -11,7 +11,7 @@ side of a TJPW match.
 """
 
 import time
-from collections import Counter, defaultdict
+from collections import Counter
 from itertools import combinations
 
 from joshirank.analysis.promotion import all_tjpw_wrestlers
@@ -159,7 +159,7 @@ def tjpw_combinations(min_matches=20):
     active_tjpw_wrestlers = get_active_tjpw_wrestlers(min_matches)
 
     print("=" * 80)
-    print(f"TJPW WRESTLER COMBINATION ANALYSIS")
+    print("TJPW WRESTLER COMBINATION ANALYSIS")
     print("=" * 80)
     print(f"Active wrestlers (≥{min_matches} matches): {len(active_tjpw_wrestlers)}")
 
@@ -193,7 +193,7 @@ def tjpw_combinations(min_matches=20):
 
     # now count partner participations
     partner_participation = {
-        n: Counter({j: 0 for j in active_tjpw_wrestlers}) for n in active_tjpw_wrestlers
+        n: Counter(dict.fromkeys(active_tjpw_wrestlers, 0)) for n in active_tjpw_wrestlers
     }
     for n in range(2, 4):
         for combo, count in combination_counts[n].items():
@@ -219,7 +219,7 @@ def tjpw_combinations(min_matches=20):
         print(f"  Unique partners: {partners}/{len(active_tjpw_wrestlers) - 1}")
         print(f"  Total team match appearances: {total_team_appearances:,}")
 
-        print(f"  Top 5 partners:")
+        print("  Top 5 partners:")
         for i, (partner_id, count) in enumerate(participation.most_common(5), 1):
             print(f"    {i}. {get_name(partner_id):<30} {count:>4} matches")
 
