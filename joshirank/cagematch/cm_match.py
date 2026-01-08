@@ -149,7 +149,7 @@ Current implementation:
 
 import re
 import urllib.parse
-from typing import Generator
+from typing import Generator, TypedDict
 
 from bs4 import BeautifulSoup, Tag
 from loguru import logger
@@ -167,7 +167,24 @@ event_href = re.compile("[?]id=1")
 wrestler_id_href = re.compile(r"id=2&nr=([0-9]+)")
 
 
-def extract_match_data_from_match_page(content: str) -> Generator[dict, None, None]:
+class MatchDict(TypedDict):
+    version: int
+    sides: list[dict]
+    side_a: tuple
+    side_b: tuple
+    date: str | None
+    wrestlers: list[int]
+    is_victory: bool
+    promotion: int | None
+    raw_html: str
+    match_type: str
+    country: str | None
+    is_multi_sided: bool
+
+
+def extract_match_data_from_match_page(
+    content: str,
+) -> Generator[MatchDict, None, None]:
     """Extract match data from a CageMatch match page HTML content."""
     soup = BeautifulSoup(content, "html.parser")
     # print(soup)
@@ -264,7 +281,7 @@ def extract_team_info(match: BeautifulSoup) -> dict[tuple, dict]:
     return team_map
 
 
-def parse_match(match: BeautifulSoup) -> dict:
+def parse_match(match: BeautifulSoup) -> MatchDict:
     """Turn match soup into a dictionary"""
     wrestlers = []
 
@@ -303,7 +320,7 @@ def parse_match(match: BeautifulSoup) -> dict:
     if d == "Unknown":
         logger.warning("Match with unknown date: {}", str(match))
 
-    match_dict = {
+    match_dict: MatchDict = {
         "version": 2,  # Format version - see docstring for version history
         "date": d,
         "country": _guess_country_of_match_soup(match),
@@ -387,7 +404,7 @@ def is_wrestler_link(element) -> bool:
 
 def _parse_match_results(
     match: BeautifulSoup, splitter, is_victory: bool, splitter_word: str
-) -> tuple:
+) -> tuple[list[dict], bool]:
     """Parse match results into structured sides data.
 
     Handles both two-sided and multi-sided matches using a unified algorithm.

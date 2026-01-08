@@ -16,11 +16,23 @@ import pathlib
 import sqlite3
 from collections import Counter
 from contextlib import contextmanager
+from typing import TypedDict
 
 from loguru import logger
 
+from joshirank.cagematch.cm_match import MatchDict
 from joshirank.cagematch.profile import CMProfile
 from joshirank.db_wrapper import DBWrapper
+
+
+class MatchInfoDict(TypedDict):
+    opponents: list[int]
+    match_count: int
+    countries_worked: dict[str, int]
+    promotions_worked: dict[str, int]
+    wrestler_id: int
+    year: int
+    timestamp: float
 
 
 class WrestlerDb(DBWrapper):
@@ -214,7 +226,7 @@ class WrestlerDb(DBWrapper):
         return cm_profile
 
     def save_matches_for_wrestler(
-        self, wrestler_id: int, match_data: list[dict], year: int
+        self, wrestler_id: int, match_data: list[MatchDict], year: int
     ):
         """Save the match data for a wrestler in the database table as JSON.
 
@@ -519,7 +531,7 @@ class WrestlerDb(DBWrapper):
             )
         return results
 
-    def get_matches(self, wrestler_id: int, year: int) -> list[dict]:
+    def get_matches(self, wrestler_id: int, year: int) -> list[MatchDict]:
         # first try to get from sqlite
         row = self._select_and_fetchone(
             """SELECT cm_matches_json FROM matches WHERE wrestler_id=? AND year=?""",
@@ -559,7 +571,7 @@ class WrestlerDb(DBWrapper):
             return dt.timestamp()
         return 0.0
 
-    def get_match_info(self, wrestler_id: int, year: int = 2025) -> dict:
+    def get_match_info(self, wrestler_id: int, year: int = 2025) -> MatchInfoDict:
         """Return match metadata for a wrestler."""
         row = self._select_and_fetchone_dict(
             """SELECT opponents, match_count, countries_worked, promotions_worked 
@@ -578,12 +590,15 @@ class WrestlerDb(DBWrapper):
             )
             return row
         else:
-            return {
-                "opponents": [],
-                "match_count": 0,
-                "countries_worked": {},
-                "promotions_worked": {},
-            }
+            return MatchInfoDict(
+                opponents=[],
+                match_count=0,
+                countries_worked={},
+                promotions_worked={},
+                year=year,
+                wrestler_id=wrestler_id,
+                timestamp=0.0,
+            )
 
     def get_all_colleagues(self, wrestler_id: int) -> set[int]:
         """Given a wrestler ID, return a set of all wrestler IDs that appeared in a match with them across all years.

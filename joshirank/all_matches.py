@@ -24,6 +24,10 @@ def extract_singles_matches(match_data: list[dict]) -> Generator[tuple]:
         else:
             continue
 
+        if -1 in wrestlers:
+            # unknown wrestler ID
+            continue
+
         if type(res["date"]) is not str:
             logger.warning("Match with unknown date: {}", res)
             continue
