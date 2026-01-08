@@ -112,7 +112,9 @@ def get_primary_promotion_for_year(wrestler_id: int, year: int) -> str | None:
 
     promotion_counter = Counter(match_info.get("promotions_worked", {}))
     if not promotion_counter:
-        return None
+        # Promotion counter is empty, but there's matches?
+        return _adjust_freelancer_by_location(match_info)
+        # return None
 
     # Get the most common promotion
     most_common_promo_id, count = promotion_counter.most_common(1)[0]
@@ -123,7 +125,10 @@ def get_primary_promotion_for_year(wrestler_id: int, year: int) -> str | None:
         return adjust_promotion_name_for_year(promo_name, year)
 
     # Otherwise, they're a freelancer
+    return _adjust_freelancer_by_location(match_info)
 
+
+def _adjust_freelancer_by_location(match_info: dict) -> str:
     # see if there's a location we can include
     location = _get_primary_location_for_year(match_info)
     if location:
