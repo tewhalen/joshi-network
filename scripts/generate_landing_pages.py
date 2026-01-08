@@ -68,11 +68,12 @@ class OutputGenerator:
             self.generate_ranking_placeholder(year)
         # if the network.html file does not exist, generate placeholder
         has_network = (self.output_dir / f"{year}" / "network.json").exists()
+        has_network_jpn = (self.output_dir / f"{year}" / "network-jpn.json").exists()
+
         if not has_network:
             self.generate_network_placeholder(year)
         else:
-            self.generate_network_viewer(year)
-        has_network_jpn = (self.output_dir / f"{year}" / "network-jpn.json").exists()
+            self.generate_network_viewer(year, has_jpn=has_network_jpn)
         if has_network_jpn:
             self.generate_jpn_network_viewer(year)
         else:
@@ -110,6 +111,7 @@ class OutputGenerator:
             has_ranking=has_ranking,
             has_network=has_network,
             has_promotions=has_promotions,
+            stats=get_year_stats(year),
         )
 
         with open(self.output_dir / f"{year}" / "index.html", "w") as f:
@@ -117,15 +119,15 @@ class OutputGenerator:
 
         print(f"Generated output/{year}/index.html")
 
-    def generate_network_viewer(self, year: int):
+    def generate_network_viewer(self, year: int, has_jpn: bool = True):
         # Generate network viewer page if network.json exists
 
         network_template = self.get_template("network.html")
         network_html = network_template.render(
             year=year,
             data_file="network.json",
-            alt_network_url="network-jpn.html",
-            alt_network_label="Japanese Only",
+            alt_network_url="network-jpn.html" if has_jpn else None,
+            alt_network_label="Japanese Only" if has_jpn else None,
         )
 
         with open(self.output_dir / f"{year}" / "network.html", "w") as f:
@@ -211,14 +213,12 @@ def get_year_stats(year: int) -> dict:
     total_matches = 0
 
     # Count all wrestlers with matches in this year (regardless of female flag)
-    for wrestler_id in wrestler_db.all_wrestler_ids():
-        available_years = wrestler_db.match_years_available(wrestler_id)
-        if year in available_years:
-            info = wrestler_db.get_match_info(wrestler_id, year)
-            match_count = info.get("match_count", 0)
-            if match_count > 0:
-                wrestlers_with_matches.add(wrestler_id)
-                total_matches += match_count
+    for wrestler_id in wrestler_db.all_female_wrestlers_with_matches_in_year(year):
+        info = wrestler_db.get_match_info(wrestler_id, year)
+        match_count = info.get("match_count", 0)
+        if match_count > 0:
+            wrestlers_with_matches.add(wrestler_id)
+            total_matches += match_count
 
     return {
         "female_wrestlers": len(wrestlers_with_matches),

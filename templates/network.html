@@ -68,7 +68,7 @@
     </div>
 
     <div class="controls">
-        <button id="rotationToggle">Pause Rotation</button>
+        <button id="rotationToggle">Start Rotation</button>
     </div>
 
     <div id="3d-graph"></div>
@@ -109,7 +109,7 @@
         // Spread nodes a little wider
         Graph.d3Force('charge').strength(-120);
         // Auto-rotate
-        let rotationEnabled = true;
+        let rotationEnabled = false;
         let angle = 0;
         setInterval(() => {
             if (rotationEnabled) {
