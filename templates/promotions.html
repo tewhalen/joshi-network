@@ -9,71 +9,8 @@
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="
 https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css">
+    <link rel="stylesheet" href="../base.css">
     <style>
-        :root {
-            --bg: #1a1a1a;
-            --fg: #e0e0e0;
-            --accent: #ff69b4;
-            --card-bg: #2a2a2a;
-            --border: #444;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        /* sensible system font stack and dark background */
-        html,
-        body {
-            margin: 0;
-            background: var(--bg);
-            color: var(--fg);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            font-size: 14px;
-            line-height: 1.45;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-
-        h1 {
-            font-size: 3rem;
-            color: var(--accent);
-            margin-bottom: 0.5rem;
-        }
-
-        .subtitle {
-            font-size: 1.2rem;
-            color: #999;
-            margin-bottom: 2rem;
-        }
-
-        .nav-links {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .nav-links a {
-            color: var(--accent);
-            text-decoration: none;
-            margin: 0 1rem;
-            font-size: 1.1rem;
-        }
-
-        .nav-links a:hover {
-            text-decoration: underline;
-        }
-
         .description {
             background: var(--card-bg);
             border: 1px solid var(--border);
@@ -100,10 +37,6 @@ https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css">
 
         .description a:hover {
             text-decoration: underline;
-        }
-
-        a {
-            color: var(--fg);
         }
 
         /* table basics */
@@ -232,15 +165,9 @@ https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css">
             <div class="subtitle">{{ year }} Promotion Statistics</div>
         </header>
 
-        <div class="nav-links">
-            <a href="index.html">← Back</a>
-        </div>
 
-        <div class="nav-links" style="margin-bottom: 1rem; font-size: 0.95rem; color: #999;">
-            <a href="../{{ year - 1 }}/promotions.html" style="color: var(--accent);">← {{ year - 1 }}</a>
-            <span style="color: #666; margin: 0 1rem;">{{ year }}</span>
-            <a href="../{{ year + 1 }}/promotions.html" style="color: var(--accent);">{{ year + 1 }} →</a>
-        </div>
+        {% set page_type = 'promotions' %}
+        {% include 'partials/nav-links.html' with context %}
 
         <div class="description">
             <h2>About This Data</h2>

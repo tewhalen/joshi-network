@@ -5,7 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Joshi Network - {{ year }}</title>
+    <link rel="stylesheet" href="../base.css">
     <style>
+        /* Override base theme for hub pages */
         :root {
             --bg: #1a1a1a;
             --fg: #e0e0e0;
@@ -14,55 +16,8 @@
             --border: #444;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: var(--bg);
-            color: var(--fg);
-            line-height: 1.6;
             padding: 2rem;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-
-        h1 {
-            font-size: 3rem;
-            color: var(--accent);
-            margin-bottom: 0.5rem;
-        }
-
-        .subtitle {
-            font-size: 1.2rem;
-            color: #999;
-        }
-
-        .nav-links {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-
-        .nav-links a {
-            color: var(--accent);
-            text-decoration: none;
-            margin: 0 1rem;
-            font-size: 1.1rem;
-        }
-
-        .nav-links a:hover {
-            text-decoration: underline;
         }
 
         .cards {
@@ -108,6 +63,22 @@
             transition: opacity 0.2s;
         }
 
+        .card .secondary-link {
+            margin-top: 0.5rem;
+            display: inline-block;
+        }
+
+        .card .disabled-link {
+            padding: 0.8rem 2rem;
+            background: var(--border);
+            color: #888;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
         .card a:hover {
             opacity: 0.9;
         }
@@ -128,28 +99,43 @@
             <div class="subtitle">{{ year }} Season</div>
         </header>
 
-        <div class="nav-links">
-            <a href="../index.html">← All Years</a>
-        </div>
+        {% set page_type = 'index' %}
+        {% include 'partials/nav-links.html' with context %}
 
         <div class="cards">
             <div class="card">
                 <h2>📊 Rankings</h2>
                 <p>Glicko2-based wrestler rankings from singles match results</p>
+                {% if has_ranking %}
                 <a href="ranking.html">View Rankings</a>
+                {% else %}
+                <span class="disabled-link" aria-disabled="true">View Rankings</span>
+                {% endif %}
             </div>
 
             <div class="card">
                 <h2>🕸️ Network</h2>
                 <p>Interactive network graph of wrestler collaborations</p>
+                {% if has_network %}
                 <a href="network.html">View Network</a>
-                <a href="network-jpn.html" style="margin-top: 0.5rem;">Japanese Only</a>
+                {% else %}
+                <span class="disabled-link" aria-disabled="true">View Network</span>
+                {% endif %}
+                {% if has_network_jpn %}
+                <a href="network-jpn.html" class="secondary-link">Japanese Only</a>
+                {% else %}
+                <span class="secondary-link disabled-link" aria-disabled="true">Japanese Only</span>
+                {% endif %}
             </div>
 
             <div class="card">
                 <h2>🏢 Promotions</h2>
                 <p>Promotion comparison and match statistics</p>
+                {% if has_promotions %}
                 <a href="promotions.html">View Promotions</a>
+                {% else %}
+                <span class="disabled-link" aria-disabled="true">View Promotions</span>
+                {% endif %}
             </div>
         </div>
 

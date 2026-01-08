@@ -1,11 +1,208 @@
 #!/usr/bin/env python
-"""Generate landing pages for the output directory structure."""
+"""Generate landing pages for the output directory structure.
 
+Includes generating index.html for each year, main landing page, and
+placeholders for missing data.
+
+Also generates the html pages that wrap the network visualizer.
+
+Uses Jinja2 templates located in the 'templates' directory."""
+
+import datetime
 import pathlib
+import shutil
 
 import jinja2
 
 from joshirank.joshidb import wrestler_db
+
+
+class OutputGenerator:
+    template_env: jinja2.Environment
+    template_loader: jinja2.FileSystemLoader
+    output_dir: pathlib.Path
+
+    def __init__(self, years: list[int]):
+        self.years = years
+        self.template_loader = jinja2.FileSystemLoader(searchpath="templates")
+        self.template_env = jinja2.Environment(loader=self.template_loader)
+        # Make boundary years available globally to templates without per-render args
+        self.template_env.globals.update(
+            current_year=datetime.date.today().year,
+            min_year=min(years),
+        )
+        self.output_dir = pathlib.Path("output")
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self._ensure_base_css()
+
+    def get_template(self, template_name: str) -> jinja2.Template:
+        """Get a Jinja2 template by name."""
+        return self.template_env.get_template(template_name)
+
+    def _ensure_base_css(self):
+        """Copy shared base stylesheet to output/base.css."""
+        src = pathlib.Path("templates/base.css")
+        dest = self.output_dir / "base.css"
+        if src.exists():
+            shutil.copyfile(src, dest)
+
+    def generate_placeholder_year_page(self, year: int):
+        """Generate a placeholder page for a year with no data."""
+
+        template = self.get_template("placeholder_year.html")
+
+        html = template.render(year=year)
+
+        with open(self.output_dir / f"{year}" / "index.html", "w") as f:
+            f.write(html)
+
+        print(f"Generated placeholder output/{year}/index.html")
+
+    def handle_year(self, year: int):
+        # make the year index.html page
+        self.generate_year_hub(year)
+
+        # if the ranking.html file does not exist, generate placeholder
+        has_ranking = (self.output_dir / f"{year}" / "ranking.html").exists()
+        if not has_ranking:
+            self.generate_ranking_placeholder(year)
+        # if the network.html file does not exist, generate placeholder
+        has_network = (self.output_dir / f"{year}" / "network.json").exists()
+        if not has_network:
+            self.generate_network_placeholder(year)
+        else:
+            self.generate_network_viewer(year)
+        has_network_jpn = (self.output_dir / f"{year}" / "network-jpn.json").exists()
+        if has_network_jpn:
+            self.generate_jpn_network_viewer(year)
+        else:
+            # remove the jpn network viewer if it exists for some reason
+            jpn_viewer = self.output_dir / f"{year}" / "network-jpn.html"
+            if jpn_viewer.exists():
+                jpn_viewer.unlink()
+        # if the promotions.html file does not exist, generate placeholder
+        has_promotions = (self.output_dir / f"{year}" / "promotions.html").exists()
+        if not has_promotions:
+            self.generate_promotions_placeholder(year)
+
+    def generate_year_hub(self, year: int):
+        """Generate an index.html for a specific year directory."""
+
+        output_dir = self.output_dir / f"{year}"
+        if not output_dir.exists():
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Check what files exist
+        has_ranking = (output_dir / "ranking.html").exists()
+        has_network = (output_dir / "network.json").exists()
+        has_network_jpn = (output_dir / "network-jpn.json").exists()
+        has_promotions = (output_dir / "promotions.html").exists()
+
+        if not (has_ranking or has_network or has_promotions):
+            # Generate placeholder instead
+            self.generate_placeholder_year_page(year)
+            return
+        # Generate year hub page
+        hub_template = self.get_template("year_hub.html")
+        output_text = hub_template.render(
+            year=year,
+            has_network_jpn=has_network_jpn,
+            has_ranking=has_ranking,
+            has_network=has_network,
+            has_promotions=has_promotions,
+        )
+
+        with open(self.output_dir / f"{year}" / "index.html", "w") as f:
+            f.write(output_text)
+
+        print(f"Generated output/{year}/index.html")
+
+    def generate_network_viewer(self, year: int):
+        # Generate network viewer page if network.json exists
+
+        network_template = self.get_template("network.html")
+        network_html = network_template.render(
+            year=year,
+            data_file="network.json",
+            alt_network_url="network-jpn.html",
+            alt_network_label="Japanese Only",
+        )
+
+        with open(self.output_dir / f"{year}" / "network.html", "w") as f:
+            f.write(network_html)
+
+        print(f"Generated output/{year}/network.html")
+
+    def generate_jpn_network_viewer(self, year: int):
+        """Generate Japanese-only network viewer for a year if data exists."""
+        # Generate Japanese-only network viewer if network-jpn.json exists
+        has_network_jpn = (self.output_dir / f"{year}" / "network-jpn.json").exists()
+        if has_network_jpn:
+            network_template = self.get_template("network.html")
+            network_jpn_html = network_template.render(
+                year=year,
+                title_suffix="Japanese Wrestlers Network",
+                data_file="network-jpn.json",
+                alt_network_url="network.html",
+                alt_network_label="All Wrestlers",
+            )
+
+            with open(self.output_dir / f"{year}" / "network-jpn.html", "w") as f:
+                f.write(network_jpn_html)
+
+            print(f"Generated output/{year}/network-jpn.html")
+
+    def generate_ranking_placeholder(self, year: int):
+        """Generate a placeholder ranking.html for a year with no ranking data."""
+        # Generate placeholder for missing ranking
+
+        ranking_template = self.get_template("placeholder_ranking.html")
+        ranking_html = ranking_template.render(year=year)
+        with open(self.output_dir / f"{year}" / "ranking.html", "w") as f:
+            f.write(ranking_html)
+        print(f"Generated placeholder output/{year}/ranking.html")
+
+    def generate_network_placeholder(self, year: int):
+        # Generate placeholder for missing network
+
+        network_template = self.get_template("placeholder_network.html")
+        network_html = network_template.render(year=year)
+        with open(self.output_dir / f"{year}" / "network.html", "w") as f:
+            f.write(network_html)
+        print(f"Generated placeholder output/{year}/network.html")
+
+    def generate_promotions_placeholder(self, year: int):
+        # Generate placeholder for missing promotions
+
+        promotions_template = self.get_template("placeholder_promotions.html")
+        promotions_html = promotions_template.render(year=year)
+        with open(self.output_dir / f"{year}" / "promotions.html", "w") as f:
+            f.write(promotions_html)
+        print(f"Generated placeholder output/{year}/promotions.html")
+
+    def generate_main_landing_page(self, years: list[int]):
+        """Generate the main landing page (output/index.html)."""
+        template = self.get_template("main_index.html")
+        # Collect year data with stats (newest first)
+        years_data = []
+        for year in sorted(years, reverse=True):
+            year_dir = self.output_dir / f"{year}"
+            if year_dir.exists() and (year_dir / "index.html").exists():
+                stats = get_year_stats(year)
+                years_data.append(
+                    {
+                        "year": year,
+                        "female_wrestlers": stats["female_wrestlers"],
+                        "matches": stats["matches"],
+                    }
+                )
+
+        html = template.render(years_data=years_data)
+
+        with open(self.output_dir / "index.html", "w") as f:
+            f.write(html)
+
+        print("Generated output/index.html")
 
 
 def get_year_stats(year: int) -> dict:
@@ -29,257 +226,36 @@ def get_year_stats(year: int) -> dict:
     }
 
 
-def generate_year_hub(year: int):
-    """Generate an index.html for a specific year directory."""
-    template_loader = jinja2.FileSystemLoader(searchpath="templates")
-    template_env = jinja2.Environment(loader=template_loader)
-
-    output_dir = pathlib.Path(f"output/{year}")
-    if not output_dir.exists():
-        print(f"Skipping {year} - directory doesn't exist")
-        return
-
-    # Check what files exist
-    has_ranking = (output_dir / "ranking.html").exists()
-    has_network = (output_dir / "network.json").exists()
-    has_promotions = (output_dir / "promotions.html").exists()
-
-    if not (has_ranking or has_network or has_promotions):
-        print(f"Skipping {year} - no content files found")
-        return
-
-    # Generate year hub page
-    hub_template = template_env.get_template("year_hub.html")
-    output_text = hub_template.render(year=year)
-
-    with open(output_dir / "index.html", "w") as f:
-        f.write(output_text)
-
-    print(f"Generated output/{year}/index.html")
-
-    # Generate network viewer page if network.json exists
-    if has_network:
-        network_template = template_env.get_template("network.html")
-        network_html = network_template.render(
-            year=year,
-            data_file="network.json",
-            alt_network_url="network-jpn.html",
-            alt_network_label="Japanese Only",
-        )
-
-        with open(output_dir / "network.html", "w") as f:
-            f.write(network_html)
-
-        print(f"Generated output/{year}/network.html")
-
-    # Generate Japanese-only network viewer if network-jpn.json exists
-    has_network_jpn = (output_dir / "network-jpn.json").exists()
-    if has_network_jpn:
-        network_template = template_env.get_template("network.html")
-        network_jpn_html = network_template.render(
-            year=year,
-            title_suffix="Japanese Wrestlers Network",
-            data_file="network-jpn.json",
-            alt_network_url="network.html",
-            alt_network_label="All Wrestlers",
-        )
-
-        with open(output_dir / "network-jpn.html", "w") as f:
-            f.write(network_jpn_html)
-
-        print(f"Generated output/{year}/network-jpn.html")
-
-
-def generate_main_landing_page(years: list[int]):
-    """Generate the main landing page (output/index.html)."""
-    # Create a simple landing page with links to each year
-    html = """<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Joshi Network</title>
-    <style>
-        :root {
-            --bg: #1a1a1a;
-            --fg: #e0e0e0;
-            --accent: #ff69b4;
-            --card-bg: #2a2a2a;
-            --border: #444;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: var(--bg);
-            color: var(--fg);
-            line-height: 1.6;
-            padding: 2rem;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        header {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-        
-        h1 {
-            font-size: 4rem;
-            color: var(--accent);
-            margin-bottom: 0.5rem;
-        }
-        
-        .subtitle {
-            font-size: 1.4rem;
-            color: #999;
-        }
-        
-        .description {
-            text-align: center;
-            max-width: 600px;
-            margin: 0 auto 3rem;
-            color: #aaa;
-        }
-        
-        .years-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 1.5rem;
-            margin-top: 2rem;
-        }
-        
-        .year-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 2rem 1rem;
-            text-align: center;
-            transition: transform 0.2s, border-color 0.2s;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        
-        .year-card:hover {
-            transform: translateY(-4px);
-            border-color: var(--accent);
-        }
-        
-        .year-card a {
-            color: var(--accent);
-            text-decoration: none;
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-        }
-        
-        .year-stats {
-            font-size: 0.85rem;
-            color: #999;
-            border-top: 1px solid var(--border);
-            padding-top: 1rem;
-            margin-top: 1rem;
-        }
-        
-        .stat-line {
-            margin: 0.3rem 0;
-        }
-        
-        .stat-label {
-            color: #777;
-        }
-        
-        .stat-value {
-            color: var(--accent);
-            font-weight: 600;
-        }
-        
-        footer {
-            text-align: center;
-            margin-top: 4rem;
-            color: #666;
-            font-size: 0.9rem;
-        }
-        
-        footer a {
-            color: var(--accent);
-            text-decoration: none;
-        }
-        
-        footer a:hover {
-            text-decoration: underline;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>Joshi Network</h1>
-            <div class="subtitle">Women's Wrestling Data & Analysis</div>
-        </header>
-        
-        <div class="description">
-            <p>Exploring the collaborative network and competitive rankings of women's professional wrestling, powered by data from CageMatch.net.</p>
-        </div>
-        
-        <div class="years-grid">
-"""
-
-    # Add year cards (newest first)
-    for year in sorted(years, reverse=True):
-        year_dir = pathlib.Path(f"output/{year}")
-        if year_dir.exists() and (year_dir / "index.html").exists():
-            stats = get_year_stats(year)
-            html += f"""            <div class="year-card">
-                <a href="{year}/index.html">{year}</a>
-                <div class="year-stats">
-                    <div class="stat-line"><span class="stat-label">Wrestlers:</span> <span class="stat-value">{stats["female_wrestlers"]}</span></div>
-                    <div class="stat-line"><span class="stat-label">Matches:</span> <span class="stat-value">{stats["matches"]}</span></div>
-                </div>
-            </div>
-"""
-
-    html += """        </div>
-        
-        <footer>
-            <p>Data sourced from <a href="https://www.cagematch.net/" target="_blank">CageMatch.net</a></p>
-            <p style="margin-top: 0.5rem;">Generated with Python, visualized with D3.js</p>
-        </footer>
-    </div>
-</body>
-</html>
-"""
-
-    with open("output/index.html", "w") as f:
-        f.write(html)
-
-    print("Generated output/index.html")
-
-
 def main():
     """Generate all landing pages."""
-    # Find all year directories
+    # Find all year directories AND get years from database
     output_path = pathlib.Path("output")
     year_dirs = [d for d in output_path.iterdir() if d.is_dir() and d.name.isdigit()]
-    years = sorted([int(d.name) for d in year_dirs])
+    output_years = set(int(d.name) for d in year_dirs)
 
-    print(f"Found year directories: {years}")
+    # Get years from database (all years with match data)
+    from scripts.list_available_years import get_available_years
 
-    # Generate hub pages for each year
-    for year in years:
-        generate_year_hub(year)
+    db_years = set(get_available_years())
 
-    # Generate main landing page
-    generate_main_landing_page(years)
+    # Combine both sources - we want to generate pages for all years
+    all_years = sorted(output_years | db_years)
+
+    print(f"Found years: {all_years}")
+
+    output_generator = OutputGenerator(years=all_years)
+
+    # Generate hub pages for each year with prev/next info
+    for i, year in enumerate(all_years):
+        output_generator.handle_year(year)
+
+    # Generate main landing page (only include years with actual content)
+    years_with_content = [
+        year
+        for year in all_years
+        if (pathlib.Path(f"output/{year}") / "index.html").exists()
+    ]
+    output_generator.generate_main_landing_page(years_with_content)
 
 
 if __name__ == "__main__":

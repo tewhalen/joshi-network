@@ -131,26 +131,34 @@ def main(year: int):
     # Create year subdirectory
     output_dir = pathlib.Path(f"output/{year}")
     output_dir.mkdir(parents=True, exist_ok=True)
+    fn = output_dir / "network.json"
 
     output = build_graph(all_female_wrestlers(), year)
-    fn = output_dir / "network.json"
-    logger.info(
-        f"Writing {len(output['nodes'])} wrestlers with {len(output['links'])} links to '{fn}'"
-    )
-    json.dump(output, open(fn, "w"), indent=2)
-
-    # Also write to old location for backwards compatibility
-    json.dump(output, open("output/joshi_net-sm.json", "w"), indent=2)
+    if len(output["nodes"]) == 0:
+        logger.warning("No wrestlers found for year {}, skipping...", year)
+        # delete the output file if it exists for some reason
+        if fn.exists():
+            fn.unlink()
+        return
+    else:
+        logger.info(
+            f"Writing {len(output['nodes'])} wrestlers with {len(output['links'])} links to '{fn}'"
+        )
+        json.dump(output, open(fn, "w"), indent=2)
 
     output = build_graph(all_joshi_japanese_wrestlers(), year, threshold=2)
     fn_jpn = output_dir / "network-jpn.json"
-    logger.info(
-        f"Writing {len(output['nodes'])} wrestlers with {len(output['links'])} links to '{fn_jpn}'"
-    )
-    json.dump(output, open(fn_jpn, "w"), indent=2)
-
-    # Also write to old location for backwards compatibility
-    json.dump(output, open("output/joshi_net-jpn.json", "w"), indent=2)
+    if len(output["nodes"]) == 0:
+        logger.warning("No Japanese wrestlers found for year {}, skipping...", year)
+        # delete the output file if it exists for some reason
+        if fn_jpn.exists():
+            fn_jpn.unlink()
+        return
+    else:
+        logger.info(
+            f"Writing {len(output['nodes'])} wrestlers with {len(output['links'])} links to '{fn_jpn}'"
+        )
+        json.dump(output, open(fn_jpn, "w"), indent=2)
 
 
 if __name__ == "__main__":

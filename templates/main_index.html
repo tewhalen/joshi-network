@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joshi Network</title>
+    <link rel="stylesheet" href="../base.css">
+    <style>
+        :root {
+            --bg: #1a1a1a;
+            --fg: #e0e0e0;
+            --accent: #ff69b4;
+            --card-bg: #2a2a2a;
+            --border: #444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-size: 4rem;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 1.4rem;
+            color: #999;
+        }
+
+        .description {
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto 3rem;
+            color: #aaa;
+        }
+
+        .years-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .year-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 2rem 1rem;
+            text-align: center;
+            transition: transform 0.2s, border-color 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .year-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+        }
+
+        .year-card a {
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .year-stats {
+            font-size: 0.85rem;
+            color: #999;
+            border-top: 1px solid var(--border);
+            padding-top: 1rem;
+            margin-top: 1rem;
+        }
+
+        .stat-line {
+            margin: 0.3rem 0;
+        }
+
+        .stat-label {
+            color: #777;
+        }
+
+        .stat-value {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 4rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Joshi Network</h1>
+            <div class="subtitle">Women's Wrestling Data & Analysis</div>
+        </header>
+
+        <div class="description">
+            <p>Exploring the collaborative network and
+                kayfabe "rankings" of women's professional wrestling, based on the data from CageMatch.net.</p>
+        </div>
+
+        <div class="years-grid">
+            {% for year_data in years_data %}
+            <div class="year-card">
+                <a href="{{ year_data.year }}/index.html">{{ year_data.year }}</a>
+                <div class="year-stats">
+                    <div class="stat-line"><span class="stat-label">Wrestlers:</span> <span class="stat-value">{{
+                            year_data.female_wrestlers }}</span></div>
+                    <div class="stat-line"><span class="stat-label">Matches:</span> <span class="stat-value">{{
+                            year_data.matches }}</span></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <footer>
+            <p>Data sourced from <a href="https://www.cagematch.net/" target="_blank">CageMatch.net</a></p>
+            <p style="margin-top: 0.5rem;">Generated with Python, visualized with D3.js</p>
+        </footer>
+    </div>
+</body>
+
+</html>

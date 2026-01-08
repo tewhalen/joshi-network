@@ -1,0 +1,11 @@
+<div class="nav-links">
+    <div>
+        <a href="../index.html">← All Years</a>
+    </div>
+    {% if year > min_year %}
+    <a class="prev-year" href="../{{ year - 1 }}/{{ page_type }}.html">← {{ year - 1 }}</a>
+    {% endif %}
+    {% if year < current_year %} <a class="next-year" href="../{{ year + 1 }}/{{ page_type }}.html">{{ year + 1 }}
+        →</a>
+        {% endif %}
+</div>

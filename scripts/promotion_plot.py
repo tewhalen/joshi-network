@@ -1,3 +1,4 @@
+import datetime
 import pathlib
 import statistics
 from collections import Counter, defaultdict
@@ -61,7 +62,8 @@ def match_count_report(year: int = 2025):
                     "hist_data": series.tolist(),
                 }
             )
-
+    if not accumulator:
+        return []
     accumulator.sort(key=lambda x: x["median"], reverse=True)
     return accumulator
 
@@ -80,6 +82,10 @@ def save_results(results, year: int = 2025):
     # load the ranking template and render out the results to a file
     template_loader = jinja2.FileSystemLoader(searchpath="templates")
     template_env = jinja2.Environment(loader=template_loader)
+    template_env.globals.update(
+        current_year=datetime.date.today().year,
+        min_year=1940,
+    )
     template = template_env.get_template("promotions.html")
     rendered_table = html_table_results(results, year)
     rendered_table = rendered_table.replace(
@@ -111,10 +117,6 @@ def save_results(results, year: int = 2025):
     output_dir.mkdir(parents=True, exist_ok=True)
 
     with open(output_dir / "promotions.html", "w") as f:
-        f.write(output_text)
-
-    # Also write to old location for backwards compatibility
-    with open("output/promotions.html", "w") as f:
         f.write(output_text)
 
 
@@ -181,7 +183,14 @@ def plot_results(results, year: int):
 def main(year: int):
     """Generate promotion statistics and plots."""
     results = match_count_report(year=year)
-
+    if not results:
+        print(f"No promotion comparison data for year {year}.")
+        # delete the output/promotions.html file if it exists for some reason
+        output_file = pathlib.Path(f"output/{year}/promotions.html")
+        if output_file.exists():
+            output_file.unlink()
+        # we leave the histograms for someone else to worry about.
+        return
     save_results(results, year=year)
     plot_results(results, year=year)
 

@@ -1,5 +1,6 @@
 import datetime
 import pathlib
+import shutil
 from collections import Counter, defaultdict
 
 import click
@@ -9,7 +10,6 @@ from tabulate import tabulate
 
 from joshirank.all_matches import all_matches
 from joshirank.analysis.promotion import (
-    get_primary_promotion_for_year,
     get_short_primary_promotion_for_year,
 )
 from joshirank.joshidb import (
@@ -19,6 +19,8 @@ from joshirank.ranking.glicko2 import Player
 from joshirank.ranking.record import Record
 
 URL_TEMPLATE = "https://www.cagematch.net/?id=2&nr={w_id}&view=&page=4&gimmick=&year={year}&promotion=&region=&location=&arena=&showtype=&constellationType=Singles&worker="
+
+MIN_MATCHES = 8
 
 
 class Wrestler(Player):
@@ -49,6 +51,14 @@ class Ranker:
     wrestler_objects: dict[str, Wrestler]
     start_rating: int = 1500
     start_rd: int = 400
+
+    def output_file(self) -> pathlib.PosixPath:
+        output_dir = pathlib.Path(f"output/{self.year}")
+        # create subdir if not exists
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Write to year subdirectory
+        return output_dir / "ranking.html"
 
     def __init__(self, year: int, by_week: bool = False):
         self.year = year
@@ -200,54 +210,10 @@ class Ranker:
                 "record": p.record,
             }
             for wrestler_id, p in self.wrestler_objects.items()
-            if p.record.total_matches() >= 5
+            if p.record.total_matches() >= MIN_MATCHES
         ]
         rankings.sort(key=lambda x: x["rating"], reverse=True)
         return rankings
-
-    def display_upsets_and_squashes(
-        self,
-    ):
-        all_opponents, all_outcomes = self.db.singles_outcomes_by_month(month)
-
-        for wrestler in all_opponents:
-            p = self.wrestler_objects[wrestler]
-
-            opponents = all_opponents[wrestler]
-            results = all_outcomes[wrestler]
-            upset_wins = [
-                opp
-                for opp, outcome in zip(opponents, results)
-                if self.result_is_upset(wrestler, opp, outcome)
-            ]
-            for opp in upset_wins:
-                print(
-                    "Upset: {} ({:.0f} / {}) def. {} ({:.0f} / {})".format(
-                        wrestler,
-                        p.rating,
-                        p.record,
-                        opp,
-                        self.wrestler_objects[opp].rating,
-                        self.wrestler_objects[opp].record,
-                    )
-                )
-            squashes = [
-                opp
-                for opp, outcome in zip(opponents, results)
-                if self.result_is_squash(wrestler, opp, outcome)
-            ]
-            for opp in squashes:
-                break
-                print(
-                    "Squash: {} ({:.0f} / {}) def. {} ({:.0f} / {})".format(
-                        wrestler,
-                        p.rating,
-                        p.record,
-                        opp,
-                        self.wrestler_objects[opp].rating,
-                        self.wrestler_objects[opp].record,
-                    )
-                )
 
     def result_is_upset(self, wrestler_a, wrestler_b, outcome) -> bool:
         if outcome == 1:
@@ -273,32 +239,21 @@ class Ranker:
         # load the ranking template and render out the results to a file
         template_loader = jinja2.FileSystemLoader(searchpath="templates")
         template_env = jinja2.Environment(loader=template_loader)
+        template_env.globals.update(
+            current_year=datetime.date.today().year,
+            min_year=1940,
+        )
         template = template_env.get_template("ranking.html")
         rendered_table = self.current_rankings_table()
         rendered_table = rendered_table.replace(
             "<table>", '<table id="ranking-table" class="display">'
         )
 
-        # Get available years for navigation
-        from scripts.list_available_years import get_available_years
-
-        all_years = sorted(get_available_years())
-        try:
-            year_idx = all_years.index(self.year)
-            prev_year = all_years[year_idx - 1] if year_idx > 0 else None
-            next_year = (
-                all_years[year_idx + 1] if year_idx < len(all_years) - 1 else None
-            )
-        except ValueError:
-            prev_year = next_year = None
-
         rendered_html = template.render(
             the_table=rendered_table,
             year=self.year,
             sort_column=0,
             sort_order="asc",
-            prev_year=prev_year,
-            next_year=next_year,
         )
 
         # Create year subdirectory
@@ -306,7 +261,7 @@ class Ranker:
         output_dir.mkdir(parents=True, exist_ok=True)
 
         # Write to year subdirectory
-        with open(output_dir / "ranking.html", "w") as f:
+        with self.output_file().open("w") as f:
             f.write(rendered_html)
 
 
@@ -352,8 +307,21 @@ def main(year: int, seed: bool, by_week: bool):
         r = Ranker(year, by_week=by_week)
     logger.info("Generating rankings for year {}...", year)
     r.main()
-    r.save_rankings_to_html()
-    logger.success("Rankings saved to output/{}_ranking.html", year)
+    rankings = r.current_rankings()
+    if not len(rankings):
+        logger.warning("No rankings generated for year {}", year)
+        # delete any existing old output file
+        output_file = r.output_file()
+        if output_file.exists():
+            output_file.unlink()
+        return
+    else:
+        r.save_rankings_to_html()
+        logger.success(
+            "Rankings ({} wrestlers) saved to output/{}_ranking.html",
+            len(rankings),
+            year,
+        )
 
 
 if __name__ == "__main__":

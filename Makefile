@@ -4,7 +4,7 @@ AVAILABLE_YEAR_TARGETS := $(addprefix output/,$(addsuffix /ranking.html,$(AVAILA
 
 # Year targets - generate all outputs for a specific year
 output/%/ranking.html output/%/network.json output/%/promotions.html: data/joshi_wrestlers.sqlite3
-	uv run python ./scripts/do_rank.py $*
+	uv run joshi-rank --seed $*
 	uv run python ./scripts/generate_network.py $*
 	uv run python ./scripts/promotion_plot.py $*
 
@@ -16,7 +16,7 @@ output/%/ranking.html output/%/network.json output/%/promotions.html: data/joshi
 output/index.html: $(AVAILABLE_YEAR_TARGETS)
 	uv run python ./scripts/generate_landing_pages.py
 
-.PHONY: lint format check test all list-years
+.PHONY: lint format check test all list-years deploy
 lint:
 	uv run ruff check .
 
@@ -31,3 +31,6 @@ test:
 
 list-years:
 	@echo "Available years: $(AVAILABLE_YEARS)"
+
+deploy: output/index.html
+	rsync -avz --delete output/ introvert.net:~/introvert.net/joshinet/

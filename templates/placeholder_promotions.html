@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ year }} Promotions - Not Available</title>
+    <link rel="stylesheet" href="../base.css">
+    <style>
+        .container {
+            max-width: 900px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 1rem;
+        }
+
+        .subtitle {
+            margin-bottom: 3rem;
+        }
+
+        .message {
+            font-size: 1.1rem;
+            color: #aaa;
+            margin-bottom: 3rem;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 4rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🏢 Promotions</h1>
+            <div class="subtitle">{{ year }}</div>
+        </header>
+
+        <div class="message">
+            <p>Promotion data not available for this year.</p>
+        </div>
+        {% set page_type = 'promotions' %}
+        {% include 'partials/nav-links.html' with context %}
+        <footer>
+            <p>Data sourced from CageMatch.net</p>
+        </footer>
+    </div>
+</body>
+
+</html>
