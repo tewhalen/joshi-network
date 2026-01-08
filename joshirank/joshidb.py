@@ -64,8 +64,8 @@ class WrestlerDb(DBWrapper):
             cm_profile_json TEXT,
             career_start TEXT,
             career_end TEXT,
-           
-            PRIMARY KEY (wrestler_id)  
+
+            PRIMARY KEY (wrestler_id)
         )
         """
         )
@@ -104,7 +104,7 @@ class WrestlerDb(DBWrapper):
             promotions_worked TEXT,
             year INTEGER NOT NULL DEFAULT 2025,
             last_updated TIMESTAMP,
-            PRIMARY KEY (wrestler_id, year) 
+            PRIMARY KEY (wrestler_id, year)
              ) """
         )
         cursor.execute(
@@ -302,9 +302,9 @@ class WrestlerDb(DBWrapper):
             return
 
         # Use a timestamp from 2 years ago to ensure they're marked as stale
-        stale_timestamp = datetime.datetime.now(
-            datetime.UTC
-        ) - datetime.timedelta(days=730)
+        stale_timestamp = datetime.datetime.now(datetime.UTC) - datetime.timedelta(
+            days=730
+        )
         stale_timestamp_str = stale_timestamp.isoformat()
 
         for year in new_years:
@@ -360,14 +360,14 @@ class WrestlerDb(DBWrapper):
         cursor = self._rw_cursor()
         # Delete existing entries for this wrestler/year
         cursor.execute(
-            """DELETE FROM wrestler_opponents 
+            """DELETE FROM wrestler_opponents
             WHERE wrestler_id = ? AND year = ?""",
             (wrestler_id, year),
         )
         # Insert new entries
         for opponent_id, count in opponents.items():
             cursor.execute(
-                """INSERT INTO wrestler_opponents 
+                """INSERT INTO wrestler_opponents
                 (wrestler_id, opponent_id, year, match_count)
                 VALUES (?, ?, ?, ?)""",
                 (wrestler_id, opponent_id, year, count),
@@ -564,30 +564,33 @@ class WrestlerDb(DBWrapper):
         )
         if row and row[0]:
             # SQLite CURRENT_TIMESTAMP is in UTC, parse as UTC and convert to epoch
-            dt = datetime.datetime.fromisoformat(row[0]).replace(
-                tzinfo=datetime.UTC
-            )
+            dt = datetime.datetime.fromisoformat(row[0]).replace(tzinfo=datetime.UTC)
             return dt.timestamp()
         return 0.0
 
     def get_match_info(self, wrestler_id: int, year: int = 2025) -> MatchInfoDict:
         """Return match metadata for a wrestler."""
         row = self._select_and_fetchone_dict(
-            """SELECT opponents, match_count, countries_worked, promotions_worked 
+            """SELECT opponents, match_count, countries_worked, promotions_worked, last_updated
             FROM matches WHERE wrestler_id=? AND year=?""",
             (wrestler_id, year),
         )
 
         if row:
-            row["opponents"] = json.loads(row["opponents"]) if row["opponents"] else []
-            row["match_count"] = row["match_count"] if row["match_count"] else 0
-            row["countries_worked"] = (
-                json.loads(row["countries_worked"]) if row["countries_worked"] else {}
+            return MatchInfoDict(
+                opponents=json.loads(row["opponents"]) if row["opponents"] else [],
+                match_count=row["match_count"] if row["match_count"] else 0,
+                countries_worked=json.loads(row["countries_worked"])
+                if row["countries_worked"]
+                else {},
+                promotions_worked=json.loads(row["promotions_worked"])
+                if row["promotions_worked"]
+                else {},
+                year=year,
+                wrestler_id=wrestler_id,
+                timestamp=row["last_updated"] if "last_updated" in row else 0.0,
             )
-            row["promotions_worked"] = (
-                json.loads(row["promotions_worked"]) if row["promotions_worked"] else {}
-            )
-            return row
+
         else:
             return MatchInfoDict(
                 opponents=[],
@@ -711,9 +714,7 @@ class WrestlerDb(DBWrapper):
             (promotion_id,),
         )
         if row and row[0]:
-            dt = datetime.datetime.fromisoformat(row[0]).replace(
-                tzinfo=datetime.UTC
-            )
+            dt = datetime.datetime.fromisoformat(row[0]).replace(tzinfo=datetime.UTC)
             return dt.timestamp()
         return 0.0
 

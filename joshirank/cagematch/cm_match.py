@@ -189,7 +189,7 @@ def extract_match_data_from_match_page(
     """Extract match data from a CageMatch match page HTML content."""
     soup = BeautifulSoup(content, "html.parser")
     # print(soup)
-    for match in soup.find_all("tr", ["TRow1", "TRow2"]):
+    for match in soup.find_all("tr", class_=["TRow1", "TRow2"]):
         # print(match)
         yield parse_match(match)
 

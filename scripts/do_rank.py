@@ -51,7 +51,7 @@ class Ranker:
     start_rating: int = 1500
     start_rd: int = 400
 
-    def output_file(self) -> pathlib.PosixPath:
+    def output_file(self) -> pathlib.Path:
         output_dir = pathlib.Path(f"output/{self.year}")
         # create subdir if not exists
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -165,11 +165,6 @@ class Ranker:
 
         output = []
         for i, d in enumerate(rankings, start=1):
-            p = self.wrestler_objects[d["id"]]
-            # name = db.get_name(name)
-            # output.append(
-            #    f"{i:3} {name:20} {rating:.0f} ({rd:.0f}) {p.record} {p.y_record(month)}"
-            # )
             html_link = (
                 '<a href="'
                 + URL_TEMPLATE.format(w_id=d["id"], year=self.year)

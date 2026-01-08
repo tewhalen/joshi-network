@@ -7,7 +7,6 @@ import click
 import jinja2
 import numpy as np
 from matplotlib import pyplot as plt
-from sparklines import sparklines
 from tabulate import tabulate
 
 from joshirank.analysis.promotion import (
@@ -37,8 +36,8 @@ def match_count_report(year: int = 2025):
         total_wrestlers = len(wrestlers)
         # median_match_count = statistics.median(count for _, count in wrestlers)
         series = np.array([count for _, count in wrestlers])
-        hist = np.histogram(series, bins=20, range=(min_val, max_val))
-        sparkline = sparklines(hist[0])[0]
+        # hist = np.histogram(series, bins=20, range=(min_val, max_val))
+        # sparkline = sparklines(hist[0])[0]
         if total_wrestlers > 2:
             quartiles = statistics.quantiles([count for _, count in wrestlers], n=4)
         else:
@@ -55,7 +54,7 @@ def match_count_report(year: int = 2025):
                     "median": quartiles[1],
                     "75%": quartiles[2],
                     "max": max_matches,
-                    "histogram": sparkline,
+                    #  "histogram": sparkline,
                     "hist_data": series.tolist(),
                 }
             )
@@ -160,7 +159,7 @@ def plot_results(results, year: int):
         )
         # fig.tight_layout()
         # remove axes and labels
-        plt.gca().axes.get_yaxis().set_visible(False)
+        plt.gca().axes.yaxis.set_visible(False)
         plt.gca().spines["top"].set_visible(False)
         plt.gca().spines["right"].set_visible(False)
         plt.gca().spines["left"].set_visible(False)

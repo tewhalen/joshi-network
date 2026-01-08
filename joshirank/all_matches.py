@@ -44,7 +44,6 @@ def all_matches(year: int) -> set:
     all_matches = set()
     j_count = 0
     for wrestler in wrestler_db.all_female_wrestlers_with_matches_in_year(year=year):
-        wdata = wrestler_db.get_wrestler(wrestler)
         if not wrestler_db.is_female(wrestler):
             continue
         j_count += 1

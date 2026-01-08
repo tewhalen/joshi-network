@@ -231,7 +231,7 @@ def main():
     # Find all year directories AND get years from database
     output_path = pathlib.Path("output")
     year_dirs = [d for d in output_path.iterdir() if d.is_dir() and d.name.isdigit()]
-    output_years = set(int(d.name) for d in year_dirs)
+    output_years = {int(d.name) for d in year_dirs}
 
     # Get years from database (all years with match data)
     from scripts.list_available_years import get_available_years
@@ -246,7 +246,7 @@ def main():
     output_generator = OutputGenerator(years=all_years)
 
     # Generate hub pages for each year with prev/next info
-    for i, year in enumerate(all_years):
+    for year in all_years:
         output_generator.handle_year(year)
 
     # Generate main landing page (only include years with actual content)

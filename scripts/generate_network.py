@@ -62,7 +62,9 @@ def build_graph(from_wrestlers: set, year: int, threshold=8):
         matches = wrestler_db.get_matches(w_id, year)
 
         for match in matches:
-            if year and not match["date"].startswith(str(year)):
+            if year and match["date"] and not match["date"].startswith(str(year)):
+                # skip matches not in the target year
+                # this should never happen!
                 continue
             match_counts[w_id] += 1
             for wrestler in match["wrestlers"]:
