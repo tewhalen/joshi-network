@@ -37,7 +37,8 @@ def test_scrape_matches_with_vcr():
 
 # Uncomment to run these tests - they will hit the network the first time!
 # After that, they'll use the recorded cassettes
-@pytest.mark.skip(reason="Hits network - enable manually to record new cassettes")
+
+
 @pytest.mark.vcr()
 def test_scrape_new_wrestler():
     """Example of recording a new wrestler's data."""
@@ -45,3 +46,16 @@ def test_scrape_new_wrestler():
     profile = scraper.scrape_profile(wrestler_id=9462)  # Hikaru Shida
 
     assert profile.name() == "Hikaru Shida"
+
+
+@pytest.mark.vcr()
+def test_scrape_all_matches():
+    """Example of recording all matches for a wrestler."""
+    scraper = CageMatchScraper()
+    matches = scraper.scrape_all_matches(wrestler_id=828)  # Aja Kong
+
+    assert len(matches) > 0
+    for match in matches:
+        assert 828 in match["wrestlers"], (
+            "Wrestler ID should be in every match, but isn't in: {}".format(match)
+        )

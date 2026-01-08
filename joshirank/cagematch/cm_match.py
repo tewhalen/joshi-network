@@ -348,9 +348,15 @@ def parse_match_results(match: BeautifulSoup) -> tuple:
     if d_split:
         splitter = d_split
         is_victory = True
+        # Extract just the matched word (defeat/defeats) from the text node
+        splitter_match = re.search(r"defeat[s]?", d_split)
+        splitter_word = splitter_match.group(0) if splitter_match else "defeat"
     elif vs_split:
         splitter = vs_split
         is_victory = False
+        # Extract just "vs." from the text node
+        splitter_match = re.search(r"vs\.", vs_split)
+        splitter_word = splitter_match.group(0) if splitter_match else "vs."
     else:
         # no recognizable result
         return [], [], False
@@ -362,13 +368,13 @@ def parse_match_results(match: BeautifulSoup) -> tuple:
 
     match_text = match_card.get_text()
 
-    # Split into winner(s) and loser(s) sections
-    if splitter.text in match_text:
-        winner_text, loser_text = match_text.split(splitter.text, 1)
+    # Split into winner(s) and loser(s) sections using just the matched word
+    if splitter_word in match_text:
+        winner_text, loser_text = match_text.split(splitter_word, 1)
     else:
         return [], [], False
 
-    return _parse_match_results(match, splitter, is_victory)
+    return _parse_match_results(match, splitter, is_victory, splitter_word)
 
 
 def is_wrestler_link(element) -> bool:
@@ -379,12 +385,20 @@ def is_wrestler_link(element) -> bool:
     return False
 
 
-def _parse_match_results(match: BeautifulSoup, splitter, is_victory: bool) -> tuple:
+def _parse_match_results(
+    match: BeautifulSoup, splitter, is_victory: bool, splitter_word: str
+) -> tuple:
     """Parse match results into structured sides data.
 
     Handles both two-sided and multi-sided matches using a unified algorithm.
     Walks through HTML nodes to collect wrestlers into groups, splitting on
     appropriate separators (" and " for victories, "vs." for draws).
+
+    Args:
+        match: BeautifulSoup match row
+        splitter: The text node containing the splitter word (for DOM traversal)
+        is_victory: True if this is a victory (defeats), False if draw (vs.)
+        splitter_word: The actual word to split on ("defeat", "defeats", or "vs.")
 
     Returns:
         tuple: (sides_list, is_victory) where sides_list is a list of dicts,
@@ -406,10 +420,10 @@ def _parse_match_results(match: BeautifulSoup, splitter, is_victory: bool) -> tu
     # breaking into groups using the splitter as the main divider
     for element in match_card.descendants:
         if element == splitter:
-            # we found the first splitter, time to start a new group
-            if current_group:
-                all_groups.append(current_group)
-                current_group = []
+            # we found the splitter node, time to start a new group
+            # Always append current group (even if empty) to mark that we've seen the splitter
+            all_groups.append(current_group)
+            current_group = []
             continue
 
         if is_wrestler_link(element):
@@ -426,8 +440,9 @@ def _parse_match_results(match: BeautifulSoup, splitter, is_victory: bool) -> tu
                 all_groups.append(current_group)
                 current_group = []
 
-    # Add the final group if there's uncollected wrestlers
-    if current_group and all_groups:
+    # Add the final group - always append if we saw the splitter
+    # (even if empty, unlinked wrestlers will be filled in by text analysis)
+    if all_groups:
         all_groups.append(current_group)
 
     winners = all_groups[0] if all_groups else []
@@ -443,7 +458,7 @@ def _parse_match_results(match: BeautifulSoup, splitter, is_victory: bool) -> tu
 
     # Count unlinked wrestlers in each side's text
     match_text = match.get_text()
-    text_parts = match_text.split(splitter.text, 1)
+    text_parts = match_text.split(splitter_word, 1)
 
     if len(text_parts) == 2:
         winner_text, losers_text = text_parts

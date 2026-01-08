@@ -88,7 +88,10 @@ def test_parsing_of_three_way_tag():
     sides = match["sides"]
     print(match["sides"])
     assert match["is_victory"] is True
+    assert len(sides) == 3
     assert set(sides[0]["wrestlers"]) == {429, 807}
+    assert sides[0]["is_winner"] is True
+    assert sides[0]["team_name"] == "The Outsiders"
     assert set(sides[1]["wrestlers"]) == {694, 413}
     assert set(sides[2]["wrestlers"]) == {633, 558}
 
@@ -102,6 +105,7 @@ def test_parsing_of_three_way_tag_nc():
     sides = match["sides"]
     print(match["sides"])
     assert match["is_victory"] is False
+    assert len(sides) == 3
     assert set(sides[0]["wrestlers"]) == {1256, 1007}
     assert set(sides[1]["wrestlers"]) == {1681, 1682}
     assert set(sides[2]["wrestlers"]) == {633, 558}
@@ -116,6 +120,7 @@ def test_parsing_of_three_way_tag_with_missing():
     sides = match["sides"]
     print(match["sides"])
     assert match["is_victory"] is False
+    assert len(sides) == 3
     assert set(sides[0]["wrestlers"]) == {1256, 1007}
     assert set(sides[1]["wrestlers"]) == {-1, 1682}
     assert set(sides[2]["wrestlers"]) == {633, 558}
@@ -144,6 +149,13 @@ def test_trios_with_named_tag_subsets():
     assert match["is_victory"] is True
     assert len(sides) == 2
     assert set(sides[0]["wrestlers"]) == {16613, 15712, 19837}
+
+    # Note that this assertion currently fails but
+    # we're not actually sure how to specify that 2 out of 3 wrestlers
+    # on the side are on a named team.
+    # And we have NO idea how to handle a side made up of multiple named teams.
+    # assert sides[0]["team_name"] == "Kyoraku Kyomei"
+
     assert set(sides[1]["wrestlers"]) == {19649, 16650, 27181}
 
 
@@ -158,3 +170,16 @@ def test_standard_singles():
     assert len(sides) == 2
     assert set(sides[0]["wrestlers"]) == {27181}
     assert set(sides[1]["wrestlers"]) == {27259}
+
+
+def test_singles_with_unknown():
+    sample_html = """<tr class="TRow2"><td class="TCol AlignCenter TextLowlight">28</td><td class="TCol TColSeparator">05.05.2009</td><td class="TCol TColSeparator"><a href="?id=8&amp;nr=2379"><img src="/site/main/img/ligen/normal/2379.gif" class="ImagePromotionLogoMini ImagePromotionLogo_mini" width="36" height="18" alt="Wrestling In Japan - Freelance Shows" title="Wrestling In Japan - Freelance Shows"></a></td><td class="TCol TColSeparator">
+<span class="MatchType"><a href="?id=5&amp;nr=4380">DDT Iron Man Heavy Metal Title</a>: </span><span class="MatchCard">Mr. Kasai defeats <a href="?id=2&amp;nr=828&amp;name=Aja+Kong">Aja Kong</a> (c) - <span class="MatchTitleChange">TITLE CHANGE !!!</span></span><div class="MatchEventLine"><a href="?id=1&amp;nr=253173">Cherry Produce Fantasy Illusion 2</a> - Event @ Itabashi Green Hall in Tokyo, Japan</div></td></tr>"""
+    soup = BeautifulSoup(sample_html, "html.parser")
+    match = parse_match(soup)
+    sides = match["sides"]
+    print(match["sides"])
+    assert match["is_victory"] is True
+    assert len(sides) == 2
+    assert set(sides[0]["wrestlers"]) == {-1}
+    assert set(sides[1]["wrestlers"]) == {828}
