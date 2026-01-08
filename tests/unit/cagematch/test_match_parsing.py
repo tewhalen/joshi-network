@@ -62,6 +62,7 @@ def test_parsing_of_tag_match_with_unknowns():
     assert match["is_victory"] is True
     assert match["side_a"] == (-1, 233)
     assert match["side_b"] == (-1, 1078)
+    assert match["country"] == "Canada"
 
 
 def test_parsing_of_clusterfuck():
@@ -78,6 +79,7 @@ def test_parsing_of_clusterfuck():
     print(match["sides"])
     assert match["is_victory"] is True
     assert -1 in match["wrestlers"]  # many unknown wrestlers
+    assert match["country"] == "USA"
 
 
 def test_parsing_of_three_way_tag():
@@ -94,6 +96,7 @@ def test_parsing_of_three_way_tag():
     assert sides[0]["team_name"] == "The Outsiders"
     assert set(sides[1]["wrestlers"]) == {694, 413}
     assert set(sides[2]["wrestlers"]) == {633, 558}
+    assert match["country"] == "USA"
 
 
 def test_parsing_of_three_way_tag_nc():
@@ -109,6 +112,7 @@ def test_parsing_of_three_way_tag_nc():
     assert set(sides[0]["wrestlers"]) == {1256, 1007}
     assert set(sides[1]["wrestlers"]) == {1681, 1682}
     assert set(sides[2]["wrestlers"]) == {633, 558}
+    assert match["country"] == "USA"
 
 
 def test_parsing_of_three_way_tag_with_missing():
@@ -124,6 +128,7 @@ def test_parsing_of_three_way_tag_with_missing():
     assert set(sides[0]["wrestlers"]) == {1256, 1007}
     assert set(sides[1]["wrestlers"]) == {-1, 1682}
     assert set(sides[2]["wrestlers"]) == {633, 558}
+    assert match["country"] == "USA"
 
 
 def test_standard_tag_team():
@@ -170,6 +175,7 @@ def test_standard_singles():
     assert len(sides) == 2
     assert set(sides[0]["wrestlers"]) == {27181}
     assert set(sides[1]["wrestlers"]) == {27259}
+    assert match["country"] == "Japan"
 
 
 def test_singles_with_unknown():
@@ -183,3 +189,4 @@ def test_singles_with_unknown():
     assert len(sides) == 2
     assert set(sides[0]["wrestlers"]) == {-1}
     assert set(sides[1]["wrestlers"]) == {828}
+    assert match["country"] == "Japan"

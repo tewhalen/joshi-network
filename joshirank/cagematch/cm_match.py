@@ -155,8 +155,13 @@ from typing import TypedDict
 from bs4 import BeautifulSoup, Tag
 from loguru import logger
 
-import joshirank.cagematch.util as util
-from joshirank.cagematch.data import country_map, missing_wrestlers
+from joshirank.cagematch.cm_match_embed import (
+    extract_country,
+    extract_date,
+    extract_matchtype,
+    extract_promotion,
+    extract_team_info,
+)
 
 date_re = re.compile(r"([0-9]{2})\.([0-9]{2})\.([0-9]{4})")
 
@@ -181,6 +186,7 @@ class MatchDict(TypedDict):
     match_type: str
     country: str | None
     is_multi_sided: bool
+    teams: dict[int, dict]  # optional
 
 
 def extract_match_data_from_match_page(
@@ -194,92 +200,9 @@ def extract_match_data_from_match_page(
         yield parse_match(match)
 
 
-def m_promotion(match: BeautifulSoup) -> int | None:
-    """Get the promotion id from a match html"""
-    for link in match.find_all("a"):
-        if link["href"].startswith("?"):
-            parsed = urllib.parse.parse_qs(link["href"][1:])
-            if parsed["id"][0] == "8":
-                # promotion
-                if "nr" in parsed:
-                    return int(parsed["nr"][0])
-    return None
-
-
-def m_date(match: BeautifulSoup) -> str | None:
-    """Get the date from a match html"""
-    for cell in match.find_all("td"):
-        m = date_re.search(cell.text)
-        if m:
-            date = util.parse_cm_date(m.group(0))
-            return date.isoformat()
-    return "Unknown"
-
-
-def get_matchtype(match: Tag):
-    m = match.find(class_="MatchType")
-    if m:
-        return util.remove_colon(m.text)
-    else:
-        return ""
-
-
 def extract_wrestler_id(wrestler: Tag) -> int:
     """Get the id number from an a tag"""
     return int(id_href.search(wrestler["href"]).group(1))
-
-
-def extract_team_info(match: BeautifulSoup) -> dict[tuple, dict]:
-    """Extract team information from match HTML.
-
-    Returns a dict mapping wrestler tuples to team info:
-    {(wrestler_a, wrestler_b): {"team_id": 123, "team_name": "Team Name", "team_type": "tag_team"}}
-
-    Only extracts teams when they represent exactly 2 wrestlers (strict approach).
-    Team links use id=28 for tag teams, id=29 for stables.
-    """
-    team_map = {}
-
-    match_card = match.find(class_="MatchCard")
-    if not match_card:
-        return team_map
-
-    # Pattern to find team links: <a href="?id=28&nr=123">Team Name</a>
-    team_link_pattern = re.compile(
-        r'<a href="\?id=(28|29)&amp;nr=(\d+)[^"]*">([^<]+)</a>'
-    )
-    html_str = str(match_card)
-
-    for match_obj in team_link_pattern.finditer(html_str):
-        team_type_id = match_obj.group(1)
-        team_id = int(match_obj.group(2))
-        team_name = match_obj.group(3)
-        team_type = "tag_team" if team_type_id == "28" else "stable"
-
-        # Find the wrestler links immediately after this team link
-        # Pattern: Team Name</a> (Wrestler1 & Wrestler2)
-        # We need to find the section after the team link up to the next logical break
-        start_pos = match_obj.end()
-        section = html_str[start_pos : start_pos + 300]
-
-        # Look for wrestler links in parentheses after team name
-        # Pattern: (Wrestler1 & Wrestler2) or (Wrestler1, Wrestler2 & Wrestler3)
-        paren_match = re.search(r"\(([^)]+)\)", section)
-        if paren_match:
-            paren_content = paren_match.group(1)
-            # Find wrestler IDs within the parentheses
-            wrestler_links = re.findall(r"id=2&amp;nr=(\d+)", paren_content)
-            wrestler_ids = tuple(sorted(int(wid) for wid in wrestler_links))
-
-            # Only add if exactly 2 wrestlers (strict approach)
-            if len(wrestler_ids) == 2:
-                team_map[wrestler_ids] = {
-                    "team_id": team_id,
-                    "team_name": team_name,
-                    "team_type": team_type,
-                }
-
-    return team_map
 
 
 def parse_match(match: BeautifulSoup) -> MatchDict:
@@ -317,35 +240,26 @@ def parse_match(match: BeautifulSoup) -> MatchDict:
 
     wrestlers = sorted(wrestlers)
 
-    d = m_date(match)
+    d = extract_date(match)
     if d == "Unknown":
         logger.warning("Match with unknown date: {}", str(match))
 
     match_dict: MatchDict = {
         "version": 2,  # Format version - see docstring for version history
         "date": d,
-        "country": _guess_country_of_match_soup(match),
+        "country": extract_country(match),
         "wrestlers": wrestlers,
         "side_a": side_a,
         "side_b": side_b,
         "is_victory": is_victory,
-        "promotion": m_promotion(match),
+        "promotion": extract_promotion(match),
         "raw_html": str(match),
-        "match_type": get_matchtype(match),
+        "match_type": extract_matchtype(match),
         "sides": sides,  # Always present for all matches
         "is_multi_sided": len(sides) > 2,
     }
 
     return match_dict
-
-
-def check_missing(txt_string):
-    """Check if any known missing wrestlers are in the given text string."""
-
-    for name in missing_wrestlers:
-        if name in txt_string:
-            return True
-    return False
 
 
 def parse_match_results(match: BeautifulSoup) -> tuple:
@@ -524,30 +438,6 @@ def _parse_match_results(
                     )
 
     return (sides, is_victory)
-
-
-def guess_country_of_match(html_content):
-    """Guess the country of a match based on its HTML content."""
-    soup = BeautifulSoup(html_content, "html.parser")
-    return _guess_country_of_match_soup(soup)
-
-
-def _guess_country_of_match_soup(soup: BeautifulSoup) -> str:
-    eventline = soup.find("div", class_="MatchEventLine")
-    # print(eventline)
-    if eventline:
-        text = eventline.get_text()
-        # Simple regex to find country names (this is just an example)
-        country_match = re.search(
-            r"(Event|Online Stream|TV-Show|Pay Per View|House Show) @ (.*)$", text
-        )
-        if country_match:
-            best_guess = country_match.group(2).split(",")[-1].strip().strip(".")
-
-            return country_map.get(best_guess, best_guess)
-
-    # Placeholder for actual country guessing logic
-    return "Unknown"
 
 
 def extract_years_from_match_page(content: str) -> set[int]:
