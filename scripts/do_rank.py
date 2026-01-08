@@ -318,9 +318,7 @@ def main(year: int, seed: bool, by_week: bool):
     else:
         r.save_rankings_to_html()
         logger.success(
-            "Rankings ({} wrestlers) saved to output/{}_ranking.html",
-            len(rankings),
-            year,
+            "Rankings ({} wrestlers) saved to {}", len(rankings), r.output_file()
         )
 
 

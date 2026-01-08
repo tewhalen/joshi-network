@@ -269,27 +269,15 @@ def parse_match(match: BeautifulSoup) -> dict:
     wrestlers = []
 
     result = parse_match_results(match)
-    if len(result) == 3:
-        # Two-sided match (backwards compatible)
-        side_a, side_b, is_victory = result
-        # Create sides structure for consistency
-        # For draws (is_victory=False), both sides have is_winner=False
-        sides = [
-            {"wrestlers": side_a, "is_winner": is_victory},
-            {"wrestlers": side_b, "is_winner": False},
-        ]
-        is_multi_sided = False
-    else:
-        # Multi-sided match (3+ sides) - sides is list of dicts
-        sides, is_victory = result
-        # Extract wrestlers from dict-based sides for backward compatibility
-        side_a = sides[0]["wrestlers"] if sides else tuple()
-        side_b = (
-            tuple(w for side in sides[1:] for w in side["wrestlers"])
-            if len(sides) > 1
-            else tuple()
-        )
-        is_multi_sided = True
+    # sides is list of dicts
+    sides, is_victory = result
+    # Extract wrestlers from dict-based sides for backward compatibility
+    side_a = sides[0]["wrestlers"] if sides else tuple()
+    side_b = (
+        tuple(w for side in sides[1:] for w in side["wrestlers"])
+        if len(sides) > 1
+        else tuple()
+    )
 
     # Extract team information (strict: only when team = full side)
     team_map = extract_team_info(match)
@@ -327,11 +315,8 @@ def parse_match(match: BeautifulSoup) -> dict:
         "raw_html": str(match),
         "match_type": get_matchtype(match),
         "sides": sides,  # Always present for all matches
+        "is_multi_sided": len(sides) > 2,
     }
-
-    # Add multi-sided flag if applicable
-    if is_multi_sided:
-        match_dict["is_multi_sided"] = True
 
     return match_dict
 
@@ -383,139 +368,127 @@ def parse_match_results(match: BeautifulSoup) -> tuple:
     else:
         return [], [], False
 
-    # Check if this is a multi-sided match by looking for " and " separators
-    # between teams in the loser section (not within teams, which use "&")
-    # Pattern: "A defeats B and C" or "A & B defeat C & D and E & F"
-    # Pass the HTML string, not plain text
-    match_card_html = str(match_card)
-    is_multi_sided = _is_multi_sided_match(match_card_html, splitter.text)
-
-    if is_multi_sided:
-        return _parse_multi_sided_match(match, splitter, is_victory)
-    else:
-        return _parse_two_sided_match(match, splitter, is_victory)
+    return _parse_match_results(match, splitter, is_victory)
 
 
-def _is_multi_sided_match(match_card_html: str, splitter_text: str) -> bool:
-    """Detect if match has 3+ sides by looking for 'and' between teams.
-
-    Returns True if there are multiple " and " separators that indicate
-    separate sides (not just list items within a team).
-
-    Args:
-        match_card_html: HTML string of the MatchCard element
-        splitter_text: The text of the splitter ("defeats" or "vs.")
-    """
-    # Split the HTML to get only the losers section
-    if splitter_text not in match_card_html:
-        return False
-
-    _, losers_html = match_card_html.split(splitter_text, 1)
-
-    # Look for pattern: ">Name</a> and <a" which indicates separate wrestlers/teams
-    and_between_links = re.findall(r"</a>\s+and\s+<a", losers_html)
-
-    # If we find 1+ occurrences of "and" between separate wrestler links,
-    # this is likely a multi-way match
-    return len(and_between_links) >= 1
+def is_wrestler_link(element) -> bool:
+    if hasattr(element, "name") and element.name == "a" and element.has_attr("href"):
+        href = element.get("href", "")
+        if wrestler_id_href.search(href):
+            return True
+    return False
 
 
-def _parse_two_sided_match(match: BeautifulSoup, splitter, is_victory: bool) -> tuple:
-    """Parse a traditional two-sided match."""
-    # these searches only find wrestler IDs (hopefully)
-    side_a_raw = splitter.find_previous_siblings("a", href=wrestler_id_href)
-    side_b_raw = splitter.find_next_siblings("a", href=wrestler_id_href)
+def _parse_match_results(match: BeautifulSoup, splitter, is_victory: bool) -> tuple:
+    """Parse match results into structured sides data.
 
-    side_a = tuple(sorted(extract_wrestler_id(x) for x in side_a_raw))
-    side_b = tuple(sorted(extract_wrestler_id(x) for x in side_b_raw))
+    Handles both two-sided and multi-sided matches using a unified algorithm.
+    Walks through HTML nodes to collect wrestlers into groups, splitting on
+    appropriate separators (" and " for victories, "vs." for draws).
 
-    # sanity check - if any wrestlers are on both sides, that's wrong
-    for w in side_a:
-        if w in side_b:
-            logger.warning(
-                "Wrestler {} found on both sides of match: {} / {}", w, side_a, side_b
-            )
-
-    match_text = match.get_text()
-    side_a_txt, side_b_txt = match_text.split(splitter.text, maxsplit=1)
-
-    if check_missing(side_a_txt):
-        # prepend a -1 to indicate missing wrestler
-        side_a = (-1,) + side_a
-    if check_missing(side_b_txt):
-        side_b = (-1,) + side_b
-
-    return side_a, side_b, is_victory
-
-
-def _parse_multi_sided_match(match: BeautifulSoup, splitter, is_victory: bool) -> tuple:
-    """Parse a multi-sided match (3+ sides).
-
-    Returns (sides_list, is_victory) where sides_list is a list of tuples,
-    each representing one side/team in the match.
+    Returns:
+        tuple: (sides_list, is_victory) where sides_list is a list of dicts,
+               each containing 'wrestlers' (tuple of IDs) and 'is_winner' (bool).
+               Unlinked wrestlers are represented with -1 sentinel values.
     """
     match_card = match.find(class_="MatchCard")
     if not match_card:
         return ([], False)
 
-    # Get all wrestler links
-    all_links = match_card.find_all("a", href=wrestler_id_href)
-
-    # Find the splitter position in the HTML
-    splitter_parent = splitter.parent
-
     # Separate winners from losers based on splitter position
-    winners = []
-    losers_groups = []
+    # the first group is "winners", the rest are "losers" groups
+    # even if it's a draw, we treat the first group as "winners" for parsing
 
+    all_groups = []
     current_group = []
-    found_splitter = False
-    in_losers = False
 
-    # Walk through all elements in MatchCard
+    # Walk through all elements in MatchCard,
+    # breaking into groups using the splitter as the main divider
     for element in match_card.descendants:
         if element == splitter:
-            found_splitter = True
+            # we found the first splitter, time to start a new group
             if current_group:
-                winners = current_group
+                all_groups.append(current_group)
                 current_group = []
-            in_losers = True
             continue
 
-        # Check if it's a wrestler link
-        if (
-            hasattr(element, "name")
-            and element.name == "a"
-            and element.has_attr("href")
-        ):
-            href = element.get("href", "")
-            if wrestler_id_href.search(href):
-                wrestler_id = extract_wrestler_id(element)
-                current_group.append(wrestler_id)
+        if is_wrestler_link(element):
+            # found a wrestler, add to the current group
+            wrestler_id = extract_wrestler_id(element)
+            current_group.append(wrestler_id)
 
-        # Check for " and " text nodes that separate sides
-        if isinstance(element, str) and in_losers:
-            if " and " in element and current_group:
-                # This "and" separates sides
-                losers_groups.append(tuple(sorted(current_group)))
+        # Check for separators between sides
+        if isinstance(element, str) and all_groups:
+            # Look for both " and " (battle royals) and "vs." (multi-way matches)
+            # Note: vs. might be preceded by ) or other characters
+            if (" and " in element or "vs." in element) and current_group:
+                # This separates sides
+                all_groups.append(current_group)
                 current_group = []
 
-    # Add the final group
-    if current_group and in_losers:
-        losers_groups.append(tuple(sorted(current_group)))
+    # Add the final group if there's uncollected wrestlers
+    if current_group and all_groups:
+        all_groups.append(current_group)
 
+    winners = all_groups[0] if all_groups else []
     # Build the final sides list as dict: [{wrestlers, is_winner}, ...]
     # Winner is first, then all losing sides
     sides = [{"wrestlers": tuple(sorted(winners)), "is_winner": is_victory}]
-    sides.extend([{"wrestlers": side, "is_winner": False} for side in losers_groups])
+    sides.extend(
+        [
+            {"wrestlers": tuple(sorted(side)), "is_winner": False}
+            for side in all_groups[1:]
+        ]
+    )
 
-    # Check for missing wrestlers
+    # Count unlinked wrestlers in each side's text
     match_text = match.get_text()
-    if check_missing(match_text):
-        # For now, add -1 to the first side where we detect missing wrestlers
-        # This is a simplification
-        if sides and check_missing(match_text.split(splitter.text)[0]):
-            sides[0]["wrestlers"] = (-1,) + sides[0]["wrestlers"]
+    text_parts = match_text.split(splitter.text, 1)
+
+    if len(text_parts) == 2:
+        winner_text, losers_text = text_parts
+
+        # Process winner side
+        if sides:
+            winner_separators = winner_text.count(" & ")
+            winner_expected = winner_separators + 1
+            winner_missing = winner_expected - len(sides[0]["wrestlers"])
+
+            if winner_missing > 0:
+                sides[0]["wrestlers"] = (
+                    tuple([-1] * winner_missing) + sides[0]["wrestlers"]
+                )
+
+        # Process loser sides - split by appropriate separator
+        if len(sides) > 1:
+            # Determine separator based on whether this is a victory or draw
+            # For draws (vs.), split by " vs. "; for victories (defeats), split by " and "
+            separator = " vs. " if not is_victory else " and "
+            loser_sections = losers_text.split(separator)
+            for i, section in enumerate(loser_sections):
+                if i + 1 < len(sides):  # Check if we have a corresponding side
+                    # In multi-sided matches, wrestlers on same side use "&", different sides use "and" or "vs."
+                    side_separators = section.count(" & ")
+                    side_expected = side_separators + 1
+                    side_missing = side_expected - len(sides[i + 1]["wrestlers"])
+
+                    if side_missing > 0:
+                        sides[i + 1]["wrestlers"] = (
+                            tuple([-1] * side_missing) + sides[i + 1]["wrestlers"]
+                        )
+
+                else:
+                    # This is a section without a corresponding linked wrestler (unlinked name only)
+                    # Add a new side with just -1
+                    # Count how many wrestlers should be in this section
+                    section_separators = section.count(" & ")
+                    section_expected = section_separators + 1
+                    sides.append(
+                        {
+                            "wrestlers": tuple([-1] * section_expected),
+                            "is_winner": False,
+                        }
+                    )
 
     return (sides, is_victory)
 
