@@ -8,6 +8,7 @@ from loguru import logger
 from tabulate import tabulate
 
 from joshirank.all_matches import all_matches
+from joshirank.analysis.name import get_primary_name_for_year
 from joshirank.analysis.promotion import (
     get_short_primary_promotion_for_year,
 )
@@ -170,7 +171,9 @@ class Ranker:
             html_link = (
                 '<a href="'
                 + URL_TEMPLATE.format(w_id=d["id"], year=self.year)
-                + '">{}</a>'.format(get_name(d["id"]))
+                + '">{}</a>'.format(
+                    get_primary_name_for_year(d["id"], self.year) or get_name(d["id"])
+                )
             )
 
             output.append(

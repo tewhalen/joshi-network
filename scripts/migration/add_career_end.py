@@ -1,18 +1,18 @@
 #!/usr/bin/env python
-"""Migration: add and populate 'career_end' column in wrestlers table.
+"""Migration: reprocess all stored match data
 
-- Adds the TEXT column 'career_end' if missing
-- Parses 'End of in-ring career' from stored JSON (cm_profile_json)
-  using flexible date parsing and populates the column in ISO format
+Updates all the derived columns, and theoretically doesn't change the timestamps.
 
 This script performs a write operation on the default database via WrestlerDb.
 """
 
 import json
+from collections import Counter
 
+from bs4 import BeautifulSoup
 from loguru import logger
 
-from joshirank.cagematch.profile import CMProfile
+from joshirank.cagematch.cm_match import parse_match
 from joshirank.joshidb import wrestler_db
 
 
@@ -29,26 +29,26 @@ def column_exists(table: str, column: str) -> bool:
 
 
 def add_column_if_missing():
-    if column_exists("wrestlers", "career_end"):
-        logger.info("Column 'career_end' already exists; skipping ALTER TABLE.")
+    if column_exists("matches", "names_used"):
+        logger.info("Column 'names_used' already exists; skipping ALTER TABLE.")
         return False
 
-    logger.info("Adding column 'career_end' (TEXT) to wrestlers table...")
+    logger.info("Adding column 'names_used' (TEXT) to matches table...")
     with wrestler_db.writable():
         wrestler_db._execute_and_commit(
-            "ALTER TABLE wrestlers ADD COLUMN career_end TEXT",
+            "ALTER TABLE matches ADD COLUMN names_used TEXT",
             (),
         )
-    logger.success("Added column 'career_end'.")
+    logger.success("Added column 'names_used'.")
     return True
 
 
-def populate_career_end():
+def populate_names_used():
     rows = wrestler_db._select_and_fetchall(
         """
-        SELECT wrestler_id, cm_profile_json
-        FROM wrestlers
-        WHERE cm_profile_json IS NOT NULL AND cm_profile_json != '{}'
+        SELECT wrestler_id, year, cm_matches_json
+        FROM matches
+        WHERE cm_matches_json IS NOT NULL AND cm_matches_json != '[]'
         """,
         (),
     )
@@ -57,32 +57,66 @@ def populate_career_end():
     fixed = 0
     errors = 0
 
-    logger.info("Populating career_end for {} wrestlers...", total)
+    logger.info("Populating names_used for {} wrestler-years...", total)
 
     with wrestler_db.writable():
-        for wrestler_id, json_str in rows:
+        i = 0
+        for wrestler_id, year, json_str in rows:
+            i += 1
             try:
                 data = json.loads(json_str)
-                profile = CMProfile.from_dict(wrestler_id, data)
-                career_end_raw = profile.career_end()
+                match_data = []
+                names_used = Counter()
+                for old_match_data in data:
+                    match_soup = BeautifulSoup(
+                        old_match_data["raw_html"], "html.parser"
+                    )
+                    new_match_data = parse_match(match_soup)
+                    match_data.append(new_match_data)
+                    # nothing is lost, we hope
+                    assert new_match_data["raw_html"] == old_match_data["raw_html"], (
+                        "Raw HTML mismatch after reparsing"
+                    )
+                opponents, countries_worked, promotions_worked, names_used = (
+                    wrestler_db._extract_data_from_match_data(wrestler_id, match_data)
+                )
 
-                career_end_val = str(career_end_raw).strip()
-
-                wrestler_db._execute_and_commit(
-                    "UPDATE wrestlers SET career_end = ? WHERE wrestler_id = ?",
-                    (career_end_val, wrestler_id),
+                wrestler_db._execute(
+                    """
+                    UPDATE matches
+                    SET cm_matches_json = ?, opponents = ?, names_used = ?, countries_worked = ?,
+                    promotions_worked = ?
+                    WHERE wrestler_id = ? AND year = ?
+                    """,
+                    (
+                        json.dumps(match_data),
+                        json.dumps([x[0] for x in opponents.most_common()]),
+                        json.dumps(dict(names_used)),
+                        json.dumps(dict(countries_worked)),
+                        json.dumps(dict(promotions_worked)),
+                        wrestler_id,
+                        year,
+                    ),
                 )
                 fixed += 1
+
             except Exception as e:
                 logger.error("Error updating {}: {}", wrestler_id, e)
                 errors += 1
-
-    logger.success("Populated career_end: {} updated, {} errors", fixed, errors)
+            if i % 100 == 0:
+                logger.info(
+                    "Processed {}/{} wrestler-years ({} updated, {} errors)",
+                    i,
+                    total,
+                    fixed,
+                    errors,
+                )
+    logger.success("Populated names_used: {} updated, {} errors", fixed, errors)
 
 
 def main():
     added = add_column_if_missing()
-    populate_career_end()
+    populate_names_used()
     if added:
         logger.info("Migration completed: column added and values populated.")
     else:

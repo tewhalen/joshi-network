@@ -29,6 +29,7 @@ class MatchInfoDict(TypedDict):
     match_count: int
     countries_worked: dict[str, int]
     promotions_worked: dict[str, int]
+    names_used: dict[str, int]
     wrestler_id: int
     year: int
     timestamp: float
@@ -102,6 +103,7 @@ class WrestlerDb(DBWrapper):
             match_count INTEGER,
             countries_worked TEXT,
             promotions_worked TEXT,
+            names_used TEXT,
             year INTEGER NOT NULL DEFAULT 2025,
             last_updated TIMESTAMP,
             PRIMARY KEY (wrestler_id, year)
@@ -248,15 +250,15 @@ class WrestlerDb(DBWrapper):
             )
             raise
 
-        opponents, countries_worked, promotions_worked = (
+        opponents, countries_worked, promotions_worked, names_used = (
             self._extract_data_from_match_data(wrestler_id, match_data)
         )
 
         self._execute_and_commit(
             """
         INSERT OR REPLACE INTO matches
-        (wrestler_id, year, cm_matches_json, last_updated, opponents, match_count, countries_worked, promotions_worked)
-        VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?)
+        (wrestler_id, year, cm_matches_json, last_updated, opponents, match_count, countries_worked, promotions_worked, names_used)
+        VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)
         """,
             (
                 wrestler_id,  # wrestler_id + year is the primary key
@@ -266,6 +268,7 @@ class WrestlerDb(DBWrapper):
                 len(match_data),
                 json.dumps(dict(countries_worked)),
                 json.dumps(dict(promotions_worked)),
+                json.dumps(dict(names_used)),
             ),
         )
         # Update normalized opponents table
@@ -273,8 +276,9 @@ class WrestlerDb(DBWrapper):
 
     def _extract_data_from_match_data(
         self, wrestler_id: int, match_data: list[MatchDict]
-    ) -> tuple[Counter, Counter, Counter]:
-        opponents, countries_worked, promotions_worked = (
+    ) -> tuple[Counter, Counter, Counter, Counter]:
+        opponents, countries_worked, promotions_worked, names_used = (
+            Counter(),
             Counter(),
             Counter(),
             Counter(),
@@ -287,7 +291,11 @@ class WrestlerDb(DBWrapper):
                 countries_worked[match["country"]] += 1
             if "promotion" in match and match["promotion"] is not None:
                 promotions_worked[match["promotion"]] += 1
-        return opponents, countries_worked, promotions_worked
+            if "wrestler_names" in match:
+                used_names = match["wrestler_names"].get(wrestler_id, [])
+                for name in used_names:
+                    names_used[name] += 1
+        return opponents, countries_worked, promotions_worked, names_used
 
     def create_stale_match_stubs(self, wrestler_id: int, years: set[int]):
         """Create stub match entries for years that don't exist yet.
@@ -316,43 +324,6 @@ class WrestlerDb(DBWrapper):
             """,
                 (wrestler_id, json.dumps([]), year, stale_timestamp_str),
             )
-
-    def update_matches_from_matches(self, wrestler_id: int):
-        """Using the stored json matches for the wrestler, update their metadata in the SQL db.
-
-        Deprecated!
-
-        """
-        rows = self._select_and_fetchall(
-            """SELECT cm_matches_json, year FROM matches WHERE wrestler_id=?""",
-            (wrestler_id,),
-        )
-        for row in rows:
-            if row and row[0]:
-                year = row[1]
-                matches = json.loads(row[0])
-                opponents, countries_worked, promotions_worked = (
-                    self._extract_data_from_match_data(wrestler_id, matches)
-                )
-
-                self._execute_and_commit(
-                    """
-                UPDATE matches
-                SET opponents=?, match_count=?, countries_worked=?, promotions_worked=?
-                WHERE wrestler_id=? AND year=?
-                """,
-                    (
-                        json.dumps([x[0] for x in opponents.most_common()]),
-                        len(matches),
-                        json.dumps(dict(countries_worked)),
-                        json.dumps(dict(promotions_worked)),
-                        wrestler_id,
-                        year,
-                    ),
-                )
-
-                # Update normalized opponents table
-                self._update_opponents_table(wrestler_id, year, opponents)
 
     def _update_opponents_table(self, wrestler_id: int, year: int, opponents: Counter):
         """Update the normalized opponents table for a wrestler/year."""
@@ -571,7 +542,7 @@ class WrestlerDb(DBWrapper):
     def get_match_info(self, wrestler_id: int, year: int = 2025) -> MatchInfoDict:
         """Return match metadata for a wrestler."""
         row = self._select_and_fetchone_dict(
-            """SELECT opponents, match_count, countries_worked, promotions_worked, last_updated
+            """SELECT opponents, match_count, countries_worked, promotions_worked, names_used, last_updated
             FROM matches WHERE wrestler_id=? AND year=?""",
             (wrestler_id, year),
         )
@@ -586,6 +557,7 @@ class WrestlerDb(DBWrapper):
                 promotions_worked=json.loads(row["promotions_worked"])
                 if row["promotions_worked"]
                 else {},
+                names_used=json.loads(row["names_used"]) if row["names_used"] else {},
                 year=year,
                 wrestler_id=wrestler_id,
                 timestamp=row["last_updated"] if "last_updated" in row else 0.0,
