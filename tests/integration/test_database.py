@@ -1,5 +1,30 @@
 """Integration tests for database operations."""
 
+import pytest
+
+
+def test_attempting_to_write_outside_context_raises(temp_db):
+    """Test that writing outside a writable context raises a RuntimeError."""
+    with pytest.raises(
+        RuntimeError,
+    ):
+        temp_db.save_profile_for_wrestler(1, {"Name": "Test"})
+
+
+def test_nested_write_contexts_raise(temp_db):
+    """Test that attempting to nest writable contexts raises a RuntimeError."""
+    with pytest.raises(RuntimeError):
+        with temp_db.writable():
+            with temp_db.writable():
+                pass
+
+
+def test_select_and_fetchone_returns_false_if_no_results(temp_db):
+    """Test that _select_and_fetchone raises if no results found."""
+    result = temp_db._select_and_fetchone(
+        "SELECT * FROM wrestlers WHERE wrestler_id = ?", (999999,)
+    )
+    assert not result
 
 
 def test_save_and_retrieve_profile(temp_db):
