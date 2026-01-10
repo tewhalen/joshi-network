@@ -281,3 +281,20 @@ def test_tokenizer_dates():
     assert len(date_tokens) == 1
     assert date_tokens[0].text == "31.12.2025"
     assert date_tokens[0].date == datetime.date(2025, 12, 31)
+
+
+def test_multiple_promotion():
+    """Turns out that some matches have multiple promotion links."""
+    sample_html = """<tr class="TRow1 TRowTVShow">
+    <td class="TCol AlignCenter TextLowlight">5</td>
+    <td class="TCol TColSeparator">29.11.1949</td>
+    <td class="TCol TColSeparator"><a href="?id=8&amp;nr=208">
+      <img src="/site/main/img/ligen/normal/208.gif" class="ImagePromotionLogoMini ImagePromotionLogo_mini" width="36" height="18" alt="Central States Wrestling" title="Central States Wrestling"></a>
+      <a href="?id=8&amp;nr=9"><img src="/site/main/img/ligen/normal/9.gif" class="ImagePromotionLogoMini ImagePromotionLogo_mini" width="36" height="18" alt="National Wrestling Alliance" title="National Wrestling Alliance"></a></td>
+    <td class="TCol TColSeparator">
+<span class="MatchType">World Women's  Title Best Two Out Of Three Falls: </span><span class="MatchCard"><a href="?id=2&amp;nr=3145&amp;name=Mildred+Burke">Mildred Burke</a> (c) defeats Marie McFarland [2:0]</span><div class="MatchEventLine"><a href="?id=1&amp;nr=145585">CSW TV</a> - TV-Show @ World War II Memorial Building in Kansas City, Missouri, USA</div></td></tr>"""
+    soup = BeautifulSoup(sample_html, "html.parser")
+
+    tokens = match_tokenizer(soup)
+    promotion_tokens = [t for t in tokens if isinstance(t, PromotionToken)]
+    assert len(promotion_tokens) == 2

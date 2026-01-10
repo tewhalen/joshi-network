@@ -201,11 +201,25 @@ def _process_element(element) -> list[RawToken]:
     elif element.name == "a":
         attrs = {k: v for k, v in element.attrs.items()}
         href = attrs.get("href", "")
-        tokens.append(LinkToken(href=href, text=element.get_text(strip=True)))
+
+        tokens.append(LinkToken(href=href, text=get_internal_text(element)))
     else:
         tokens.append(TagToken(name=element.name, attrs=dict(element.attrs)))
 
     return tokens
+
+
+def get_internal_text(element) -> str:
+    """Extract internal text from a link element, and if there's no text
+    in there, use the alt text of an image inside it (for promotion logos)."""
+    text = element.get_text(strip=True)
+    if text:
+        return text
+    # check for an image inside
+    img = element.find("img")
+    if img and img.has_attr("alt"):
+        return img["alt"]
+    return ""
 
 
 def date_token(token: TextToken) -> DateToken | None:

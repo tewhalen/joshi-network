@@ -264,30 +264,3 @@ def parse_match(match: BeautifulSoup) -> MatchDict:
     )
 
     return pre_match_dict
-
-
-SAMPLE_THREE_WAY_TAG = BeautifulSoup(
-    """<tr class="TRow2">
-    <td class="TCol AlignCenter TextLowlight">4</td>
-    <td class="TCol TColSeparator">18.11.1996</td>
-    <td class="TCol TColSeparator">
-        <a href="?id=8&amp;nr=2">
-            <img src="/site/main/img/ligen/normal/2_WCW Monday NITRO_1995-199903.gif" class="ImagePromotionLogoMini ImagePromotionLogo_mini" width="36" height="18" alt="World Championship Wrestling" title="World Championship Wrestling">
-        </a></td>
-    <td class="TCol TColSeparator">
-        <span class="MatchType">Dark Three Way: </span>
-        <span class="MatchCard">
-            <a href="?id=2&amp;nr=1256&amp;name=Ciclope">Ciclope</a> &amp; <a href="?id=2&amp;nr=1007&amp;name=Galaxy">Galaxy</a> vs. <a href="?id=28&amp;nr=452&amp;name=High+Voltage">High Voltage</a> (<a href="?id=2&amp;nr=1681&amp;name=Kenny+Kaos">Kenny Kaos</a> &amp; <a href="?id=2&amp;nr=1682&amp;name=Robbie+Rage">Robbie Rage</a>) vs. <a href="?id=28&amp;nr=67&amp;name=The+Nasty+Boys">The Nasty Boys</a> (<a href="?id=2&amp;nr=633&amp;name=Brian+Knobbs">Brian Knobbs</a> &amp; <a href="?id=2&amp;nr=558&amp;name=Jerry+Sags">Jerry Sags</a>) - No Contest
-        </span>
-        <div class="MatchEventLine">
-            <a href="?id=1&amp;nr=4091">WCW Monday NITRO #62</a> - Dark Match @ Civic Center in Florence, South Carolina, USA
-        </div>
-        </td></tr>""",
-    "html.parser",
-)
-
-if __name__ == "__main__":
-    from pprint import pprint
-
-    match_info = parse_match(SAMPLE_THREE_WAY_TAG)
-    pprint(match_info)
