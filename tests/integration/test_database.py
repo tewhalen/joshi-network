@@ -27,6 +27,38 @@ def test_select_and_fetchone_returns_false_if_no_results(temp_db):
     assert not result
 
 
+def test_failed_commit_rollsback(temp_db):
+    """Test that a failed commit rolls back changes."""
+    try:
+        with temp_db.writable():
+            temp_db._execute(
+                "INSERT INTO wrestlers (wrestler_id, name, is_female) VALUES (?, ?, ?)",
+                (1, "Test Wrestler", 1),
+            )
+            # Force an error
+            temp_db._execute("INVALID SQL STATEMENT")
+    except Exception:
+        pass
+    with pytest.raises(KeyError):
+        wrestler = temp_db.get_wrestler(1)
+
+
+def test_explict_commit_does_not_rollback(temp_db):
+    """Test that a failure after an explicit commit does not roll back changes."""
+    with pytest.raises(TypeError):
+        with temp_db.writable():
+            temp_db._execute(
+                "INSERT INTO wrestlers (wrestler_id, name, is_female) VALUES (?, ?, ?)",
+                (1, "Test Wrestler", 1),
+            )
+            temp_db._commit()
+            # Force an error
+            temp_db._execute("INVALID SQL STATEMENT")
+
+    wrestler = temp_db.get_wrestler(1)
+    assert wrestler["name"] == "Test Wrestler"
+
+
 def test_save_and_retrieve_profile(temp_db):
     """Test saving and retrieving wrestler profile."""
     profile_data = {
