@@ -113,6 +113,12 @@ class WrestlerDb(DBWrapper):
             """CREATE INDEX IF NOT EXISTS idx_matches_year ON matches (year)"""
         )
         cursor.execute(
+            """CREATE INDEX IF NOT EXISTS idx_matches_count ON matches (match_count)"""
+        )
+        cursor.execute(
+            """CREATE INDEX IF NOT EXISTS idx_matches_year_count ON matches (year, match_count)"""
+        )
+        cursor.execute(
             """CREATE INDEX IF NOT EXISTS idx_matches_updated ON matches (last_updated)"""
         )
         cursor.close()
