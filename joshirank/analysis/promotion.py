@@ -24,6 +24,7 @@ For this reason, the use of the location field in the wrestler table is discoura
 """
 
 import json
+import re
 from collections import Counter
 
 from joshirank.joshi_data import promotion_abbreviations, promotion_name_changes
@@ -42,6 +43,21 @@ def wrestler_is_retired(wrestler_id: int) -> bool:
     wrestler_info = wrestler_db.get_wrestler(wrestler_id)
     career_end = wrestler_info.get("career_end", None)
     if career_end:
+        return True
+    return False
+
+
+def promotion_is_actually_freelance(promotion_id: int) -> bool:
+    """Some 'promotions' in the CageMatch database are proxies for independent
+    shows without a true promotion behind them. These should be... well, they
+    shoudld increase the likelihood that a wrestler is freelance.
+
+    They look like "Wrestling In Mexiko - Freelance Shows" or
+    "Wrestling In The USA - Freelance Shows"
+
+    """
+    pattern = re.compile("Wrestling In (.+) - Freelance Shows", re.IGNORECASE)
+    if pattern.match(get_promotion_name(promotion_id)):
         return True
     return False
 
@@ -122,7 +138,8 @@ def get_primary_promotion_for_year(wrestler_id: int, year: int) -> str | None:
     # If this promotion represents at least 40% of matches, use it
     if count / match_count >= 0.4:
         promo_name = get_promotion_name(most_common_promo_id)
-        return adjust_promotion_name_for_year(promo_name, year)
+        if not promotion_is_actually_freelance(most_common_promo_id):
+            return adjust_promotion_name_for_year(promo_name, year)
 
     # Otherwise, they're a freelancer
     return _adjust_freelancer_by_location(match_info)
