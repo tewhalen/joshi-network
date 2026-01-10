@@ -14,18 +14,18 @@ THIS_YEAR = time.localtime().tm_year
 class OperationsManager:
     """Manages scraping operations and HTTP session."""
 
-    def __init__(self, wrestler_db: WrestlerDb, slow: bool = False):
+    def __init__(self, wrestler_db: WrestlerDb, slow: int | None = None):
         """Initialize operations manager.
 
         Args:
             wrestler_db: Database instance to update
-            slow: If True, use 7s delay and remove session limit
+            slow: If set, use this many seconds delay and remove session limit
         """
         self.wrestler_db = wrestler_db
         self.scraper = CageMatchScraper()
 
-        if slow:
-            self.scraper.sleep_delay = 7.0
+        if slow is not None:
+            self.scraper.sleep_delay = float(slow)
             self.scraper.max_requests_per_session = float("inf")  # No limit
 
     def keep_going(self) -> bool:
@@ -234,3 +234,9 @@ class OperationsManager:
             self.refresh_promotion(item.object_id)
         else:
             raise ValueError(f"Unknown work item operation: {item.operation}")
+        if item.note:
+            logger.info(
+                "{} | {}",
+                item.object_id,
+                item.note,
+            )

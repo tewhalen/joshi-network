@@ -2,6 +2,7 @@
 
 import time
 from abc import abstractmethod
+from collections import Counter
 
 from loguru import logger
 
@@ -150,9 +151,8 @@ class QueueBuilder:
                     year=year,
                 )
 
-    def _collect_promotion_ids(self) -> dict:
+    def _collect_promotion_ids(self) -> Counter:
         """Collect all promotion IDs from match data with frequency counts."""
-        from collections import Counter
 
         promotion_counter = Counter()
 
@@ -278,6 +278,7 @@ class FullQueueBuilder(QueueBuilder):
                             priority=priority,
                             object_id=promotion_id,
                             operation="refresh_promotion",
+                            note=f"Present in {frequency} matches",
                         )
                     )
 

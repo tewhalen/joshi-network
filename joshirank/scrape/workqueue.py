@@ -11,6 +11,9 @@ class WorkItem:
     operation: str = field(compare=False)
     year: int | None = field(default=None, compare=False)
     force: bool = field(default=False, compare=False)
+    note: str = field(
+        default="", compare=False
+    )  # maybe a little helpful note for logging?
 
 
 class WorkQueue:

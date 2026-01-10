@@ -147,7 +147,7 @@ class ScrapingSession:
         wrestler_db: WrestlerDb,
         queue_builder: QueueBuilder,
         dry_run=False,
-        slow=False,
+        slow=None,
     ):
         self.ops_manager = OperationsManager(wrestler_db, slow=slow)
         self.wrestler_db = wrestler_db
@@ -323,9 +323,17 @@ def setup_logging():
     help="Skip database backup (not recommended)",
 )
 @click.option(
-    "--slow",
-    is_flag=True,
+    "--slow",  # set slow to 7s between requests
+    "slow",
+    default=None,
+    flag_value=7,
     help="Slow mode: 7s between requests, no session limit",
+)
+@click.option(
+    "--ultraslow",  # set slow to 30s between requests
+    "slow",
+    flag_value=30,
+    help="Ultraslow mode: 30s between requests, no session limit",
 )
 def cli(
     tjpw_only,
@@ -396,8 +404,10 @@ def cli(
     if matches_only:
         queue_builder.only_matches = True
         logger.info("Matches-only mode: only scraping matches")
-    if slow:
+    if slow == 7:
         logger.warning("SLOW MODE: 7s between requests, no session limit")
+    if slow == 30:
+        logger.warning("SNAIL MODE: 30s between requests, no session limit")
 
     scraper = ScrapingSession(wrestler_db, queue_builder, dry_run=dry_run, slow=slow)
 
