@@ -103,6 +103,9 @@
 
                 return group;
             })
+            // Set a default visible link style; refined below once data is available
+            .linkColor('#b3b3b3')
+            .linkOpacity(0.6)
         // .linkWidth('value')
         // .linkOpacity(0.4);
 
@@ -126,6 +129,27 @@
             rotationEnabled = !rotationEnabled;
             document.getElementById('rotationToggle').textContent =
                 rotationEnabled ? 'Pause Rotation' : 'Resume Rotation';
+        });
+
+        // After data loads, create a fast id->color map and set conditional link coloring
+        const colorById = new Map();
+        Graph.onEngineTick(() => {
+            if (colorById.size) return; // do once
+            const data = Graph.graphData();
+            if (!data || !data.nodes || data.nodes.length === 0) return;
+            for (const n of data.nodes) {
+                // default id field is 'id'
+                if (n.id !== undefined && n.color) {
+                    colorById.set(n.id, n.color);
+                }
+            }
+            Graph
+                .linkColor(link => {
+                    const sc = typeof link.source === 'object' ? link.source.color : colorById.get(link.source);
+                    const tc = typeof link.target === 'object' ? link.target.color : colorById.get(link.target);
+                    return sc && tc && sc === tc ? sc : '#b3b3b3';
+                })
+                .linkOpacity(0.6);
         });
     </script>
 </body>
