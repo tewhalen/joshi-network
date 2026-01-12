@@ -136,13 +136,15 @@ class OperationsManager:
         for year, matches in matches_by_year.items():
             self.wrestler_db.save_matches_for_wrestler(wrestler_id, matches, year=year)
 
-        # Update timestamps for existing stub years that had no matches
-        # This confirms they've been checked and prevents them showing as stale
+        # Remove existing stub years that had no matches
+        # We've scraped all matches, so any year not in matches_by_year is empty
+        # and should have its stub record removed
         existing_years = self.wrestler_db.match_years_available(wrestler_id)
         for year in existing_years:
             if year not in matches_by_year:
-                # This year exists in DB but had no matches - update timestamp to mark as checked
-                self.wrestler_db.save_matches_for_wrestler(wrestler_id, [], year=year)
+                # This year exists in DB but has no matches, so remove stub
+                # if matches show up later, they'll be noticed and scraped by normal process
+                self.wrestler_db.remove_empty_match_stub(wrestler_id, year=year)
 
     def refresh_promotion(self, promotion_id: int):
         """Scrape and update promotion data.

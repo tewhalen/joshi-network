@@ -331,6 +331,16 @@ class WrestlerDb(DBWrapper):
                 (wrestler_id, json.dumps([]), year, stale_timestamp_str),
             )
 
+    def remove_empty_match_stub(self, wrestler_id: int, year: int):
+        """Remove an empty match stub for a wrestler/year."""
+        self._execute_and_commit(
+            """
+        DELETE FROM matches
+        WHERE wrestler_id = ? AND year = ? AND (cm_matches_json = '[]' OR cm_matches_json IS NULL)
+        """,
+            (wrestler_id, year),
+        )
+
     def _update_opponents_table(self, wrestler_id: int, year: int, opponents: Counter):
         """Update the normalized opponents table for a wrestler/year."""
 

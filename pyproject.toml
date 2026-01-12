@@ -24,6 +24,7 @@ joshi-scrape = "scripts.scrape:cli"
 joshi-rank = "scripts.do_rank:main"
 joshi-network = "scripts.generate_network:main"
 joshi-promotions = "scripts.promotion_plot:main"
+lookup-wrestler = "scripts.analysis.wrestler_stats:main"
 
 [project.optional-dependencies]
 dev = [
