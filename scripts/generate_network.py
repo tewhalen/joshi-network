@@ -7,6 +7,7 @@ from collections import Counter
 import click
 from loguru import logger
 
+from joshirank.analysis.name import get_primary_name_for_year
 from joshirank.analysis.promotion import (
     get_short_primary_promotion_for_year,
 )
@@ -96,7 +97,7 @@ def build_graph(from_wrestlers: set, year: int, threshold=8):
                 "id": str(wrestler),
                 "group": promotion_id[promotion],
                 "promotion": promotion,
-                "name": get_name(wrestler),
+                "name": get_primary_name_for_year(wrestler, year),
                 "matches": math.log10(match_counts[wrestler]),
             }
         )

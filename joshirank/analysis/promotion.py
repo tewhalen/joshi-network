@@ -23,18 +23,26 @@ For this reason, the use of the location field in the wrestler table is discoura
 
 """
 
+import datetime
 import json
 import re
 from collections import Counter
 
-from joshirank.joshi_data import promotion_abbreviations, promotion_name_changes
+from loguru import logger
+
+from joshirank.joshi_data import (
+    joshi_promotions,
+    promotion_abbreviations,
+    promotion_name_changes,
+)
 from joshirank.joshidb import MatchInfoDict, get_promotion_name, wrestler_db
 
 
 def wrestler_is_retired(wrestler_id: int) -> bool:
     """Determine if a wrestler is retired based on profile data.
 
-    A wrestler is considered retired if there's a end date in their profile.
+    A wrestler is considered retired if there's a end date in their profile,
+    or if they haven't wrestled any matches in the last 3 years.
 
     Args:
         wrestler_id: The wrestler's ID
@@ -42,7 +50,13 @@ def wrestler_is_retired(wrestler_id: int) -> bool:
 
     wrestler_info = wrestler_db.get_wrestler(wrestler_id)
     career_end = wrestler_info.get("career_end", None)
-    if career_end:
+    if career_end is not None and career_end not in ("", "None"):
+        return True
+
+    years_available = wrestler_db.match_years_available(wrestler_id)
+    if not years_available:
+        return True
+    if max(years_available) < (datetime.date.today().year - 3):
         return True
     return False
 
@@ -255,13 +269,57 @@ def guess_location_from_matches(wrestler_id: int):
     if not rows:
         return
 
-    country_counter = Counter()
-    for row in rows:
-        if row and row[0]:
-            # should be a dict stored as json
-            countries_worked = json.loads(row[0])
-            country_counter.update(countries_worked)
+    country_counter = full_countries_worked(wrestler_id)
 
     if country_counter:
         # get the most common country
         return max(country_counter.items(), key=lambda x: x[1])[0]
+
+
+def full_countries_worked(wrestler_id: int) -> Counter:
+    """Get a Counter of all countries worked by the wrestler across all matches."""
+    rows = wrestler_db._select_and_fetchall(
+        """SELECT countries_worked FROM matches WHERE wrestler_id=?""",
+        (wrestler_id,),
+    )
+    country_counter = Counter()
+    for row in rows:
+        if row and row[0]:
+            countries_worked = json.loads(row[0])
+            country_counter.update(countries_worked)
+    return country_counter
+
+
+def is_japanese(wrestler_id: int, year: int | None = None) -> bool:
+    """Determine if a wrestler is Japanese based on profile and match data.
+
+    Uses a hard-coded list of known non-Japanese joshi wrestlers,
+    countries worked, and promotions worked.
+    """
+
+    if wrestler_id in {
+        4629,
+        9555,  # iyo sky
+        16547,  # yuka
+        9462,  # shida
+        22328,  # thekla?
+        20432,  # mina
+        2785,  # asuka
+        19615,  # giulia
+        11958,  # kairi sane
+    }:
+        return True
+    wrestler_info = wrestler_db.get_wrestler(wrestler_id)
+    if guess_location_from_matches(wrestler_id) == "Japan":
+        return True
+
+    promotion = (
+        get_primary_promotion_for_year(wrestler_id, year)
+        if year
+        else wrestler_info.get("promotion", "")
+    )
+    if not promotion:
+        return False
+    if "Japan" in promotion or promotion in joshi_promotions:
+        return True
+    return False
